@@ -60,6 +60,10 @@ library(Cairo)
 library(extrafont)
 library(ggmap)
 library(mgsub)
+library(httr2)
+library(pdftools)
+library(tm)
+library(ggtext)
 
 #############################################################
 #####                Load Functions                     #####
@@ -78,7 +82,7 @@ removeDiacritics <- function(string) {
 }
 
 #############################################################
-#####                 Create Folders                    #####
+#####          Create Folders and Filenames             #####
 #############################################################
 
 # set extension and Citation
@@ -95,95 +99,14 @@ Figure.dir <- "Figures/"
 if (!dir.exists("Figures/")){
   dir.create(file.path(Figures.dir),recursive = TRUE)
 }
-
-#############################################################
-#####               Load and Format Data                #####
-#############################################################
-#####      Generate INTERPOL combined list              #####
-
-if (file.exists("INTERPOL/INTERPOL_Combined.csv",recursive = TRUE)){
-  print("INTERPOL data already combined")
-  Interpol_data <- read.csv(file = "INTERPOL/INTERPOL_Combined.csv")
-}else{Interpol_data <- list.files(cit.path.INTERPOL, pattern=extension, full.names=TRUE)
-Interpol_data <- rbindlist(lapply(Interpol_data,fread, encoding='UTF-8'))
-write.csv(Interpol_data,file = "INTERPOL/INTERPOL_Combined.csv",row.names = TRUE)
-print("INTERPOL data has been combined")
-Interpol_data <- read.csv(file = "INTERPOL/INTERPOL_Combined.csv")
+Papers.dir <- "Papers/"
+if (!dir.exists("Papers/")){
+  dir.create(file.path(Figures.dir),recursive = TRUE)
 }
 
-# rename some of the columns to remove special characters or encoding
-names(Interpol_data)[3] <- c("AuthorID")
-
-Interpol_data <- Interpol_data %>%
-  select(Year,Title,Source.title,Authors,Affiliations,AuthorID,Author.Keywords,Index.Keywords,EID)%>%
-  distinct()
-
-#####        Generate Scopus combined list              #####
-
-if (file.exists("Scopus/SCOPUS.csv",recursive = TRUE)){
-  print("Scopus data already combined")
-  Scopus_data <- read.csv(file = "Scopus/SCOPUS.csv")
-}else{Scopus_data <- list.files(cit.path.SCOPUS, pattern=extension, full.names=TRUE)
-Scopus_data <- rbindlist(lapply(Scopus_data,fread, encoding='UTF-8'))
-write.csv(Scopus_data,file = "Scopus/SCOPUS.csv",row.names = TRUE)
-print("Scopus data has been combined")
-Scopus_data <- read.csv(file = "Scopus/SCOPUS.csv")
-}
-
-# rename some of the columns to remove special characters or encoding
-names(Scopus_data)[3] <- c("AuthorID")
-
-Scopus_data <- Scopus_data %>%
-  select(Year,Title,Source.title,Authors,Affiliations,AuthorID,Abstract,Author.Keywords,Index.Keywords,EID)%>%
-  distinct()
-
-#############################################################
-##### Correct Country Names and Create Affiliations List ####
-#############################################################
-## Using Scopus data, apply corrections to countries
-
-Scopus_data$Affiliations <- gsub("\\.", "", Scopus_data$Affiliations)
-Scopus_data$Affiliations <- gsub("USA\\, United States", "USA", Scopus_data$Affiliations)
-Scopus_data$Affiliations <- gsub("Russian Federation", "Russia", Scopus_data$Affiliations)
-Scopus_data$Affiliations <- gsub("Cairo Egypt", "Cairo\\, Egypt", Scopus_data$Affiliations)
-Scopus_data$Affiliations <- gsub("Hong Kong", "Hong Kong\\, China", Scopus_data$Affiliations)
-Scopus_data$Affiliations <- gsub("United States", "USA", Scopus_data$Affiliations, perl = TRUE)
-Scopus_data$Affiliations <- gsub("United Kingdom", "UK", Scopus_data$Affiliations, perl = TRUE)
-Scopus_data$Affiliations <- gsub("South Korea", "Korea South", Scopus_data$Affiliations, perl = TRUE)
-
-# replace ';' with ',' as multiple affiliations are separated with ';'
-Scopus_data$Affiliations <- gsub(";", ",", Scopus_data$Affiliations)
-
-# split fields by ", "
-ScopusAffiliations <- sapply(Scopus_data$Affiliations, strsplit, split = ", ", USE.NAMES = FALSE)
-
-# extract fields which match a known city making sure that diacritics aren't a problem...
-CityList <- lapply(ScopusAffiliations, function(x)x[which(removeDiacritics(x) %in% world.cities$name)])
-
-# ... or country
-CountryList <- lapply(ScopusAffiliations, function(x)x[which(removeDiacritics(x) %in% world.cities$country.etc)])
-
-# this version only returns unique instances of countries per publication
-ScopusCountryListUnique <- lapply(ScopusAffiliations, function(x)unique(x[which(x %in% world.cities$country.etc)]))
-
-#extract the list of country per paper and place in dataframe
-CountryListbyPaperUnique <- as.data.table(matrix(ScopusCountryListUnique),ExplosiveListStringAsFactors=FALSE)
-
-# bind to the original data
-ScopusCountryListbyPaperUnique<- cbind(Scopus_data,CountryListbyPaperUnique)
-
-# rename Country column
-names(ScopusCountryListbyPaperUnique)[11] <- c("Country")
-
-#convert to character - may not be necessary
-ScopusCountryListbyPaperUnique$Country <- as.character(ScopusCountryListbyPaperUnique$Country)
-
-# remove unwanted characters  
-ScopusCountryListbyPaperUnique$Country <-  gsub("c\\(","",ScopusCountryListbyPaperUnique$Country)
-ScopusCountryListbyPaperUnique$Country <-  gsub("\\)","",ScopusCountryListbyPaperUnique$Country)
-ScopusCountryListbyPaperUnique$Country <-  gsub("\"","",ScopusCountryListbyPaperUnique$Country)
-ScopusCountryListbyPaperUnique$Country <-  gsub(", ",",",ScopusCountryListbyPaperUnique$Country)
-ScopusCountryListbyPaperUnique$Country <-  gsub("character\\(0",NA,ScopusCountryListbyPaperUnique$Country)
+# filename for figure export
+FigureName <- "Fig1_Scopus_Keyword_"
+TableName <- "Table1_Scopus_Keyword_"
 
 #############################################################
 #####                    Load Countries                 #####
@@ -203,106 +126,9 @@ NumberCountry <- 20
 #############################################################
 
 #     Select one of the following three options
-KeywordEntries <- "Author_Keywords"
+# KeywordEntries <- "Author_Keywords"
 # KeywordEntries <- "Database_Keywords"
-# KeywordEntries <- "All_Keywords"
-
-#############################################################
-#####           Interpol keyword selection             #####
-#############################################################
-
-Interpol_data_selected <- Interpol_data 
-
-if (KeywordEntries == "Author_Keywords"){
-  #   Author Keywords only
-  names(Interpol_data_selected) <- sub("Author.Keywords","AIKeywords", names(Interpol_data_selected))
-  Keyname <- "A_Keywords"
-} else{
-  if (KeywordEntries == "Database_Keywords"){
-    #   Index Keywords only
-    names(Interpol_data_selected) <- sub("Index.Keywords","AIKeywords", names(Interpol_data_selected))
-    Keyname <- "I_Keywords"
-  }
-  else {
-    # Index and Author Keywords
-    # Combine Columns Author.Keywords and Index.Keywords and place in Column name "AIKeywords" and remove original columns
-    Interpol_data_selected <- Interpol_data_selected %>%
-      unite("AIKeywords", Author.Keywords, Index.Keywords,sep = ";", remove = TRUE)
-    Keyname <- "AI_Keywords"
-  }}
-
-#Split Column "AIKeywords" in row by the separator ";", remove leading white space to generate list
-InterpolKeywordList <- Interpol_data_selected %>% 
-  mutate(AIKeywords = strsplit(as.character(AIKeywords), ";")) %>% 
-  unnest(AIKeywords) %>%
-  mutate_if(is.character, str_trim)
-
-# Upper case "AIKeywords" in "DatasetKeywordList" and save in dataframe
-InterpolKeywordList$AIKeywords <- toupper(InterpolKeywordList$AIKeywords)
-
-# Extract list of "AIkeywords" and remove duplicate
-
-InterpolDistinctKeywordList <- InterpolKeywordList %>%
-  select(AIKeywords) %>%
-  distinct()
-
-#############################################################
-#####           Scopus keyword selection             #####
-#############################################################
-
-Scopus_data_selected <- Scopus_data 
-
-if (KeywordEntries == "Author_Keywords"){
-  #   Author Keywords only
-  names(Scopus_data_selected) <- sub("Author.Keywords","AIKeywords", names(Scopus_data_selected))
-  Keyname <- "A_Keywords"
-} else{
-  if (KeywordEntries == "Database_Keywords"){
-    #   Index Keywords only
-    names(Scopus_data_selected) <- sub("Index.Keywords","AIKeywords", names(Scopus_data_selected))
-    Keyname <- "I_Keywords"
-  }
-  else {
-    # Index and Author Keywords
-    # Combine Columns Author.Keywords and Index.Keywords and place in Column name "AIKeywords" and remove original columns
-    Scopus_data_selected <- Scopus_data_selected %>%
-      unite("AIKeywords", Author.Keywords, Index.Keywords,sep = ";", remove = TRUE)
-    Keyname <- "AI_Keywords"
-  }}
-
-#Split Column "AIKeywords" in row by the separator ";", remove leading white space to generate list
-ScopusKeywordList <- Scopus_data_selected %>% 
-  mutate(AIKeywords = strsplit(as.character(AIKeywords), ";")) %>% 
-  unnest(AIKeywords) %>%
-  mutate_if(is.character, str_trim)
-
-# Upper case "AIKeywords" in "DatasetKeywordList" and save in dataframe
-ScopusKeywordList$AIKeywords <- toupper(ScopusKeywordList$AIKeywords)
-
-# Extract list of "AIkeywords" and remove duplicate
-
-ScopusDistinctKeywordList <- ScopusKeywordList %>%
-  select(AIKeywords) %>%
-  distinct()
-
-# Select column label $Year, $Title,  $Source.title, $Author.Keywords, $Index.Keyword
-ScopusCountryListbyPaperUniqueReduced <- ScopusCountryListbyPaperUnique
-
-ScopusCountryListbyPaperUniqueReduced$Abstract <- gsub('[^[:alnum:] ]', ' ', ScopusCountryListbyPaperUniqueReduced$Abstract)
-ScopusCountryListbyPaperUniqueReduced$Abstract <- gsub("\\s+", " ", ScopusCountryListbyPaperUniqueReduced$Abstract)
-
-ScopusCountryListbyPaperUniqueReduced$Abstract <- tolower(ScopusCountryListbyPaperUniqueReduced$Abstract)
-
-ScopusCountryListbyPaperUniqueReduced$Title <- gsub('[^[:alnum:] ]', ' ', ScopusCountryListbyPaperUniqueReduced$Title)
-ScopusCountryListbyPaperUniqueReduced$Title <- gsub("\\s+", " ", ScopusCountryListbyPaperUniqueReduced$Title)
-
-ScopusCountryListbyPaperUniqueReduced$Title <- tolower(ScopusCountryListbyPaperUniqueReduced$Title)
-
-ScopusCountryListbyPaperUniqueReduced$Author.Keywords <- gsub('[^[:alnum:] ]', ' ', ScopusCountryListbyPaperUniqueReduced$Author.Keywords)
-ScopusCountryListbyPaperUniqueReduced$Author.Keywords <- gsub("\\s+", " ", ScopusCountryListbyPaperUniqueReduced$Author.Keywords)
-
-ScopusCountryListbyPaperUniqueReduced$Author.Keywords <- tolower(ScopusCountryListbyPaperUniqueReduced$Author.Keywords)
-
+KeywordEntries <- "All_Keywords"
 
 #############################################################
 #####                  Data cleansing                   #####
@@ -315,30 +141,49 @@ ScopusCountryListbyPaperUniqueReduced$Author.Keywords <- tolower(ScopusCountryLi
 KeywordCorrectionList <- read.csv("CorrectionLists/KeywordsCorrectionFull.txt", sep="\t", header=TRUE)
 KeywordCorrectionList <- as.data.frame(KeywordCorrectionList)
 
-# Apply corrections to Interpol data
-InterpolKeywordList$KeywordsCorrected <- gsr(as.character(InterpolKeywordList$AIKeywords),as.character(KeywordCorrectionList$AIKeywords),as.character(KeywordCorrectionList$CorAIKeywordsAcronym))
+#############################################################
+#####           Load Explosive Corpus                   #####
+#############################################################
 
-# number of distinct Keywords after correction
-InterpolDistinctKeywordListCorrected <- InterpolKeywordList %>%
-  select(KeywordsCorrected) %>%
-  distinct()
+# Load the Corpus of interest to search in the Interpol output entries
+ExplosiveList <- read.csv("ExplosiveDatabase.csv", header = TRUE)
 
-# Apply corrections to Scopus data
-ScopusKeywordList$KeywordsCorrected <- gsr(as.character(ScopusKeywordList$AIKeywords),as.character(KeywordCorrectionList$AIKeywords),as.character(KeywordCorrectionList$CorAIKeywordsAcronym))
+ExplosiveList$UncorrectedNoSpecials <- ExplosiveList$Uncorrected.Explosive
 
-ScopusKeywordListCollapsed <- ScopusKeywordList %>% 
-  group_by(Title) %>%
-  summarize(KeywordsCorrected=paste0(KeywordsCorrected, collapse = ", "))
+ExplosiveList$UncorrectedNoSpecials<- gsub('[^[:alnum:] ]', ' ', ExplosiveList$UncorrectedNoSpecials)
+ExplosiveList$UncorrectedNoSpecials <- gsub("\\s+", " ", ExplosiveList$UncorrectedNoSpecials)
 
-# number of distinct Keywords after correction
-ScopusDistinctKeywordListCorrected <- ScopusKeywordList %>%
-  select(KeywordsCorrected) %>%
-  distinct()
+# Remove trailing (right) whitespace and make lowercase
+#ExplosiveList$UncorrectedNoSpecials <- trimws(ExplosiveList$UncorrectedNoSpecials, which = c("right"))
+ExplosiveList$UncorrectedNoSpecials <- toupper(ExplosiveList$UncorrectedNoSpecials)
 
-ScopusKeywordListCollapsedSummary <- data.frame(ScopusKeywordListCollapsed$KeywordsCorrected)
-ScopusCountryListbyPaperUniqueReduced <- merge(ScopusCountryListbyPaperUniqueReduced, ScopusKeywordListCollapsedSummary, by = 0, all = TRUE)
-names(ScopusCountryListbyPaperUniqueReduced)[13] <- c("AI.Keywords")
+ExplosiveList$UncorrectedNoSpaces <- ExplosiveList$UncorrectedNoSpecials
+ExplosiveList$UncorrectedNoSpaces <- trimws(ExplosiveList$UncorrectedNoSpaces, which = c("both"))
 
+ExplosiveList$Colour <- ExplosiveList$Explosive.Type
+ExplosiveList$Colour <-gsub('Military/Commercial','seagreen',ExplosiveList$Colour)
+ExplosiveList$Colour <-gsub('Homemade','tomato',ExplosiveList$Colour)
+ExplosiveList$Colour <- replace_na(ExplosiveList$Colour,'slateblue')
+
+# Convert to Object
+ExplosiveListString <- ExplosiveList$UncorrectedNoSpecials
+
+# Load the Uncorrected Corpus of interest to search in the Interpol output entries
+#ExplosiveListUncorrected <- read.csv("Explosives-List Uncorrected.txt", sep = "\t", header = TRUE)
+
+#ExplosiveListUncorrected$ExplosiveCompound <- gsub('[^[:alnum:] ]', ' ', ExplosiveListUncorrected$ExplosiveCompound)
+#ExplosiveListUncorrected$ExplosiveCompound <- gsub("\\s+", " ", ExplosiveListUncorrected$ExplosiveCompound)
+
+# Remove trailing (right) whitespace and make lowercase
+#ExplosiveListUncorrected$ExplosiveCompound <- trimws(ExplosiveListUncorrected$ExplosiveCompound, which = c("right"))
+#ExplosiveListUncorrected$ExplosiveCompound <- toupper(ExplosiveListUncorrected$ExplosiveCompound)
+
+# Convert to Object
+#ExplosiveListUncorrectedString <- ExplosiveListUncorrected$ExplosiveCompound
+
+#############################################################
+#####           Figure Settings                         #####
+#############################################################
 #############################################################
 ##### Figure colours
 # assign text colour
@@ -353,17 +198,6 @@ maximum <- 105  # maximum number of keywords appearing in the keyword figure
 # colour palette for the Keyword figure
 pal <- c("#990000","#FF5D00","#FFB900","#FFFF00","#ACFF00","#00CC00","#33FFFF","#008BFF","#0000FF","#8968CD","#551A8B")
 
-
-
-
-#############################################################
-#####                    Data loading                   #####
-#############################################################
-
-# filename for figure export
-FigureName <- "Fig1_Scopus_Keyword_"
-TableName <- "Table1_Scopus_Keyword_"
-
 #############################################################
 #####  This is the code for generating Keyword figures  #####
 #############################################################
@@ -377,32 +211,45 @@ Count <- number
 #############################################################
 #####                       Codes                       #####
 #############################################################
+#These codes must be run first to prepare the data correctly for figure generation
+ source("Code/Interpol Data Prep.R")
+ source("Code/Scopus Data Prep.R")
 
 # These codes can be run subsequently or independently as each create necessary outputs for the next codes.
 
 # # Figure 1, INTERPOL Keywords as a function of year
-# source("Code/Figure1_INTERPOL_Keywords.R")
+ source("Code/Figure1_Interpol_Keywords.R")
 #
 # # Figure 2, Scopus Keywords as a function of year
-# source("Code/Figure2_Scopus_Keywords.R")
+ source("Code/Figure2_Scopus_Keywords.R")
 #
 # # Figure 3.1, Interpol - Country affiliations
-# source("Code/Figure3.1_Interpol_Country_Affiliation.R")
-#
+ source("Code/Figure3.1_Interpol_Country_Affiliation.R")
+
 # # Figure 3.2, Scopus - Country affiliations
-# source("Code/Figure3.2_Scopus_Country_Affiliation.R")
+ source("Code/Figure3.2_Scopus_Country_Affiliation.R")
+
+#These codes must be run prior first to extract explosive keywords
+ source("Code/Interpol Explosive Keywords.R")
+ source("Code/Scopus Explosive Keywords.R")
+
+# # Figure 4.1, Interpol Explosive Country
+ source("Code/Figure4.1_Interpol_Explosive_Country.R")
+
+# # Figure 4.2, Scopus Explosive Country
+ source("Code/Figure4.2_Scopus_Explosive_Country.R")
+
+# # Figure 5.1, Interpol Explosive Year
+ source("Code/Figure5.1_Interpol_Explosive_Year.R")
+
+# # Figure 5.2, Scopus Explosive Year
+ source("Code/Figure5.2_Scopus_Explosive_Year.R")
+
+# # Figure 6, Full Text Mining Comparison
+ source("Code/Figure6_Full_Text_Mining.R")
+
+# # Figure 7, Scopus Country Network
+ source("Code/Figure7_CountryNetwork.R")
 #
-# # Figure 4.1 Scopus - Explosives per country and relationship
-#source("Code/Figure4.1_Scopus_Explosive_Country_Relationship.R")
-#
-# # Figure 4.2 Scopus - Explosives per country and relationship
-# source("Code/Figure4.2_Scopus_Technique_Country_Relationship.R")
-#
-# # Figure 4.3 Scopus - Explosives per country and relationship
-# source("Code/Figure4.3_Scopus_Surface_Country_Relationship.R")
-#
-# # Figure 5, Scopus - Country network map
-# source("Code/Figure5_CountryNetwork.R")
-#
-# # Figure 6, Scopus - Country collaboration percentage
-# source("Code/Figure6_InternationalCollaboration.R")
+# # Figure 8, Scopus - Country collaboration percentage
+ source("Code/Figure8_InternationalCollaboration.R")

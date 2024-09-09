@@ -8,7 +8,7 @@
 #######################################################
 #####                  Scopus Data                #####
 
-Scopus_Fig2_Data <- Scopus_data_selected
+Scopus_Fig2_Data <- Scopus_data
 
 #############################################################
 #####                  Data cleansing                   #####

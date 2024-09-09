@@ -8,7 +8,7 @@
 #######################################################
 #####                 INTERPOL Data               #####
 
-Interpol_Fig1_Data <- Interpol_data_selected
+Interpol_Fig1_Data <- Interpol_data
 
 #############################################################
 #####               Data analysis - Keywords            #####
@@ -23,6 +23,7 @@ InterpolPublicationYear$Year <- as.numeric(as.character(InterpolPublicationYear$
 InterpolKeywordList_KeywordsPerTitle <- InterpolKeywordList  %>%
   select(Year,Title,Source.title,KeywordsCorrected) %>%
   distinct()
+InterpolKeywordList_KeywordsPerTitle[InterpolKeywordList_KeywordsPerTitle==""] <- NA
 InterpolKeywordList_KeywordsPerTitle <-InterpolKeywordList_KeywordsPerTitle[complete.cases(InterpolKeywordList_KeywordsPerTitle), ]
 sum(is.na(InterpolKeywordList$KeywordsCorrected))
 
@@ -79,7 +80,7 @@ InterpolKeywordPlot <- ggplot(InterpolTopKeywordsGraph,aes(x=Year,y=reorder(Keyw
   guides(fill=guide_legend(title="Count"))+
   labs(x="Year",y="",title="")+
   scale_y_discrete(expand=c(0,0))+
-  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020))+
+  scale_x_continuous(breaks=c(2000,2002,2004,2006,2008,2010,2012,2014,2016,2018,2020,2022))+
   scale_fill_manual(values=c(pal),na.value = "grey90")+
   #coord_fixed()+
   theme_grey(base_size=8)+
@@ -90,7 +91,7 @@ InterpolKeywordPlot <- ggplot(InterpolTopKeywordsGraph,aes(x=Year,y=reorder(Keyw
         legend.text=element_text(colour=textcol,size=7),
         legend.key.height=grid::unit(0.8,"cm"),
         legend.key.width=grid::unit(0.2,"cm"),
-        axis.text.x=element_text(size=8,colour=textcol),
+        axis.text.x=element_text(size=7,colour=textcol),
         axis.text.y=element_text(vjust=0.2,colour=textcol),
         axis.ticks=element_line(size=0.4),
         plot.background=element_blank(),  # element_rect(fill, colour, size, linetype, color))
