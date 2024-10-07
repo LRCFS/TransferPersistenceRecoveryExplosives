@@ -2,10 +2,10 @@ InterpolJournalCount <- aggregate(Interpol_data$Source.title, by= list(Interpol_
 names(InterpolJournalCount)[2] <- c("Count")
 names(InterpolJournalCount)[1] <- c("Journal")
 InterpolJournalCountOrder <- InterpolJournalCount[order(InterpolJournalCount$Count, decreasing = TRUE),  ]
-TopPaper <- top_n(InterpolJournalCountOrder)
+TopPaper <- top_n(InterpolJournalCountOrder,1)
 
 PropPapers <- Interpol_data
-PropPapers <- PropPapers[Interpol_data$Source.title %in% "Propellants, Explosives, Pyrotechnics", ]
+PropPapers <- PropPapers[Interpol_data$Source.title %in% TopPaper$Journal, ]
 
 for(d in 297:nrow(PropPapers)){
   doi <- PropPapers[1, "DOI"]

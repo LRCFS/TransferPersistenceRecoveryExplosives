@@ -39,7 +39,7 @@ names(ScopusPapersbyYear)[2] <- c("Count")
 ScopusExplosivesTotal <- top_n(ScopusExplosivesTotal,5)
 
 #to choose which explosives to plot
-#SelectedExplosives <- c("2,4,6-Trinitrotoluene (TNT)", "Cyclotrimethylene-Trinitramine (RDX)", "Cyclotetramethylene-Tetranitramine (HMX)", "Pentaerythritol Tetranitrate (PETN)","Ammonium Nitrate (AN)","Triacetone Triperoxide (TATP)")
+#SelectedExplosives <- c("2,4,6-Trinitrotoluene (TNT)", "Cyclotetramethylene-Tetranitramine (HMX)","Triacetone Triperoxide (TATP)","Hexamethylene Triperoxide Diamine (HMTD)")
 #ScopusExplosivesTotal <-data_frame(SelectedExplosives)
 names(ScopusExplosivesTotal)[1] <- c("Explosive_List")
 
@@ -50,8 +50,6 @@ ScopusExplosivesbyYearCount <- subset(ScopusExplosivesbyYearCount, ScopusExplosi
 range <- as.numeric(max(ScopusExplosivesbyYearCount$x, na.rm = TRUE))
 
 source("Functions/KeywordRange.R")
-
-
 
 #############################################################
 #####                      GRAPH                        #####
@@ -93,17 +91,16 @@ ScopusExplosivesbyYearCountGraph$graphorder <- as.numeric(gsr(ScopusExplosivesby
 # further modified ggplot
 ScopusTopExplosivesPlot <- ggplot(ScopusExplosivesbyYearCountGraph,aes(x=Year))+
   geom_line(aes(y=Percentage, color=Explosive_List))+
-  geom_point(aes(y=Percentage, color=Explosive_List))+
+  #geom_point(aes(y=Percentage, color=Explosive_List))+
   geom_line(aes(y=YearTotal/100, colour = "'Number of Papers with Explosive Keywords"), linetype = 3)+
   labs(x="Year",y="Percentage Mentions (%)")+
   scale_y_continuous()+
   scale_y_continuous(sec.axis = sec_axis(transform = ~.* 100, name = "Number of Papers"))+
   scale_x_continuous(breaks=c(2000,2002,2004,2006,2008,2010,2012,2014,2016,2018,2020,2022))+
-  scale_fill_manual(values=c(pal),na.value = "grey90")+
-  theme_grey(base_size=8)+
+  scale_color_manual(values = c("black", brewer.pal(5, "Set1")))
+theme_grey(base_size=8)+
   theme(text = element_text(family = "Arial"),
         legend.position="right",legend.direction="vertical",
-        #legend.title=element_text(colour=textcol),
         legend.margin=margin(grid::unit(0,"cm")),
         legend.text=element_text(colour=textcol,size=7),
         legend.key.height=grid::unit(0.8,"cm"),
@@ -112,17 +109,14 @@ ScopusTopExplosivesPlot <- ggplot(ScopusExplosivesbyYearCountGraph,aes(x=Year))+
         axis.text.x=element_text(size=7,colour=textcol),
         axis.text.y=element_text(vjust=0.2,colour=textcol),
         axis.ticks=element_line(size=0.4),
-        plot.background=element_blank(),  # element_rect(fill, colour, size, linetype, color))
+        plot.background=element_blank(),
         panel.border=element_blank(),
         plot.margin=margin(-0.2,0.4,0.1,0.2,"cm"),
         plot.title=element_text(colour=textcol,hjust=0,size=12))
-
-ScopusTopExplosivesPlot <- ScopusTopExplosivesPlot + scale_fill_discrete(breaks=c('Number of Papers Published', '2,4,6-Trinitrotoluene (TNT)','Ammonium Nitrate (AN)','Cyclotetramethylene-Tetranitramine (HMX)','Cyclotrimethylene-Trinitramine (RDX)','Pentaerythritol Tetranitrate (PETN)','Triacetone Triperoxide (TATP)'))
-  
   #save figure
   Var1 <- paste0("Fig_5.2_Scopus_Explosives_By_Year")
   show(ScopusTopExplosivesPlot) 
-  ggsave(paste0(Figure.dir,sprintf("%s.tiff",Var1)), ScopusTopExplosivesPlot, width = 6.88, height = 8.5, units = "in", dpi=300)
+  ggsave(paste0(Figure.dir,sprintf("%s.tiff",Var1)), ScopusTopExplosivesPlot, width = 8, height = 8.5, units = "in", dpi=300)
 
 #Export to top keywords list
 write.csv(ScopusExplosivesbyYearCountGraph, file=paste0(Results.dir,sprintf("%s.csv",Var1)), row.names = F)

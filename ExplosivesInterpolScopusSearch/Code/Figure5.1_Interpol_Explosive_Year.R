@@ -40,11 +40,11 @@ InterpolPapersbyYear <- aggregate(InterpolPapersbyYear, by=list(Year=InterpolPap
 names(InterpolPapersbyYear)[2] <- c("Count")
 
 #to select the top 5 explosives with the most matching keywords
-InterpolExplosivesTotal <- top_n(InterpolExplosivesTotal,5)
+# InterpolExplosivesTotal <- top_n(InterpolExplosivesTotal,5)
 
 #to choose which explosives to plot
-#SelectedExplosives <- c("2,4,6-Trinitrotoluene (TNT)", "Cyclotrimethylene-Trinitramine (RDX)", "Cyclotetramethylene-Tetranitramine (HMX)", "Pentaerythritol Tetranitrate (PETN)","Ammonium Nitrate (AN)","Triacetone Triperoxide (TATP)")
-# InterpolExplosivesTotal <-data_frame(SelectedExplosives)
+SelectedExplosives <- c("2,4,6-Trinitrotoluene (TNT)", "Cyclotetramethylene-Tetranitramine (HMX)","Triacetone Triperoxide (TATP)","Hexamethylene Triperoxide Diamine (HMTD)")
+InterpolExplosivesTotal <-data_frame(SelectedExplosives)
 names(InterpolExplosivesTotal)[1] <- c("Explosive_List")
 
 # subset against the top list
@@ -54,8 +54,6 @@ InterpolExplosivesbyYearCount <- subset(InterpolExplosivesbyYearCount, InterpolE
 range <- as.numeric(max(InterpolExplosivesbyYearCount$x, na.rm = TRUE))
 
 source("Functions/KeywordRange.R")
-
-
 
 #############################################################
 #####                      GRAPH                        #####
@@ -97,17 +95,16 @@ InterpolExplosivesbyYearCountGraph$graphorder <- as.numeric(gsr(InterpolExplosiv
 # further modified ggplot
 InterpolTopExplosivesPlot <- ggplot(InterpolExplosivesbyYearCountGraph,aes(x=Year))+
   geom_line(aes(y=Percentage, color=Explosive_List))+
-  geom_point(aes(y=Percentage, color=Explosive_List))+
+  #geom_point(aes(y=Percentage, color=Explosive_List))+
   geom_line(aes(y=YearTotal/10, colour = "'Number of Papers with Explosive Keywords"), linetype = 3)+
   labs(x="Year",y="Percentage Mentions (%)")+
   scale_y_continuous()+
   scale_y_continuous(sec.axis = sec_axis(transform = ~.* 10, name = "Number of Papers"))+
   scale_x_continuous(breaks=c(2000,2002,2004,2006,2008,2010,2012,2014,2016,2018,2020,2022))+
-  scale_fill_manual(values=c(pal),na.value = "grey90")+
+  scale_color_manual(values = c("black", brewer.pal(5, "Set1")))
   theme_grey(base_size=8)+
   theme(text = element_text(family = "Arial"),
         legend.position="right",legend.direction="vertical",
-        #legend.title=element_text(colour=textcol),
         legend.margin=margin(grid::unit(0,"cm")),
         legend.text=element_text(colour=textcol,size=7),
         legend.key.height=grid::unit(0.8,"cm"),
@@ -116,17 +113,15 @@ InterpolTopExplosivesPlot <- ggplot(InterpolExplosivesbyYearCountGraph,aes(x=Yea
         axis.text.x=element_text(size=7,colour=textcol),
         axis.text.y=element_text(vjust=0.2,colour=textcol),
         axis.ticks=element_line(size=0.4),
-        plot.background=element_blank(),  # element_rect(fill, colour, size, linetype, color))
+        plot.background=element_blank(),
         panel.border=element_blank(),
         plot.margin=margin(-0.2,0.4,0.1,0.2,"cm"),
         plot.title=element_text(colour=textcol,hjust=0,size=12))
 
-InterpolTopExplosivesPlot <- InterpolTopExplosivesPlot + scale_fill_discrete(breaks=c('Number of Papers Published', '2,4,6-Trinitrotoluene (TNT)','Ammonium Nitrate (AN)','Cyclotetramethylene-Tetranitramine (HMX)','Cyclotrimethylene-Trinitramine (RDX)','Pentaerythritol Tetranitrate (PETN)','Triacetone Triperoxide (TATP)'))
-
 #save figure
 Var1 <- paste0("Fig_5.1_Interpol_Explosives_By_Year")
 show(InterpolTopExplosivesPlot) 
-ggsave(paste0(Figure.dir,sprintf("%s.tiff",Var1)), InterpolTopExplosivesPlot, width = 6.88, height = 8.5, units = "in", dpi=300)
+ggsave(paste0(Figure.dir,sprintf("%s.tiff",Var1)), InterpolTopExplosivesPlot, width = 8, height = 8.5, units = "in", dpi=300)
 
 #Export to top keywords list
 write.csv(InterpolExplosivesbyYearCountGraph, file=paste0(Results.dir,sprintf("%s.csv",Var1)), row.names = F)

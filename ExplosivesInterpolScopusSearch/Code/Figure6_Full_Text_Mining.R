@@ -62,6 +62,7 @@ FullTextCount$FullTextExplosives <- toupper(FullTextCount$FullTextExplosives)
 
 # Apply corrections to Full Text Count
 FullTextCount$FullTextExplosives <- gsr(as.character(FullTextCount$FullTextExplosives),as.character(ExplosiveList$Uncorrected.Explosive),as.character(ExplosiveList$Corrected.Explosive))
+FullTextCount$FullTextExplosives <- gsr(as.character(FullTextCount$FullTextExplosives),as.character(ExplosiveList$UncorrectedNoSpaces),as.character(ExplosiveList$Corrected.Explosive))
 FullTextCountReduced <- FullTextCount %>%
   select(FullTextExplosives,DOI) %>%
   group_by(DOI) %>%
@@ -124,8 +125,9 @@ names(AbsTitleKeywordsCount)[3] <- "DOI"
 
 AbsTitleKeywordsCount$AbsTitleKeywordsExplosives <- toupper(AbsTitleKeywordsCount$AbsTitleKeywordsExplosives)
 
-# Apply corrections to Full Text Count
+# Apply corrections to Abstract, Title, Keywords Count
 AbsTitleKeywordsCount$AbsTitleKeywordsExplosives <- gsr(as.character(AbsTitleKeywordsCount$AbsTitleKeywordsExplosives),as.character(ExplosiveList$Uncorrected.Explosive),as.character(ExplosiveList$Corrected.Explosive))
+AbsTitleKeywordsCount$AbsTitleKeywordsExplosives <- gsr(as.character(AbsTitleKeywordsCount$AbsTitleKeywordsExplosives),as.character(ExplosiveList$UncorrectedNoSpaces),as.character(ExplosiveList$Corrected.Explosive))
 AbsTitleKeywordsCountReduced <- AbsTitleKeywordsCount %>%
   select(AbsTitleKeywordsExplosives,DOI) %>%
   group_by(DOI) %>%
@@ -187,9 +189,9 @@ ExplosivesCountSubset <-subset(ExplosivesCount,Explosive %in% TopExplosives$Expl
 ######## Graph ########
 ExplosivesMentionsbySource <- ggplot(ExplosivesCountSubset)+
   geom_col(aes(x=Explosive, y=Count, fill=Source), position=position_dodge2(preserve="single")) + 
+  scale_fill_manual(values = c(brewer.pal(3, "Set1")))+
   labs(y="Number of Papers")+
-  theme(text = element_text(family = "Palatino"),
-        legend.position="right",legend.direction="vertical",
+  theme(legend.position="right",legend.direction="vertical",
         legend.title=element_text(colour=textcol),
         legend.margin=margin(grid::unit(0,"cm")),
         legend.text=element_text(colour=textcol,size=8),
@@ -201,7 +203,7 @@ ExplosivesMentionsbySource <- ggplot(ExplosivesCountSubset)+
         panel.border=element_blank(),
         plot.margin=margin(0.7,0.6,0.1,0.8,"cm"),
         plot.title=element_text(colour=textcol,hjust=0,size=6),
-        axis.title.x = element_blank(), axis.text.x = element_text(size=5, angle = 60, hjust=1))
+        axis.text.x = element_text(size=6, angle = 60, hjust=1))
 
 show(ExplosivesMentionsbySource)
 

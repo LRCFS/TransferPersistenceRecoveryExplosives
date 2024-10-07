@@ -63,7 +63,9 @@ library(mgsub)
 library(httr2)
 library(pdftools)
 library(tm)
+library(RWeka)
 library(ggtext)
+library(ggsci)
 
 #############################################################
 #####                Load Functions                     #####
@@ -149,37 +151,24 @@ KeywordCorrectionList <- as.data.frame(KeywordCorrectionList)
 ExplosiveList <- read.csv("ExplosiveDatabase.csv", header = TRUE)
 
 ExplosiveList$UncorrectedNoSpecials <- ExplosiveList$Uncorrected.Explosive
-
+ExplosiveList$UncorrectedNoSpecials <- paste0(" ", ExplosiveList$UncorrectedNoSpecials)
 ExplosiveList$UncorrectedNoSpecials<- gsub('[^[:alnum:] ]', ' ', ExplosiveList$UncorrectedNoSpecials)
 ExplosiveList$UncorrectedNoSpecials <- gsub("\\s+", " ", ExplosiveList$UncorrectedNoSpecials)
 
 # Remove trailing (right) whitespace and make lowercase
-#ExplosiveList$UncorrectedNoSpecials <- trimws(ExplosiveList$UncorrectedNoSpecials, which = c("right"))
+ExplosiveList$UncorrectedNoSpecials <- trimws(ExplosiveList$UncorrectedNoSpecials, which = c("right"))
+formatC
 ExplosiveList$UncorrectedNoSpecials <- toupper(ExplosiveList$UncorrectedNoSpecials)
 
 ExplosiveList$UncorrectedNoSpaces <- ExplosiveList$UncorrectedNoSpecials
 ExplosiveList$UncorrectedNoSpaces <- trimws(ExplosiveList$UncorrectedNoSpaces, which = c("both"))
 
 ExplosiveList$Colour <- ExplosiveList$Explosive.Type
-ExplosiveList$Colour <-gsub('Military/Commercial','seagreen',ExplosiveList$Colour)
-ExplosiveList$Colour <-gsub('Homemade','tomato',ExplosiveList$Colour)
-ExplosiveList$Colour <- replace_na(ExplosiveList$Colour,'slateblue')
+ExplosiveList$Colour <-gsub('No Practical Use','tomato',ExplosiveList$Colour)
+ExplosiveList$Colour <- replace_na(ExplosiveList$Colour,'black')
 
 # Convert to Object
 ExplosiveListString <- ExplosiveList$UncorrectedNoSpecials
-
-# Load the Uncorrected Corpus of interest to search in the Interpol output entries
-#ExplosiveListUncorrected <- read.csv("Explosives-List Uncorrected.txt", sep = "\t", header = TRUE)
-
-#ExplosiveListUncorrected$ExplosiveCompound <- gsub('[^[:alnum:] ]', ' ', ExplosiveListUncorrected$ExplosiveCompound)
-#ExplosiveListUncorrected$ExplosiveCompound <- gsub("\\s+", " ", ExplosiveListUncorrected$ExplosiveCompound)
-
-# Remove trailing (right) whitespace and make lowercase
-#ExplosiveListUncorrected$ExplosiveCompound <- trimws(ExplosiveListUncorrected$ExplosiveCompound, which = c("right"))
-#ExplosiveListUncorrected$ExplosiveCompound <- toupper(ExplosiveListUncorrected$ExplosiveCompound)
-
-# Convert to Object
-#ExplosiveListUncorrectedString <- ExplosiveListUncorrected$ExplosiveCompound
 
 #############################################################
 #####           Figure Settings                         #####
@@ -218,7 +207,7 @@ Count <- number
 # These codes can be run subsequently or independently as each create necessary outputs for the next codes.
 
 # # Figure 1, INTERPOL Keywords as a function of year
- source("Code/Figure1_Interpol_Keywords.R")
+source("Code/Figure1_Interpol_Keywords.R")
 #
 # # Figure 2, Scopus Keywords as a function of year
  source("Code/Figure2_Scopus_Keywords.R")
@@ -230,8 +219,8 @@ Count <- number
  source("Code/Figure3.2_Scopus_Country_Affiliation.R")
 
 #These codes must be run prior first to extract explosive keywords
- source("Code/Interpol Explosive Keywords.R")
- source("Code/Scopus Explosive Keywords.R")
+source("Code/Interpol Explosive Keywords.R")
+source("Code/Scopus Explosive Keywords.R")
 
 # # Figure 4.1, Interpol Explosive Country
  source("Code/Figure4.1_Interpol_Explosive_Country.R")
@@ -250,6 +239,6 @@ Count <- number
 
 # # Figure 7, Scopus Country Network
  source("Code/Figure7_CountryNetwork.R")
-#
+
 # # Figure 8, Scopus - Country collaboration percentage
  source("Code/Figure8_InternationalCollaboration.R")

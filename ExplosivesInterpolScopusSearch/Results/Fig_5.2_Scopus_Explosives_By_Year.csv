@@ -1,111 +1,86 @@
 "Year","Explosive_List","Count","YearTotal","Percentage","graphorder"
-2001,"2,4,6-Trinitrotoluene (TNT)",77,1082,18.075117370892,2001
-2002,"2,4,6-Trinitrotoluene (TNT)",74,1121,16.9336384439359,2001
-2003,"2,4,6-Trinitrotoluene (TNT)",77,1307,15.7786885245902,2001
-2004,"2,4,6-Trinitrotoluene (TNT)",107,1613,20,2001
-2005,"2,4,6-Trinitrotoluene (TNT)",109,1771,17.0579029733959,2001
-2006,"2,4,6-Trinitrotoluene (TNT)",117,1995,15.7681940700809,2001
-2007,"2,4,6-Trinitrotoluene (TNT)",140,1896,19.2043895747599,2001
-2008,"2,4,6-Trinitrotoluene (TNT)",156,2270,19.5244055068836,2001
-2009,"2,4,6-Trinitrotoluene (TNT)",183,2299,19.3446088794926,2001
-2010,"2,4,6-Trinitrotoluene (TNT)",183,2528,17.8362573099415,2001
-2011,"2,4,6-Trinitrotoluene (TNT)",206,2608,19.9612403100775,2001
-2012,"2,4,6-Trinitrotoluene (TNT)",240,2476,19.1540303272147,2001
-2013,"2,4,6-Trinitrotoluene (TNT)",229,2510,19.8612315698179,2001
-2014,"2,4,6-Trinitrotoluene (TNT)",228,2605,17.4311926605505,2001
-2015,"2,4,6-Trinitrotoluene (TNT)",225,2455,17.8571428571429,2001
-2016,"2,4,6-Trinitrotoluene (TNT)",200,2740,13.8888888888889,2001
-2017,"2,4,6-Trinitrotoluene (TNT)",228,2866,15.5844155844156,2001
-2018,"2,4,6-Trinitrotoluene (TNT)",206,2908,14.651493598862,2001
-2019,"2,4,6-Trinitrotoluene (TNT)",219,3201,16.1266568483063,2001
-2020,"2,4,6-Trinitrotoluene (TNT)",247,3139,16.5994623655914,2001
-2021,"2,4,6-Trinitrotoluene (TNT)",206,3047,16.0186625194401,2001
-2022,"2,4,6-Trinitrotoluene (TNT)",232,3178,16.0887656033287,2001
-2001,"Cyclotetramethylene-Tetranitramine (HMX)",34,1082,7.981220657277,2001
-2002,"Cyclotetramethylene-Tetranitramine (HMX)",42,1121,9.61098398169336,2001
-2003,"Cyclotetramethylene-Tetranitramine (HMX)",50,1307,10.2459016393443,2001
-2004,"Cyclotetramethylene-Tetranitramine (HMX)",64,1613,11.9626168224299,2001
-2005,"Cyclotetramethylene-Tetranitramine (HMX)",63,1771,9.85915492957746,2001
-2006,"Cyclotetramethylene-Tetranitramine (HMX)",88,1995,11.8598382749326,2001
-2007,"Cyclotetramethylene-Tetranitramine (HMX)",72,1896,9.87654320987654,2001
-2008,"Cyclotetramethylene-Tetranitramine (HMX)",74,2270,9.26157697121402,2001
-2009,"Cyclotetramethylene-Tetranitramine (HMX)",85,2299,8.98520084566596,2001
-2010,"Cyclotetramethylene-Tetranitramine (HMX)",90,2528,8.7719298245614,2001
-2011,"Cyclotetramethylene-Tetranitramine (HMX)",75,2608,7.26744186046512,2001
-2012,"Cyclotetramethylene-Tetranitramine (HMX)",128,2476,10.2154828411812,2001
-2013,"Cyclotetramethylene-Tetranitramine (HMX)",111,2510,9.62705984388552,2001
-2014,"Cyclotetramethylene-Tetranitramine (HMX)",111,2605,8.48623853211009,2001
-2015,"Cyclotetramethylene-Tetranitramine (HMX)",101,2455,8.01587301587302,2001
-2016,"Cyclotetramethylene-Tetranitramine (HMX)",129,2740,8.95833333333333,2001
-2017,"Cyclotetramethylene-Tetranitramine (HMX)",171,2866,11.6883116883117,2001
-2018,"Cyclotetramethylene-Tetranitramine (HMX)",150,2908,10.6685633001422,2001
-2019,"Cyclotetramethylene-Tetranitramine (HMX)",132,3201,9.72017673048601,2001
-2020,"Cyclotetramethylene-Tetranitramine (HMX)",160,3139,10.752688172043,2001
-2021,"Cyclotetramethylene-Tetranitramine (HMX)",123,3047,9.56454121306376,2001
-2022,"Cyclotetramethylene-Tetranitramine (HMX)",143,3178,9.91678224687933,2001
-2001,"Cyclotrimethylene-Trinitramine (RDX)",58,1082,13.6150234741784,2001
-2002,"Cyclotrimethylene-Trinitramine (RDX)",69,1121,15.7894736842105,2001
-2003,"Cyclotrimethylene-Trinitramine (RDX)",63,1307,12.9098360655738,2001
-2004,"Cyclotrimethylene-Trinitramine (RDX)",91,1613,17.0093457943925,2001
-2005,"Cyclotrimethylene-Trinitramine (RDX)",105,1771,16.4319248826291,2001
-2006,"Cyclotrimethylene-Trinitramine (RDX)",118,1995,15.9029649595687,2001
-2007,"Cyclotrimethylene-Trinitramine (RDX)",115,1896,15.7750342935528,2001
-2008,"Cyclotrimethylene-Trinitramine (RDX)",123,2270,15.3942428035044,2001
-2009,"Cyclotrimethylene-Trinitramine (RDX)",122,2299,12.8964059196617,2001
-2010,"Cyclotrimethylene-Trinitramine (RDX)",134,2528,13.0604288499025,2001
-2011,"Cyclotrimethylene-Trinitramine (RDX)",135,2608,13.0813953488372,2001
-2012,"Cyclotrimethylene-Trinitramine (RDX)",167,2476,13.3280127693536,2001
-2013,"Cyclotrimethylene-Trinitramine (RDX)",172,2510,14.9176062445794,2001
-2014,"Cyclotrimethylene-Trinitramine (RDX)",168,2605,12.8440366972477,2001
-2015,"Cyclotrimethylene-Trinitramine (RDX)",173,2455,13.7301587301587,2001
-2016,"Cyclotrimethylene-Trinitramine (RDX)",198,2740,13.75,2001
-2017,"Cyclotrimethylene-Trinitramine (RDX)",201,2866,13.7388926862611,2001
-2018,"Cyclotrimethylene-Trinitramine (RDX)",180,2908,12.8022759601707,2001
-2019,"Cyclotrimethylene-Trinitramine (RDX)",154,3201,11.340206185567,2001
-2020,"Cyclotrimethylene-Trinitramine (RDX)",164,3139,11.0215053763441,2001
-2021,"Cyclotrimethylene-Trinitramine (RDX)",130,3047,10.1088646967341,2001
-2022,"Cyclotrimethylene-Trinitramine (RDX)",145,3178,10.0554785020804,2001
-2001,"Dinitrotoluene (DNT)",23,1082,5.39906103286385,2001
-2002,"Dinitrotoluene (DNT)",13,1121,2.97482837528604,2001
-2003,"Dinitrotoluene (DNT)",19,1307,3.89344262295082,2001
-2004,"Dinitrotoluene (DNT)",27,1613,5.04672897196262,2001
-2005,"Dinitrotoluene (DNT)",23,1771,3.59937402190923,2001
-2006,"Dinitrotoluene (DNT)",19,1995,2.56064690026954,2001
-2007,"Dinitrotoluene (DNT)",32,1896,4.38957475994513,2001
-2008,"Dinitrotoluene (DNT)",37,2270,4.63078848560701,2001
-2009,"Dinitrotoluene (DNT)",47,2299,4.96828752642706,2001
-2010,"Dinitrotoluene (DNT)",63,2528,6.14035087719298,2001
-2011,"Dinitrotoluene (DNT)",59,2608,5.71705426356589,2001
-2012,"Dinitrotoluene (DNT)",59,2476,4.70869912210694,2001
-2013,"Dinitrotoluene (DNT)",48,2510,4.16305290546401,2001
-2014,"Dinitrotoluene (DNT)",66,2605,5.04587155963303,2001
-2015,"Dinitrotoluene (DNT)",49,2455,3.88888888888889,2001
-2016,"Dinitrotoluene (DNT)",68,2740,4.72222222222222,2001
-2017,"Dinitrotoluene (DNT)",47,2866,3.21257689678742,2001
-2018,"Dinitrotoluene (DNT)",49,2908,3.4850640113798,2001
-2019,"Dinitrotoluene (DNT)",42,3201,3.09278350515464,2001
-2020,"Dinitrotoluene (DNT)",40,3139,2.68817204301075,2001
-2021,"Dinitrotoluene (DNT)",36,3047,2.79937791601866,2001
-2022,"Dinitrotoluene (DNT)",38,3178,2.63522884882108,2001
-2001,"Pentaerythritol Tetranitrate (PETN)",19,1082,4.46009389671362,2001
-2002,"Pentaerythritol Tetranitrate (PETN)",13,1121,2.97482837528604,2001
-2003,"Pentaerythritol Tetranitrate (PETN)",20,1307,4.0983606557377,2001
-2004,"Pentaerythritol Tetranitrate (PETN)",20,1613,3.73831775700935,2001
-2005,"Pentaerythritol Tetranitrate (PETN)",28,1771,4.38184663536776,2001
-2006,"Pentaerythritol Tetranitrate (PETN)",35,1995,4.71698113207547,2001
-2007,"Pentaerythritol Tetranitrate (PETN)",35,1896,4.80109739368999,2001
-2008,"Pentaerythritol Tetranitrate (PETN)",42,2270,5.25657071339174,2001
-2009,"Pentaerythritol Tetranitrate (PETN)",42,2299,4.43974630021142,2001
-2010,"Pentaerythritol Tetranitrate (PETN)",68,2528,6.62768031189084,2001
-2011,"Pentaerythritol Tetranitrate (PETN)",47,2608,4.55426356589147,2001
-2012,"Pentaerythritol Tetranitrate (PETN)",72,2476,5.7462090981644,2001
-2013,"Pentaerythritol Tetranitrate (PETN)",63,2510,5.46400693842151,2001
-2014,"Pentaerythritol Tetranitrate (PETN)",66,2605,5.04587155963303,2001
-2015,"Pentaerythritol Tetranitrate (PETN)",64,2455,5.07936507936508,2001
-2016,"Pentaerythritol Tetranitrate (PETN)",73,2740,5.06944444444444,2001
-2017,"Pentaerythritol Tetranitrate (PETN)",61,2866,4.16951469583049,2001
-2018,"Pentaerythritol Tetranitrate (PETN)",65,2908,4.62304409672831,2001
-2019,"Pentaerythritol Tetranitrate (PETN)",61,3201,4.4918998527246,2001
-2020,"Pentaerythritol Tetranitrate (PETN)",70,3139,4.70430107526882,2001
-2021,"Pentaerythritol Tetranitrate (PETN)",45,3047,3.49922239502333,2001
-2022,"Pentaerythritol Tetranitrate (PETN)",52,3178,3.60610263522885,2001
+2001,"2,4,6-Trinitrotoluene (TNT)",71,951,19.7771587743733,2001
+2002,"2,4,6-Trinitrotoluene (TNT)",66,1028,17.1875,2001
+2003,"2,4,6-Trinitrotoluene (TNT)",70,1217,15.695067264574,2001
+2004,"2,4,6-Trinitrotoluene (TNT)",105,1523,20.7509881422925,2001
+2005,"2,4,6-Trinitrotoluene (TNT)",101,1655,17.9396092362345,2001
+2006,"2,4,6-Trinitrotoluene (TNT)",104,1865,15.4531946508172,2001
+2007,"2,4,6-Trinitrotoluene (TNT)",133,1829,19.4160583941606,2001
+2008,"2,4,6-Trinitrotoluene (TNT)",155,2151,20.6666666666667,2001
+2009,"2,4,6-Trinitrotoluene (TNT)",182,2208,20.2898550724638,2001
+2010,"2,4,6-Trinitrotoluene (TNT)",188,2413,19.2032686414709,2001
+2011,"2,4,6-Trinitrotoluene (TNT)",207,2463,21.406411582213,2001
+2012,"2,4,6-Trinitrotoluene (TNT)",230,2309,19.5080576759966,2001
+2013,"2,4,6-Trinitrotoluene (TNT)",232,2346,21.0526315789474,2001
+2014,"2,4,6-Trinitrotoluene (TNT)",219,2408,17.9508196721311,2001
+2015,"2,4,6-Trinitrotoluene (TNT)",222,2299,18.8775510204082,2001
+2016,"2,4,6-Trinitrotoluene (TNT)",198,2595,14.3686502177068,2001
+2017,"2,4,6-Trinitrotoluene (TNT)",223,2720,15.9058487874465,2001
+2018,"2,4,6-Trinitrotoluene (TNT)",213,2737,15.2578796561605,2001
+2019,"2,4,6-Trinitrotoluene (TNT)",218,2961,16.5779467680608,2001
+2020,"2,4,6-Trinitrotoluene (TNT)",255,2832,17.7329624478442,2001
+2021,"2,4,6-Trinitrotoluene (TNT)",213,2798,17.0127795527157,2001
+2022,"2,4,6-Trinitrotoluene (TNT)",229,2886,16.6909620991254,2001
+2001,"Cyclotetramethylene-Tetranitramine (HMX)",26,951,7.24233983286908,2001
+2002,"Cyclotetramethylene-Tetranitramine (HMX)",32,1028,8.33333333333333,2001
+2003,"Cyclotetramethylene-Tetranitramine (HMX)",42,1217,9.41704035874439,2001
+2004,"Cyclotetramethylene-Tetranitramine (HMX)",54,1523,10.6719367588933,2001
+2005,"Cyclotetramethylene-Tetranitramine (HMX)",45,1655,7.99289520426288,2001
+2006,"Cyclotetramethylene-Tetranitramine (HMX)",76,1865,11.2927191679049,2001
+2007,"Cyclotetramethylene-Tetranitramine (HMX)",60,1829,8.75912408759124,2001
+2008,"Cyclotetramethylene-Tetranitramine (HMX)",67,2151,8.93333333333333,2001
+2009,"Cyclotetramethylene-Tetranitramine (HMX)",74,2208,8.24972129319955,2001
+2010,"Cyclotetramethylene-Tetranitramine (HMX)",82,2413,8.3758937691522,2001
+2011,"Cyclotetramethylene-Tetranitramine (HMX)",70,2463,7.23888314374354,2001
+2012,"Cyclotetramethylene-Tetranitramine (HMX)",117,2309,9.9236641221374,2001
+2013,"Cyclotetramethylene-Tetranitramine (HMX)",107,2346,9.70961887477314,2001
+2014,"Cyclotetramethylene-Tetranitramine (HMX)",107,2408,8.77049180327869,2001
+2015,"Cyclotetramethylene-Tetranitramine (HMX)",93,2299,7.90816326530612,2001
+2016,"Cyclotetramethylene-Tetranitramine (HMX)",114,2595,8.27285921625544,2001
+2017,"Cyclotetramethylene-Tetranitramine (HMX)",158,2720,11.2696148359486,2001
+2018,"Cyclotetramethylene-Tetranitramine (HMX)",134,2737,9.59885386819484,2001
+2019,"Cyclotetramethylene-Tetranitramine (HMX)",128,2961,9.73384030418251,2001
+2020,"Cyclotetramethylene-Tetranitramine (HMX)",145,2832,10.0834492350487,2001
+2021,"Cyclotetramethylene-Tetranitramine (HMX)",112,2798,8.94568690095847,2001
+2022,"Cyclotetramethylene-Tetranitramine (HMX)",129,2886,9.40233236151603,2001
+2001,"Hexamethylene Triperoxide Diamine (HMTD)",1,951,0.278551532033426,2001
+2002,"Hexamethylene Triperoxide Diamine (HMTD)",2,1028,0.520833333333333,2001
+2003,"Hexamethylene Triperoxide Diamine (HMTD)",2,1217,0.448430493273543,2001
+2006,"Hexamethylene Triperoxide Diamine (HMTD)",4,1865,0.594353640416048,2001
+2007,"Hexamethylene Triperoxide Diamine (HMTD)",5,1829,0.72992700729927,2001
+2008,"Hexamethylene Triperoxide Diamine (HMTD)",3,2151,0.4,2001
+2009,"Hexamethylene Triperoxide Diamine (HMTD)",8,2208,0.891861761426979,2001
+2010,"Hexamethylene Triperoxide Diamine (HMTD)",7,2413,0.715015321756895,2001
+2011,"Hexamethylene Triperoxide Diamine (HMTD)",4,2463,0.413650465356774,2001
+2012,"Hexamethylene Triperoxide Diamine (HMTD)",6,2309,0.508905852417303,2001
+2013,"Hexamethylene Triperoxide Diamine (HMTD)",5,2346,0.453720508166969,2001
+2014,"Hexamethylene Triperoxide Diamine (HMTD)",5,2408,0.40983606557377,2001
+2015,"Hexamethylene Triperoxide Diamine (HMTD)",11,2299,0.935374149659864,2001
+2016,"Hexamethylene Triperoxide Diamine (HMTD)",10,2595,0.725689404934688,2001
+2017,"Hexamethylene Triperoxide Diamine (HMTD)",4,2720,0.285306704707561,2001
+2018,"Hexamethylene Triperoxide Diamine (HMTD)",4,2737,0.286532951289398,2001
+2019,"Hexamethylene Triperoxide Diamine (HMTD)",6,2961,0.456273764258555,2001
+2020,"Hexamethylene Triperoxide Diamine (HMTD)",2,2832,0.139082058414465,2001
+2021,"Hexamethylene Triperoxide Diamine (HMTD)",6,2798,0.479233226837061,2001
+2022,"Hexamethylene Triperoxide Diamine (HMTD)",5,2886,0.364431486880466,2001
+2002,"Triacetone Triperoxide (TATP)",5,1028,1.30208333333333,2002
+2003,"Triacetone Triperoxide (TATP)",3,1217,0.672645739910314,2002
+2004,"Triacetone Triperoxide (TATP)",4,1523,0.790513833992095,2002
+2005,"Triacetone Triperoxide (TATP)",8,1655,1.42095914742451,2002
+2006,"Triacetone Triperoxide (TATP)",18,1865,2.67459138187221,2002
+2007,"Triacetone Triperoxide (TATP)",13,1829,1.8978102189781,2002
+2008,"Triacetone Triperoxide (TATP)",24,2151,3.2,2002
+2009,"Triacetone Triperoxide (TATP)",25,2208,2.78706800445931,2002
+2010,"Triacetone Triperoxide (TATP)",25,2413,2.55362614913177,2002
+2011,"Triacetone Triperoxide (TATP)",19,2463,1.96483971044467,2002
+2012,"Triacetone Triperoxide (TATP)",25,2309,2.12044105173876,2002
+2013,"Triacetone Triperoxide (TATP)",20,2346,1.81488203266788,2002
+2014,"Triacetone Triperoxide (TATP)",19,2408,1.55737704918033,2002
+2015,"Triacetone Triperoxide (TATP)",23,2299,1.95578231292517,2002
+2016,"Triacetone Triperoxide (TATP)",16,2595,1.1611030478955,2002
+2017,"Triacetone Triperoxide (TATP)",14,2720,0.998573466476462,2002
+2018,"Triacetone Triperoxide (TATP)",12,2737,0.859598853868195,2002
+2019,"Triacetone Triperoxide (TATP)",17,2961,1.29277566539924,2002
+2020,"Triacetone Triperoxide (TATP)",9,2832,0.62586926286509,2002
+2021,"Triacetone Triperoxide (TATP)",16,2798,1.2779552715655,2002
+2022,"Triacetone Triperoxide (TATP)",9,2886,0.65597667638484,2002

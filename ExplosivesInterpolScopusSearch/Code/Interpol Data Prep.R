@@ -109,6 +109,9 @@ InterpolKeywordList <- Interpol_data %>%
 # Upper case "AIKeywords" in "DatasetKeywordList" and save in dataframe
 InterpolKeywordList$AIKeywords <- toupper(InterpolKeywordList$AIKeywords)
 
+InterpolKeywordList$AIKeywords[InterpolKeywordList$AIKeywords==""] <- NA
+InterpolKeywordList <- InterpolKeywordList[complete.cases(InterpolKeywordList[ ,8]),]
+
 # Extract list of "AIkeywords" and remove duplicate
 InterpolDistinctKeywordList <- InterpolKeywordList %>%
   select(AIKeywords) %>%
@@ -133,8 +136,5 @@ Interpol_data <- merge(Interpol_data, InterpolKeywordListCollapsed, all = TRUE)
 
 Interpol_data$KeywordsCorrected <- gsub('[^[:alnum:] ]', ' ', Interpol_data$KeywordsCorrected)
 Interpol_data$KeywordsCorrected <- gsub("\\s+", " ", Interpol_data$KeywordsCorrected)
-
-#### Split Explosive List by Military/Commercial and Home-made #####
-
 
 print("Interpol data prepared for figure generation")

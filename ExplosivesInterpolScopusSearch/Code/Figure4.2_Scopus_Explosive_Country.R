@@ -54,7 +54,7 @@ ScopusKeywordCountryPairCount <- subset(ScopusKeywordCountryPairCount, Country %
 ScopusKeywordCount <- aggregate(ScopusKeywordCountryPairsReduced$Explosive_List_Corrected, by=list(Explosive_List_Corrected = ScopusKeywordCountryPairsReduced$Explosive_List_Corrected), FUN=length)
 
 #select the top 100 Explosive_List appearing in list
-#ScopusKeywordCount <- top_n(ScopusKeywordCount,100)
+ScopusKeywordCount <- top_n(ScopusKeywordCount,93)
 #write.csv(ScopusKeywordCount, file = "ScopusKeywordCount.csv", row.names = FALSE)
 
 # subset against the top list
@@ -66,7 +66,7 @@ ScopusKeywordCountryPairCountExplosiveSubset <- subset(ScopusKeywordCountryPairC
 # This part instead consider the top n countries and return their individual top n list of explosives reference list. They are then merged together in a list. 
 ScopusCountrySubset <- ScopusKeywordCountryTotal$Country
 # remove existing dataframe that may have been run on previous option selection
-rm(ScopusKeywordCount)
+rm(ScopusKeywordCountryPairsCountSubset)
 
 for (i in 1:length(ScopusCountrySubset)){
   
@@ -163,9 +163,9 @@ ScopusExplosivesbyCountryPlot <- ggplot(ScopusExplosivesbyCountry_Graph,aes(x=re
         legend.text=element_text(colour=textcol,size=8),
         legend.key.height=grid::unit(0.8,"cm"),
         legend.key.width=grid::unit(0.2,"cm"),
-        axis.text.y=element_text(size=5, vjust=0.2, colour=ScopusKeywordOrder$Colour),
+        axis.text.y=element_text(size=6, vjust=0.2, colour=ScopusKeywordOrder$Colour),
         axis.ticks=element_line(size=0.4),
-        plot.background=element_blank(),  # element_rect(fill, colour, size, linetype, color))
+        plot.background=element_blank(),
         panel.border=element_blank(),
         plot.margin=margin(0.7,0.4,0.1,0.2,"cm"),
         plot.title=element_text(colour=textcol,hjust=0,size=6),
@@ -176,6 +176,6 @@ show(ScopusExplosivesbyCountryPlot)
 #save figure
 Var1 <- paste0("Fig_4.2_Scopus_Explosive_Country")
 
-ggsave(paste0(Figure.dir,sprintf("%s.tiff",Var1)), ScopusExplosivesbyCountryPlot, width = 7.5, height = 8.5, units = "in", dpi=300)
+ggsave(paste0(Figure.dir,sprintf("%s.tiff",Var1)), ScopusExplosivesbyCountryPlot, width = 8, height = 9.5, units = "in", dpi=300)
 
 print("Processing complete. Please check 'Figures/' folder for output")

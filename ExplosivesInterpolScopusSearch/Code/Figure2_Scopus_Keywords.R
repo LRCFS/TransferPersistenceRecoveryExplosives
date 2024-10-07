@@ -42,7 +42,8 @@ ScopusKeywordList_KeywordsPerTitle <- ScopusKeywordList  %>%
   select(Year,Title,Source.title,KeywordsCorrected) %>%
   distinct()
 
-ScopusKeywordList_KeywordsPerTitle <-ScopusKeywordList_KeywordsPerTitle[complete.cases(ScopusKeywordList_KeywordsPerTitle), ]
+ScopusKeywordList_KeywordsPerTitle[ScopusKeywordList_KeywordsPerTitle==""] <- NA
+ScopusKeywordList_KeywordsPerTitle <-ScopusKeywordList_KeywordsPerTitle[complete.cases(ScopusKeywordList_KeywordsPerTitle[ ,4]), ]
 sum(is.na(ScopusKeywordList$KeywordsCorrected))
 
 ScopusKeywordYearCount <- aggregate(ScopusKeywordList_KeywordsPerTitle$Year, by=list(Year=ScopusKeywordList_KeywordsPerTitle$Year, Keyword=ScopusKeywordList_KeywordsPerTitle$KeywordsCorrected), FUN=length)
@@ -98,7 +99,7 @@ ScopusKeywordPlot <- ggplot(ScopusTopKeywordsGraph,aes(x=Year,y=reorder(Keywords
   guides(fill=guide_legend(title="Count"))+
   labs(x="Year",y="",title="")+
   scale_y_discrete(expand=c(0,0))+
-  scale_x_continuous(breaks=c(1980,1985,1990,1995,2000,2005,2010,2015,2020))+
+  scale_x_continuous(breaks=c(2000,2002,2004,2006,2008,2010,2012,2014,2016,2018,2020,2022))+
   scale_fill_manual(values=c(pal),na.value = "grey90")+
   #coord_fixed()+
   theme_grey(base_size=8)+

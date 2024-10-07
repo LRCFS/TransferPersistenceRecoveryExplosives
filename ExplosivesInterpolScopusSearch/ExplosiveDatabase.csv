@@ -1,41 +1,39 @@
 Uncorrected Explosive,Corrected Explosive,Explosive Type
- GSX,GSX,NA
- HBX,HBX,NA
 1-[(2e)-3-(1h-tetrazol-5-yl)triaz-2-en-1-ylidene]methanediamine,1-[(2e)-3-(1h-tetrazol-5-yl)triaz-2-en-1-ylidene]methanediamine,NA
 1-[(2E)-3-(1H-TETRAZOL-5-YL)TRIAZ-2-EN-1-YLIDENE]METHANEDIAMINE,1-[(2e)-3-(1h-tetrazol-5-yl)triaz-2-en-1-ylidene]methanediamine,NA
 1-AMINO-3-NITROGUANIDINE,1-Amino-3-Nitroguanidine (ANQ),NA
- ANQ,1-Amino-3-Nitroguanidine (ANQ),NA
-NITROAMINOGUANIDINE,1-Amino-3-Nitroguanidine (ANQ),NA
 1-Amino-3-Nitroguanidine (ANQ),1-Amino-3-Nitroguanidine (ANQ),NA
 1-AMINO-3-NITROGUANIDINE (ANQ),1-Amino-3-Nitroguanidine (ANQ),NA
+ANQ,1-Amino-3-Nitroguanidine (ANQ),NA
+NITROAMINOGUANIDINE,1-Amino-3-Nitroguanidine (ANQ),NA
 "1,1-DIAMINO-2,2-DINITROETHYLENE","1,1-Diamino-2,2-Dinitroethylene (FOX-7)",NA
-DADNE,"1,1-Diamino-2,2-Dinitroethylene (FOX-7)",NA
-FOX-7,"1,1-Diamino-2,2-Dinitroethylene (FOX-7)",NA
 "1,1-Diamino-2,2-Dinitroethylene (FOX-7)","1,1-Diamino-2,2-Dinitroethylene (FOX-7)",NA
 "1,1-DIAMINO-2,2-DINITROETHYLENE (FOX-7)","1,1-Diamino-2,2-Dinitroethylene (FOX-7)",NA
+DADNE,"1,1-Diamino-2,2-Dinitroethylene (FOX-7)",NA
+FOX-7,"1,1-Diamino-2,2-Dinitroethylene (FOX-7)",NA
 "1,3,3-TRINITROAZETIDINE","1,3,3-Trinitroazetidine (TNAZ)",NA
-TNAZ,"1,3,3-Trinitroazetidine (TNAZ)",NA
-TRINITROAZETIDINE,"1,3,3-Trinitroazetidine (TNAZ)",NA
 "1,3,3-Trinitroazetidine (TNAZ)","1,3,3-Trinitroazetidine (TNAZ)",NA
 "1,3,3-TRINITROAZETIDINE (TNAZ)","1,3,3-Trinitroazetidine (TNAZ)",NA
+TNAZ,"1,3,3-Trinitroazetidine (TNAZ)",NA
+TRINITROAZETIDINE,"1,3,3-Trinitroazetidine (TNAZ)",NA
 "1,3,5-TRIAMINO-2,4,6-TRINITROBENZENE","1,3,5-Triamino-2,4,6-Trinitrobenzene (TATB)",NA
-TATB,"1,3,5-Triamino-2,4,6-Trinitrobenzene (TATB)",NA
 "1,3,5-Triamino-2,4,6-Trinitrobenzene (TATB)","1,3,5-Triamino-2,4,6-Trinitrobenzene (TATB)",NA
 "1,3,5-TRIAMINO-2,4,6-TRINITROBENZENE (TATB)","1,3,5-Triamino-2,4,6-Trinitrobenzene (TATB)",NA
+TATB,"1,3,5-Triamino-2,4,6-Trinitrobenzene (TATB)",NA
 "1,3,5-TRIAZIDO-2,4,6-TRINITROBENZENE","1,3,5-Triazido-2,4,6-Trinitrobenzene (TATNB)",NA
+"1,3,5-Triazido-2,4,6-Trinitrobenzene (TATNB)","1,3,5-Triazido-2,4,6-Trinitrobenzene (TATNB)",NA
+"1,3,5-TRIAZIDO-2,4,6-TRINITROBENZENE (TATNB)","1,3,5-Triazido-2,4,6-Trinitrobenzene (TATNB)",NA
 TATNB,"1,3,5-Triazido-2,4,6-Trinitrobenzene (TATNB)",NA
 TNTAZB,"1,3,5-Triazido-2,4,6-Trinitrobenzene (TATNB)",NA
 TRIAZIDOTRINITROBENZENE,"1,3,5-Triazido-2,4,6-Trinitrobenzene (TATNB)",NA
 TRIAZIDOTRINITROBENZOL,"1,3,5-Triazido-2,4,6-Trinitrobenzene (TATNB)",NA
 TRINITROTRIAZIDOBENZENE,"1,3,5-Triazido-2,4,6-Trinitrobenzene (TATNB)",NA
-"1,3,5-Triazido-2,4,6-Trinitrobenzene (TATNB)","1,3,5-Triazido-2,4,6-Trinitrobenzene (TATNB)",NA
-"1,3,5-TRIAZIDO-2,4,6-TRINITROBENZENE (TATNB)","1,3,5-Triazido-2,4,6-Trinitrobenzene (TATNB)",NA
-"1,3,5-TRINITROBENZENE","1,3,5-Trinitrobenzene (TNB)",NA
-5-TNB,"1,3,5-Trinitrobenzene (TNB)",NA
- TNB,"1,3,5-Trinitrobenzene (TNB)",NA
-TRINITROBENZENE (TNB),"1,3,5-Trinitrobenzene (TNB)",NA
-"1,3,5-Trinitrobenzene (TNB)","1,3,5-Trinitrobenzene (TNB)",NA
-"1,3,5-TRINITROBENZENE (TNB)","1,3,5-Trinitrobenzene (TNB)",NA
+"1,3,5-TRINITROBENZENE","1,3,5-Trinitrobenzene (TNB)",No Practical Use
+"1,3,5-Trinitrobenzene (TNB)","1,3,5-Trinitrobenzene (TNB)",No Practical Use
+"1,3,5-TRINITROBENZENE (TNB)","1,3,5-Trinitrobenzene (TNB)",No Practical Use
+5-TNB,"1,3,5-Trinitrobenzene (TNB)",No Practical Use
+TNB,"1,3,5-Trinitrobenzene (TNB)",No Practical Use
+TRINITROBENZENE (TNB),"1,3,5-Trinitrobenzene (TNB)",No Practical Use
 "2,3,4,6-Tetranitroaniline","2,3,4,6-Tetranitroaniline",NA
 "2,3,4,6-TETRANITROANILINE","2,3,4,6-Tetranitroaniline",NA
 "2,4-Dinitro-2,4-Diazahexane","2,4-Dinitro-2,4-Diazahexane",NA
@@ -43,10 +41,10 @@ TRINITROBENZENE (TNB),"1,3,5-Trinitrobenzene (TNB)",NA
 "2,4-Dinitro-2,4-Diazapentane","2,4-Dinitro-2,4-Diazapentane",NA
 "2,4-DINITRO-2,4-DIAZAPENTANE","2,4-Dinitro-2,4-Diazapentane",NA
 "2,4-DINITROANILISOLE (DNAN)","2,4-Dinitroanisole (DNAN)",NA
-DINITROANISOLE,"2,4-Dinitroanisole (DNAN)",NA
-DINITROANISOLE (DNAN),"2,4-Dinitroanisole (DNAN)",NA
 "2,4-Dinitroanisole (DNAN)","2,4-Dinitroanisole (DNAN)",NA
 "2,4-DINITROANISOLE (DNAN)","2,4-Dinitroanisole (DNAN)",NA
+DINITROANISOLE,"2,4-Dinitroanisole (DNAN)",NA
+DINITROANISOLE (DNAN),"2,4-Dinitroanisole (DNAN)",NA
 "2 ,4-DINITRO TOLUENES","2,4-Dinitrotoluene (DNT)",NA
 "2 ,4-DINITROTOLUENE","2,4-Dinitrotoluene (DNT)",NA
 "2 ,4-DNT","2,4-Dinitrotoluene (DNT)",NA
@@ -57,97 +55,95 @@ DINITROANISOLE (DNAN),"2,4-Dinitroanisole (DNAN)",NA
 "2,4-DINITRO TOLUENE (DNT)","2,4-Dinitrotoluene (DNT)",NA
 "2,4-DINITROTOLUENE","2,4-Dinitrotoluene (DNT)",NA
 "2,4-DINITROTOLUENE (DNT)","2,4-Dinitrotoluene (DNT)",NA
-"2,4-DNT","2,4-Dinitrotoluene (DNT)",NA
 "2,4-Dinitrotoluene (DNT)","2,4-Dinitrotoluene (DNT)",NA
 "2,4-DINITROTOLUENE (DNT)","2,4-Dinitrotoluene (DNT)",NA
-TRINITROCRESOL,"2,4,6-Trinitrocresol",NA
+"2,4-DNT","2,4-Dinitrotoluene (DNT)",NA
 "2,4,6-Trinitrocresol","2,4,6-Trinitrocresol",NA
 "2,4,6-TRINITROCRESOL","2,4,6-Trinitrocresol",NA
-"2 ,4 ,6 TRINITROTOLUENE","2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-"2 ,4 ,6-TRINITROTOLUENE","2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-2 4 6-TRINITROTOLUENE.,"2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-"2,4,6 TRINITROTOLUENE","2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-"2,4,6 TRINITROTOLUENE N 15","2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-"2,4,6-TIRNITROTOLUENE","2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-"2,4,6-TNT","2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-"2,4,6-TRINITRENOTOLUENE","2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-"2,4,6-TRINITROTOLUENE","2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-"2,4,6-TRINITROTOLUENE (TNT)","2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-"2,4,6-TRINITROTOULENE","2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-2.4.6-TNT,"2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-6-TRINITROTOLUENE (TNT),"2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-EXPLOSIVES. TNT,"2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-RAW TNT,"2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-TNT,"2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-"TNT (2 ,4 ,6TRINITROTOLUENE)","2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-"TNT (2,4,6-TRINITROTOLUENE)","2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-TNT COMPOUNDS,"2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-TNT VAPOR,"2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-TRINITROTOLUENE,"2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-TRINITROTOLUENE (TNT),"2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-TRINITROTOLUENES,"2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-"2,4,6-Trinitrotoluene (TNT)","2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-"2,4,6-TRINITROTOLUENE (TNT)","2,4,6-Trinitrotoluene (TNT)",Military/Commercial
-"2,4,6-Trinitroxylene","2,4,6-Trinitroxylene",NA
-"2,4,6-TRINITROXYLENE","2,4,6-Trinitroxylene",NA
-TRINITROXYLENE,"2,4,6-Trinitroxylene (TNX)",NA
+TRINITROCRESOL,"2,4,6-Trinitrocresol",NA
+"2 ,4 ,6 TRINITROTOLUENE","2,4,6-Trinitrotoluene (TNT)",NA
+"2 ,4 ,6-TRINITROTOLUENE","2,4,6-Trinitrotoluene (TNT)",NA
+2 4 6-TRINITROTOLUENE.,"2,4,6-Trinitrotoluene (TNT)",NA
+"2,4,6 TRINITROTOLUENE","2,4,6-Trinitrotoluene (TNT)",NA
+"2,4,6 TRINITROTOLUENE N 15","2,4,6-Trinitrotoluene (TNT)",NA
+"2,4,6-TIRNITROTOLUENE","2,4,6-Trinitrotoluene (TNT)",NA
+"2,4,6-TNT","2,4,6-Trinitrotoluene (TNT)",NA
+"2,4,6-TRINITRENOTOLUENE","2,4,6-Trinitrotoluene (TNT)",NA
+"2,4,6-TRINITROTOLUENE","2,4,6-Trinitrotoluene (TNT)",NA
+"2,4,6-TRINITROTOLUENE (TNT)","2,4,6-Trinitrotoluene (TNT)",NA
+"2,4,6-Trinitrotoluene (TNT)","2,4,6-Trinitrotoluene (TNT)",NA
+"2,4,6-TRINITROTOLUENE (TNT)","2,4,6-Trinitrotoluene (TNT)",NA
+"2,4,6-TRINITROTOULENE","2,4,6-Trinitrotoluene (TNT)",NA
+2.4.6-TNT,"2,4,6-Trinitrotoluene (TNT)",NA
+6-TRINITROTOLUENE (TNT),"2,4,6-Trinitrotoluene (TNT)",NA
+EXPLOSIVES. TNT,"2,4,6-Trinitrotoluene (TNT)",NA
+RAW TNT,"2,4,6-Trinitrotoluene (TNT)",NA
+TNT,"2,4,6-Trinitrotoluene (TNT)",NA
+"TNT (2 ,4 ,6TRINITROTOLUENE)","2,4,6-Trinitrotoluene (TNT)",NA
+"TNT (2,4,6-TRINITROTOLUENE)","2,4,6-Trinitrotoluene (TNT)",NA
+TNT COMPOUNDS,"2,4,6-Trinitrotoluene (TNT)",NA
+TNT VAPOR,"2,4,6-Trinitrotoluene (TNT)",NA
+TRINITROTOLUENE,"2,4,6-Trinitrotoluene (TNT)",NA
+TRINITROTOLUENE (TNT),"2,4,6-Trinitrotoluene (TNT)",NA
+TRINITROTOLUENES,"2,4,6-Trinitrotoluene (TNT)",NA
+"2,4,6-Trinitroxylene","2,4,6-Trinitroxylene (TNX)",NA
+"2,4,6-TRINITROXYLENE","2,4,6-Trinitroxylene (TNX)",NA
 "2,4,6-TRINITROXYLENE (TNX)","2,4,6-Trinitroxylene (TNX)",NA
-HEXANITROBIPHENYL,"2,4,6,2',4',6'-Hexanitrobiphenyl",NA
+TRINITROXYLENE,"2,4,6-Trinitroxylene (TNX)",NA
 "2,4,6,2',4',6'-Hexanitrobiphenyl","2,4,6,2',4',6'-Hexanitrobiphenyl",NA
 "2,4,6,2',4',6'-HEXANITROBIPHENYL","2,4,6,2',4',6'-Hexanitrobiphenyl",NA
-HEXANITRODIPHENYL OXIDE,"2,4,6,2',4',6'-Hexanitrodiphenyl Oxide",NA
+HEXANITROBIPHENYL,"2,4,6,2',4',6'-Hexanitrobiphenyl",NA
 "2,4,6,2',4',6'-Hexanitrodiphenyl oxide","2,4,6,2',4',6'-Hexanitrodiphenyl Oxide",NA
 "2,4,6,2',4',6'-HEXANITRODIPHENYL OXIDE","2,4,6,2',4',6'-Hexanitrodiphenyl Oxide",NA
-HEXANITRODIPHENYLAMINE,"2,4,6,2',4',6'-Hexanitrodiphenylamine",NA
+HEXANITRODIPHENYL OXIDE,"2,4,6,2',4',6'-Hexanitrodiphenyl Oxide",NA
 "2,4,6,2',4',6'-Hexanitrodiphenylamine","2,4,6,2',4',6'-Hexanitrodiphenylamine",NA
 "2,4,6,2',4',6'-HEXANITRODIPHENYLAMINE","2,4,6,2',4',6'-Hexanitrodiphenylamine",NA
-HEXANITRODIPHENYLSULFIDE,"2,4,6,2',4',6'-Hexanitrodiphenylsulfide",NA
+HEXANITRODIPHENYLAMINE,"2,4,6,2',4',6'-Hexanitrodiphenylamine",NA
 "2,4,6,2',4',6'-Hexanitrodiphenylsulfide","2,4,6,2',4',6'-Hexanitrodiphenylsulfide",NA
 "2,4,6,2',4',6'-HEXANITRODIPHENYLSULFIDE","2,4,6,2',4',6'-Hexanitrodiphenylsulfide",NA
-HEXANITRODIPHENYLSULFONE,"2,4,6,2',4',6'-Hexanitrodiphenylsulfone",NA
+HEXANITRODIPHENYLSULFIDE,"2,4,6,2',4',6'-Hexanitrodiphenylsulfide",NA
 "2,4,6,2',4',6'-Hexanitrodiphenylsulfone","2,4,6,2',4',6'-Hexanitrodiphenylsulfone",NA
 "2,4,6,2',4',6'-HEXANITRODIPHENYLSULFONE","2,4,6,2',4',6'-Hexanitrodiphenylsulfone",NA
+HEXANITRODIPHENYLSULFONE,"2,4,6,2',4',6'-Hexanitrodiphenylsulfone",NA
 "2,6-DIAMINO-3,5-DINITROPYRAZINE-1-OXIDE","2,6-Diamino-3,5-Dinitropyrazine-1-Oxide (LLM-105)",NA
-LLM-105,"2,6-Diamino-3,5-Dinitropyrazine-1-Oxide (LLM-105)",NA
 "2,6-Diamino-3,5-Dinitropyrazine-1-Oxide (LLM-105)","2,6-Diamino-3,5-Dinitropyrazine-1-Oxide (LLM-105)",NA
 "2,6-DIAMINO-3,5-DINITROPYRAZINE-1-OXIDE (LLM-105)","2,6-Diamino-3,5-Dinitropyrazine-1-Oxide (LLM-105)",NA
-"3-NITRO-1,2,4-TRIAZOL-5-ONE","3-Nitro-1,2,4-Triazol-5-One (NTO)",NA
+LLM-105,"2,6-Diamino-3,5-Dinitropyrazine-1-Oxide (LLM-105)",NA
 "3_NITRO_1,2,4_TRIAZOL_3_ONE","3-Nitro-1,2,4-Triazol-5-One (NTO)",NA
 "3_NITRO_1,2,4_TRIAZOLIN_5_ONE (NTO)","3-Nitro-1,2,4-Triazol-5-One (NTO)",NA
-"5-NITRO-2,4-DIHYDRO-3H-1,2,4-TRIAZOL-3-ONE","3-Nitro-1,2,4-Triazol-5-One (NTO)",NA
+"3-NITRO-1,2,4-TRIAZOL-5-ONE","3-Nitro-1,2,4-Triazol-5-One (NTO)",NA
 "3-Nitro-1,2,4-Triazol-5-One (NTO)","3-Nitro-1,2,4-Triazol-5-One (NTO)",NA
 "3-NITRO-1,2,4-TRIAZOL-5-ONE (NTO)","3-Nitro-1,2,4-Triazol-5-One (NTO)",NA
- NTO,"3-Nitro-1,2,4-Triazol-5-One (NTO)",NA
+"5-NITRO-2,4-DIHYDRO-3H-1,2,4-TRIAZOL-3-ONE","3-Nitro-1,2,4-Triazol-5-One (NTO)",NA
+NTO,"3-Nitro-1,2,4-Triazol-5-One (NTO)",NA
 "3,5-Dinitro-3,5-Diazaheptane","3,5-Dinitro-3,5-Diazaheptane",NA
 "3,5-DINITRO-3,5-DIAZAHEPTANE","3,5-Dinitro-3,5-Diazaheptane",NA
 "4,10-DINITRO-2,6,8,12-TETRAOXA-4,10-DIAZATETRACYCLO[5.5.0.05,903,11]-DODECANE","4,10-Dinitro-2,6,8,12-Tetraoxa-4,10-Diazawurtzitane (TEX)",NA
 "4,10-DINITRO-2,6,8,12-TETRAOXA-4,10-DIAZAWURTZITANE","4,10-Dinitro-2,6,8,12-Tetraoxa-4,10-Diazawurtzitane (TEX)",NA
- TEX,"4,10-Dinitro-2,6,8,12-Tetraoxa-4,10-Diazawurtzitane (TEX)",NA
 "4,10-Dinitro-2,6,8,12-Tetraoxa-4,10-Diazawurtzitane (TEX)","4,10-Dinitro-2,6,8,12-Tetraoxa-4,10-Diazawurtzitane (TEX)",NA
 "4,10-DINITRO-2,6,8,12-TETRAOXA-4,10-DIAZAWURTZITANE (TEX)","4,10-Dinitro-2,6,8,12-Tetraoxa-4,10-Diazawurtzitane (TEX)",NA
-DINITROBENZOFUROXAN,"4,6-Dinitrobenzofuroxan (DNBF)",NA
+TEX,"4,10-Dinitro-2,6,8,12-Tetraoxa-4,10-Diazawurtzitane (TEX)",NA
 "4,6-Dinitrobenzofuroxan","4,6-Dinitrobenzofuroxan (DNBF)",NA
-"4,6-DNBF","4,6-Dinitrobenzofuroxan (DNBF)",NA
 "4,6-Dinitrobenzofuroxan (DNBF)","4,6-Dinitrobenzofuroxan (DNBF)",NA
 "4,6-DINITROBENZOFUROXAN (DNBF)","4,6-Dinitrobenzofuroxan (DNBF)",NA
+"4,6-DNBF","4,6-Dinitrobenzofuroxan (DNBF)",NA
+DINITROBENZOFUROXAN,"4,6-Dinitrobenzofuroxan (DNBF)",NA
 "5,5_-BISTETRAZOLE-1,1_-DIOLATE","5,5-Bistetrazole-1,1-Diolate (TKX-50)",NA
-TKX50,"5,5-Bistetrazole-1,1-Diolate (TKX-50)",NA
-TKX 50,"5,5-Bistetrazole-1,1-Diolate (TKX-50)",NA
-TKX-50,"5,5-Bistetrazole-1,1-Diolate (TKX-50)",NA
-"BISHYDROXYLAMMONIUM-5,5_-BIS(TETRAZOLATE-1N-OXIDE)","5,5-Bistetrazole-1,1-Diolate (TKX-50)",NA
 "5,5_-Bistetrazole-1,1_-Diolate (TKX-50)","5,5-Bistetrazole-1,1-Diolate (TKX-50)",NA
 "5,5_-BISTETRAZOLE-1,1_-DIOLATE (TKX-50)","5,5-Bistetrazole-1,1-Diolate (TKX-50)",NA
+"BISHYDROXYLAMMONIUM-5,5_-BIS(TETRAZOLATE-1N-OXIDE)","5,5-Bistetrazole-1,1-Diolate (TKX-50)",NA
+TKX 50,"5,5-Bistetrazole-1,1-Diolate (TKX-50)",NA
+TKX-50,"5,5-Bistetrazole-1,1-Diolate (TKX-50)",NA
+TKX50,"5,5-Bistetrazole-1,1-Diolate (TKX-50)",NA
 Amatex,Amatex,NA
 AMATEX,Amatex,NA
 Amatol,Amatol,NA
 AMATOL,Amatol,NA
-AMMONALS,Ammonal,NA
 Ammonal,Ammonal,NA
 AMMONAL,Ammonal,NA
-Ammonium Picrate,Ammonium Picrate,NA
-AMMONIUM PICRATE,Ammonium Picrate,NA
-Ammonium Azide,Ammonium Azide,NA
-AMMONIUM AZIDE,Ammonium Azide,NA
+AMMONALS,Ammonal,NA
+Ammonium Azide,Ammonium Azide,No Practical Use
+AMMONIUM AZIDE,Ammonium Azide,No Practical Use
 Ammonium Chloride,Ammonium Chloride,NA
 AMMONIUM CHLORIDE,Ammonium Chloride,NA
 Ammonium Dichromate,Ammonium Dichromate,NA
@@ -156,19 +152,21 @@ AMMONIUM DINITRAMIDE,Ammonium Dinitramide (ADN),NA
 Ammonium Dinitramide (ADN),Ammonium Dinitramide (ADN),NA
 AMMONIUM DINITRAMIDE (ADN),Ammonium Dinitramide (ADN),NA
 AMMONIUM NITRATE,Ammonium Nitrate (AN),NA
+Ammonium Nitrate (AN),Ammonium Nitrate (AN),NA
+AMMONIUM NITRATE (AN),Ammonium Nitrate (AN),NA
 AMMONIUM NITRATE AND POTASSIUM CHLORIDE,Ammonium Nitrate (AN),NA
 AMMONIUM NITRATE AND SODIUM SULFATE,Ammonium Nitrate (AN),NA
 AMMONIUM NITRATE EXPLOSIVES,Ammonium Nitrate (AN),NA
 AMMONIUM NITRATE MIXTURES,Ammonium Nitrate (AN),NA
 AMMONIUM NITRATES,Ammonium Nitrate (AN),NA
 AN (AMMONIUM NITRATE),Ammonium Nitrate (AN),NA
-Ammonium Nitrate (AN),Ammonium Nitrate (AN),NA
-AMMONIUM NITRATE (AN),Ammonium Nitrate (AN),NA
-AMMONIUM PRECHLORATE (AP),Ammonium Perchlorate,NA
 Ammonium Perchlorate,Ammonium Perchlorate,NA
 AMMONIUM PERCHLORATE,Ammonium Perchlorate,NA
-"Ammonium-2,4,6-trinitrophenolate",Ammonium Picrate,NA
+AMMONIUM PRECHLORATE (AP),Ammonium Perchlorate,NA
+Ammonium Picrate,Ammonium Picrate,NA
 AMMONIUM PICRATE,Ammonium Picrate,NA
+AMMONIUM PICRATE,Ammonium Picrate,NA
+"Ammonium-2,4,6-trinitrophenolate",Ammonium Picrate,NA
 Astrolite,Astrolite,NA
 ASTROLITE,Astrolite,NA
 Baratol,Baratol,NA
@@ -185,12 +183,12 @@ Bi-trinitroethylnitramine,Bi-trinitroethylnitramine,NA
 BI-TRINITROETHYLNITRAMINE,Bi-trinitroethylnitramine,NA
 Bi-trinitroethylurea,Bi-trinitroethylurea,NA
 BI-TRINITROETHYLUREA,Bi-trinitroethylurea,NA
-"BIS(2,2-DINITROPROPYL)ACETAL","Bis(2,2-dinitropropyl)Acetal (BDNPA)",NA
 BDNPA,"Bis(2,2-dinitropropyl)Acetal (BDNPA)",NA
+"BIS(2,2-DINITROPROPYL)ACETAL","Bis(2,2-dinitropropyl)Acetal (BDNPA)",NA
 "Bis(2,2-dinitropropyl)Acetal (BDNPA)","Bis(2,2-dinitropropyl)Acetal (BDNPA)",NA
 "BIS(2,2-DINITROPROPYL)ACETAL (BDNPA)","Bis(2,2-dinitropropyl)Acetal (BDNPA)",NA
-"BIS(2,2-DINITROPROPYL)FORMAL","Bis(2,2-dinitropropyl)Formal (BDNPF)",NA
 BDNPF,"Bis(2,2-dinitropropyl)Formal (BDNPF)",NA
+"BIS(2,2-DINITROPROPYL)FORMAL","Bis(2,2-dinitropropyl)Formal (BDNPF)",NA
 "Bis(2,2-dinitropropyl)Formal (BDNPF)","Bis(2,2-dinitropropyl)Formal (BDNPF)",NA
 "BIS(2,2-DINITROPROPYL)FORMAL (BDNPF)","Bis(2,2-dinitropropyl)Formal (BDNPF)",NA
 Bis(nitramino)triazinone,Bis(nitramino)triazinone,NA
@@ -209,28 +207,28 @@ Calcium Potassium Styphnate,Calcium Potassium Styphnate,NA
 CALCIUM POTASSIUM STYPHNATE,Calcium Potassium Styphnate,NA
 Camphor,Camphor,NA
 CAMPHOR,Camphor,NA
- Composition A ,Composition A,NA
- COMPOSITION A ,Composition A,NA
+Comp A,Composition A,NA
+Comp.A,Composition A,NA
+Composition A ,Composition A,NA
+COMPOSITION A ,Composition A,NA
+Comp B,Composition B,NA
+Comp.B,Composition B,NA
+Composition B ,Composition B,NA
+COMPOSITION B ,Composition B,NA
 HEXOLITE,Composition B,NA
 HEXOTOL,Composition B,NA
- Composition B ,Composition B,NA
- Comp B,Composition B,NA
- Comp.B,Composition B,NA
- Comp A,Composition A,NA
- Comp.A,Composition A,NA
- Comp C,Composition C,NA
- Comp.C,Composition C,NA
- COMPOSITION B ,Composition B,NA
- Composition C ,Composition C,NA
- COMPOSITION C ,Composition C,NA
- Composition I ,Composition I,NA
- COMPOSITION I ,Composition I,NA
- Composition II ,Composition II,NA
- COMPOSITION II ,Composition II,NA
+Comp C,Composition C,NA
+Comp.C,Composition C,NA
+Composition C ,Composition C,NA
+COMPOSITION C ,Composition C,NA
+Composition I ,Composition I,NA
+COMPOSITION I ,Composition I,NA
+Composition II ,Composition II,NA
+COMPOSITION II ,Composition II,NA
 COPPER (I) 5-NITROTETRAZOLATE,Copper (I) 5-Nitrotetrazolate (DBX-1),NA
-DBX-1,Copper (I) 5-Nitrotetrazolate (DBX-1),NA
 Copper (I) 5-Nitrotetrazolate (DBX-1),Copper (I) 5-Nitrotetrazolate (DBX-1),NA
 COPPER (I) 5-NITROTETRAZOLATE (DBX-1),Copper (I) 5-Nitrotetrazolate (DBX-1),NA
+DBX-1,Copper (I) 5-Nitrotetrazolate (DBX-1),NA
 Cordite,Cordite,NA
 CORDITE,Cordite,NA
 Cyanuric Triazide,Cyanuric Triazide,NA
@@ -240,13 +238,13 @@ CYANURIC TRIAZIDE,Cyanuric Triazide,NA
 CYCLOTETRAMETHYLENE TETRAMINE,Cyclotetramethylene-Tetranitramine (HMX),NA
 CYCLOTETRAMETHYLENE TETRANITRAMINE,Cyclotetramethylene-Tetranitramine (HMX),NA
 CYCLOTETRAMETHYLENE TETRANITRAMINE (HMX),Cyclotetramethylene-Tetranitramine (HMX),NA
+Cyclotetramethylene-Tetranitramine (HMX),Cyclotetramethylene-Tetranitramine (HMX),NA
+CYCLOTETRAMETHYLENE-TETRANITRAMINE (HMX),Cyclotetramethylene-Tetranitramine (HMX),NA
 CYCLOTETRAMETHYLENETETRANITRAMINE,Cyclotetramethylene-Tetranitramine (HMX),NA
 HMX,Cyclotetramethylene-Tetranitramine (HMX),NA
 OCTOGEN,Cyclotetramethylene-Tetranitramine (HMX),NA
-Cyclotetramethylene-Tetranitramine (HMX),Cyclotetramethylene-Tetranitramine (HMX),NA
-CYCLOTETRAMETHYLENE-TETRANITRAMINE (HMX),Cyclotetramethylene-Tetranitramine (HMX),NA
-Cyclotrimethylene Trinitrosamine,Cyclotrimethylene Trinitrosamine,NA
-CYCLOTRIMETHYLENE TRINITROSAMINE,Cyclotrimethylene Trinitrosamine,NA
+Cyclotrimethylene Trinitrosamine,Cyclotrimethylene Trinitrosamine (R-Salt),NA
+CYCLOTRIMETHYLENE TRINITROSAMINE,Cyclotrimethylene Trinitrosamine (R-Salt),NA
 "1,3,5 TRINITRO 1,3,5 TRIAZINANE",Cyclotrimethylene-Trinitramine (RDX),NA
 "1,3,5 TRINITROSO 1,3,5 TRIAZINANE",Cyclotrimethylene-Trinitramine (RDX),NA
 "1,3,5-TRINITRO-1,3,5-TRIAZINE (RDX)",Cyclotrimethylene-Trinitramine (RDX),NA
@@ -257,6 +255,8 @@ CYCLONITE,Cyclotrimethylene-Trinitramine (RDX),NA
 CYCLOTRIMETHYLENE TRINITRAMINE,Cyclotrimethylene-Trinitramine (RDX),NA
 CYCLOTRIMETHYLENE TRINITRAMINE (RDX),Cyclotrimethylene-Trinitramine (RDX),NA
 CYCLOTRIMETHYLENE-TRINITRAMINE,Cyclotrimethylene-Trinitramine (RDX),NA
+Cyclotrimethylene-Trinitramine (RDX),Cyclotrimethylene-Trinitramine (RDX),NA
+CYCLOTRIMETHYLENE-TRINITRAMINE (RDX),Cyclotrimethylene-Trinitramine (RDX),NA
 CYCLOTRIMETHYLENENITRAMINE,Cyclotrimethylene-Trinitramine (RDX),NA
 CYCLOTRIMETHYLENETRINITRAMINE,Cyclotrimethylene-Trinitramine (RDX),NA
 CYCLOTRIMETHYLENETRINITRAMINE (RDX),Cyclotrimethylene-Trinitramine (RDX),NA
@@ -274,8 +274,6 @@ RDX (CYCLOTRIMETHYLENE TRINITRAMINE),Cyclotrimethylene-Trinitramine (RDX),NA
 RDX CRYSTAL,Cyclotrimethylene-Trinitramine (RDX),NA
 RDX POWDERS,Cyclotrimethylene-Trinitramine (RDX),NA
 "RECRYSTALLIZED CYCLO-1,3,5-TRIMETHYLENE-2,4,6-TRINITRAMINE (RDX) POWDER",Cyclotrimethylene-Trinitramine (RDX),NA
-Cyclotrimethylene-Trinitramine (RDX),Cyclotrimethylene-Trinitramine (RDX),NA
-CYCLOTRIMETHYLENE-TRINITRAMINE (RDX),Cyclotrimethylene-Trinitramine (RDX),NA
 Diamyl Phthalate,Diamyl Phthalate,NA
 DIAMYL PHTHALATE,Diamyl Phthalate,NA
 DDNP,Diazodinitrophenol (DDNP),NA
@@ -290,13 +288,13 @@ Diethyleneglycol Dinitrate (DEGDN),Diethyleneglycol Dinitrate (DEGDN),NA
 DIETHYLENEGLYCOL DINITRATE (DEGDN),Diethyleneglycol Dinitrate (DEGDN),NA
 Diglycerol Tetranitrate,Diglycerol Tetranitrate,NA
 DIGLYCEROL TETRANITRATE,Diglycerol Tetranitrate,NA
-"Dihydroxylammonium-3,3'-Dinitro-5,5'-Bis(1,2,4-Triazole)-1,1'-Diolate","Dihydroxylammonium-3,3'-Dinitro-5,5'-Bis(1,2,4-Triazole)-1,1'-Siolate",NA
-"DIHYDROXYLAMMONIUM-3,3'-DINITRO-5,5'-BIS(1,2,4-TRIAZOLE)-1,1'-SIOLATE","Dihydroxylammonium-3,3'-Dinitro-5,5'-Bis(1,2,4-Triazole)-1,1'-Siolate",NA
+"Dihydroxylammonium-3,3'-Dinitro-5,5'-Bis(1,2,4-Triazole)-1,1'-Diolate","Dihydroxylammonium-3,3'-Dinitro-5,5'-Bis(1,2,4-Triazole)-1,1'-Diolate (MAD-X1)",NA
+"DIHYDROXYLAMMONIUM-3,3'-DINITRO-5,5'-BIS(1,2,4-TRIAZOLE)-1,1'-DIOLATE","Dihydroxylammonium-3,3'-Dinitro-5,5'-Bis(1,2,4-Triazole)-1,1'-Diolate (MAD-X1)",NA
 "1,3-DINITROBENZENE",Dinitrobenzene (DNB),NA
 DINITROBENZENE,Dinitrobenzene (DNB),NA
-METADINITROBENZENE,Dinitrobenzene (DNB),NA
 Dinitrobenzene (DNB),Dinitrobenzene (DNB),NA
 DINITROBENZENE (DNB),Dinitrobenzene (DNB),NA
+METADINITROBENZENE,Dinitrobenzene (DNB),NA
 Dinitrodiazaheptane,Dinitrodiazaheptane,NA
 DINITRODIAZAHEPTANE,Dinitrodiazaheptane,NA
 Dinitrodiazahexane,Dinitrodiazahexane,NA
@@ -316,53 +314,53 @@ DINITROORTHOCRESOL,Dinitroorthocresol,NA
 Dinitrophenoxyethylnitrate,Dinitrophenoxyethylnitrate,NA
 DINITROPHENOXYETHYLNITRATE,Dinitrophenoxyethylnitrate,NA
 DINITROPHENYLHYDRAZINE,Dinitrophenylhydrazine (DPNH),NA
-DPNH,Dinitrophenylhydrazine (DPNH),NA
 Dinitrophenylhydrazine (DPNH),Dinitrophenylhydrazine (DPNH),NA
 DINITROPHENYLHYDRAZINE (DPNH),Dinitrophenylhydrazine (DPNH),NA
+DPNH,Dinitrophenylhydrazine (DPNH),NA
 Dinitrosobenzene,Dinitrosobenzene,NA
 DINITROSOBENZENE,Dinitrosobenzene,NA
 DINITROTOLUENE,Dinitrotoluene (DNT),NA
-DINITROTOLUENES,Dinitrotoluene (DNT),NA
-DNT,Dinitrotoluene (DNT),NA
 Dinitrotoluene (DNT),Dinitrotoluene (DNT),NA
 DINITROTOLUENE (DNT),Dinitrotoluene (DNT),NA
+DINITROTOLUENES,Dinitrotoluene (DNT),NA
+DNT,Dinitrotoluene (DNT),NA
+DINA,Dioxyethylnitramine Dinitrate (DINA),NA
 DIOXYETHYLNITRAMINE DINITRATE,Dioxyethylnitramine Dinitrate (DINA),NA
 Dioxyethylnitramine Dinitrate (DINA),Dioxyethylnitramine Dinitrate (DINA),NA
 DIOXYETHYLNITRAMINE DINITRATE (DINA),Dioxyethylnitramine Dinitrate (DINA),NA
- DINA,Dioxyethylnitramine Dinitrate (DINA),NA
 Dipentaerythritol Hexanitrate,Dipentaerythritol Hexanitrate,NA
 DIPENTAERYTHRITOL HEXANITRATE,Dipentaerythritol Hexanitrate,NA
-GELATIN DYNAMITE,Dynamite,NA
 Dynamite,Dynamite,NA
 DYNAMITE,Dynamite,NA
+GELATIN DYNAMITE,Dynamite,NA
 Ednatol,Ednatol,NA
 EDNATOL,Ednatol,NA
 ERYTHRITOL TETRANITRATE,Erythritol Tetranitrate (ETN),NA
- ETN,Erythritol Tetranitrate (ETN),NA
 Erythritol Tetranitrate (ETN),Erythritol Tetranitrate (ETN),NA
 ERYTHRITOL TETRANITRATE (ETN),Erythritol Tetranitrate (ETN),NA
+ETN,Erythritol Tetranitrate (ETN),NA
 Ethriol Trinitrate,Ethriol Trinitrate,NA
 ETHRIOL TRINITRATE,Ethriol Trinitrate,NA
 Ethyl Nitrate,Ethyl Nitrate,NA
 ETHYL NITRATE,Ethyl Nitrate,NA
 Ethyl Picrate,Ethyl Picrate,NA
 ETHYL PICRATE,Ethyl Picrate,NA
- EDGN,Ethylene Glycol Dinitrate (EGDN),NA
- EGDN,Ethylene Glycol Dinitrate (EGDN),NA
+EDGN,Ethylene Glycol Dinitrate (EGDN),NA
+EGDN,Ethylene Glycol Dinitrate (EGDN),NA
 ETHYLENE GLYCOL DINITRATE,Ethylene Glycol Dinitrate (EGDN),NA
-ETHYLENEGLYCOL DINITRATE (EGDN),Ethylene Glycol Dinitrate (EGDN),NA
-NITROGLYCOL,Ethylene Glycol Dinitrate (EGDN),NA
 Ethylene Glycol Dinitrate (EGDN),Ethylene Glycol Dinitrate (EGDN),NA
 ETHYLENE GLYCOL DINITRATE (EGDN),Ethylene Glycol Dinitrate (EGDN),NA
+ETHYLENEGLYCOL DINITRATE (EGDN),Ethylene Glycol Dinitrate (EGDN),NA
+NITROGLYCOL,Ethylene Glycol Dinitrate (EGDN),NA
 Ethylenediamine Dinitrate,Ethylenediamine Dinitrate,NA
 ETHYLENEDIAMINE DINITRATE,Ethylenediamine Dinitrate,NA
 Ethylenedinitramine,Ethylenedinitramine,NA
 ETHYLENEDINITRAMINE,Ethylenedinitramine,NA
 Ethyltetryl,Ethyltetryl,NA
 ETHYLTETRYL,Ethyltetryl,NA
-GELIGNITES,Gelignite,NA
 Gelignite,Gelignite,NA
 GELIGNITE,Gelignite,NA
+GELIGNITES,Gelignite,NA
 Glycerol Acetate Dinitrate,Glycerol Acetate Dinitrate,NA
 GLYCEROL ACETATE DINITRATE,Glycerol Acetate Dinitrate,NA
 Glycerol Dinitrate,Glycerol Dinitrate,NA
@@ -375,6 +373,7 @@ GLYCEROL TRINITROPHENYL ETHER DINITRATE,Glycerol Trinitrophenyl Ether Dinitrate,
 "GLYCEROL-2,4-DINITROPHENYL ETHER DINITRATE","Glycerol-2,4-Dinitrophenyl Ether Dinitrate",NA
 Glycidyl Azide Polymer,Glycidyl Azide Polymer,NA
 GLYCIDYL AZIDE POLYMER,Glycidyl Azide Polymer,NA
+GSX,GSX,NA
 Guanidine Nitrate,Guanidine Nitrate,NA
 GUANIDINE NITRATE,Guanidine Nitrate,NA
 Guanidine Perchlorate,Guanidine Perchlorate,NA
@@ -387,15 +386,16 @@ Guanylureadinitramide (FOX-12),Guanylureadinitramide (FOX-12),NA
 GUANYLUREADINITRAMIDE (FOX-12),Guanylureadinitramide (FOX-12),NA
 Gun Powder,Gun Powder,NA
 GUN POWDER,Gun Powder,NA
+HBX,HBX,NA
 Heptryl,Heptryl,NA
 HEPTRYL,Heptryl,NA
 Hexal,Hexal,NA
 HEXAL,Hexal,NA
-HEXA-METHYLENE TRIPEROXIDE DIAMINE (HMTD),Hexamethylene Triperoxide Diamine (HMTD),NA
-HEXAMETHYLENE TRIPEROXIDE DIAMINE,Hexamethylene Triperoxide Diamine (HMTD),NA
-HMTD,Hexamethylene Triperoxide Diamine (HMTD),NA
-Hexamethylene Triperoxide Diamine (HMTD),Hexamethylene Triperoxide Diamine (HMTD),NA
-HEXAMETHYLENE TRIPEROXIDE DIAMINE (HMTD),Hexamethylene Triperoxide Diamine (HMTD),NA
+HEXA-METHYLENE TRIPEROXIDE DIAMINE (HMTD),Hexamethylene Triperoxide Diamine (HMTD),No Practical Use
+HEXAMETHYLENE TRIPEROXIDE DIAMINE,Hexamethylene Triperoxide Diamine (HMTD),No Practical Use
+Hexamethylene Triperoxide Diamine (HMTD),Hexamethylene Triperoxide Diamine (HMTD),No Practical Use
+HEXAMETHYLENE TRIPEROXIDE DIAMINE (HMTD),Hexamethylene Triperoxide Diamine (HMTD),No Practical Use
+HMTD,Hexamethylene Triperoxide Diamine (HMTD),No Practical Use
 Hexamethylenetetramine Dinitrate,Hexamethylenetetramine Dinitrate,NA
 HEXAMETHYLENETETRAMINE DINITRATE,Hexamethylenetetramine Dinitrate,NA
 Hexanitroazobenzene,Hexanitroazobenzene,NA
@@ -404,11 +404,9 @@ Hexanitrodiphenylaminoethyl Nitrate,Hexanitrodiphenylaminoethyl Nitrate,NA
 HEXANITRODIPHENYLAMINOETHYL NITRATE,Hexanitrodiphenylaminoethyl Nitrate,NA
 Hexanitrodiphenylglycerol Mononitrate,Hexanitrodiphenylglycerol Mononitrate,NA
 HEXANITRODIPHENYLGLYCEROL MONONITRATE,Hexanitrodiphenylglycerol Mononitrate,NA
-Hexanitroethane,Hexanitroethane,NA
-HEXANITROETHANE,Hexanitroethane,NA
+Hexanitroethane,Hexanitroethane,No Practical Use
+HEXANITROETHANE,Hexanitroethane,No Practical Use
 _-CL-20,Hexanitrohexaazaisowurtzitane (CL-20),NA
-HEXANITROHEXAAZAISOWURTZITANE,Hexanitrohexaazaisowurtzitane (CL-20),NA
-HEXANITROHEXAAZAISOWURTZITANE (CL-20),Hexanitrohexaazaisowurtzitane (CL-20),NA
 CL-20,Hexanitrohexaazaisowurtzitane (CL-20),NA
 CL-20 BASED EXPLOSIVE INK,Hexanitrohexaazaisowurtzitane (CL-20),NA
 CL-20/HMX CO-CRYSTAL,Hexanitrohexaazaisowurtzitane (CL-20),NA
@@ -416,17 +414,19 @@ CL-20/NTO COCRYSTAL EXPLOSIVE,Hexanitrohexaazaisowurtzitane (CL-20),NA
 CL-20/RDX-CMDB PROPELLANT,Hexanitrohexaazaisowurtzitane (CL-20),NA
 CL20,Hexanitrohexaazaisowurtzitane (CL-20),NA
 HEXAAZAISOWURTZITANE (CL-20),Hexanitrohexaazaisowurtzitane (CL-20),NA
+HEXANITROHEXAAZAISOWURTZITANE,Hexanitrohexaazaisowurtzitane (CL-20),NA
+HEXANITROHEXAAZAISOWURTZITANE (CL-20),Hexanitrohexaazaisowurtzitane (CL-20),NA
+Hexanitrohexaazaisowurtzitane (CL-20),Hexanitrohexaazaisowurtzitane (CL-20),NA
 "HEXANITROHEXAAZAISOWURTZITANE/2,4,6-TRINITROTOLUENE (CL-20/TNT) COCRYSTAL EXPLOSIVE",Hexanitrohexaazaisowurtzitane (CL-20),NA
 NANO-CL-20,Hexanitrohexaazaisowurtzitane (CL-20),NA
-Hexanitrohexaazaisowurtzitane (CL-20),Hexanitrohexaazaisowurtzitane (CL-20),NA
 Hexanitrooxanilide,Hexanitrooxanilide,NA
 HEXANITROOXANILIDE,Hexanitrooxanilide,NA
 "2,2',4,4',6,6'-HEXANITROSTILBENE",Hexanitrostilbene (HNS),NA
 HEXANITROSTILBENE,Hexanitrostilbene (HNS),NA
-HNS,Hexanitrostilbene (HNS),NA
-JD-X,Hexanitrostilbene (HNS),NA
 Hexanitrostilbene (HNS),Hexanitrostilbene (HNS),NA
 HEXANITROSTILBENE (HNS),Hexanitrostilbene (HNS),NA
+HNS,Hexanitrostilbene (HNS),NA
+JD-X,Hexanitrostilbene (HNS),NA
 Hydrazine Nitrate,Hydrazine Nitrate,NA
 HYDRAZINE NITRATE,Hydrazine Nitrate,NA
 Hydrazine Perchlorate,Hydrazine Perchlorate,NA
@@ -451,9 +451,9 @@ LITHIUM NITRATE,Lithium Nitrate,NA
 Lithium Perchlorate,Lithium Perchlorate,NA
 LITHIUM PERCHLORATE,Lithium Perchlorate,NA
 MANNITOL HEXANITRATE,Mannitol Hexanitrate (MHN),NA
-MHN,Mannitol Hexanitrate (MHN),NA
 Mannitol Hexanitrate (MHN),Mannitol Hexanitrate (MHN),NA
 MANNITOL HEXANITRATE (MHN),Mannitol Hexanitrate (MHN),NA
+MHN,Mannitol Hexanitrate (MHN),NA
 Mercury Fulminate,Mercury Fulminate,NA
 MERCURY FULMINATE,Mercury Fulminate,NA
 MEKP,Methyl Ethyl Ketone Peroxide (MEKP),NA
@@ -468,10 +468,10 @@ Minex,Minex,NA
 MINEX,Minex,NA
 Minol,Minol,NA
 MINOL,Minol,NA
-N-Butyl-N-(2-Nitroxybutyl)Nitramine,N-Butyl-N-(2-Nitroxybutyl)Nitramine,NA
-N-BUTYL-N-(2-NITROXYBUTYL)NITRAMINE,N-Butyl-N-(2-Nitroxybutyl)Nitramine,NA
-N-Ethyl-N-(2-Nitroxyethyl)Nitramine,N-Ethyl-N-(2-Nitroxyethyl)Nitramine,NA
-N-ETHYL-N-(2-NITROXYETHYL)NITRAMINE,N-Ethyl-N-(2-Nitroxyethyl)Nitramine,NA
+N-Butyl-N-(2-Nitroxybutyl)Nitramine,N-Butyl-N-(2-Nitroxybutyl)Nitramine (BuNENA),NA
+N-BUTYL-N-(2-NITROXYBUTYL)NITRAMINE,N-Butyl-N-(2-Nitroxybutyl)Nitramine (BuNENA),NA
+N-Ethyl-N-(2-Nitroxyethyl)Nitramine,N-Ethyl-N-(2-Nitroxyethyl)Nitramine (EtNENA),NA
+N-ETHYL-N-(2-NITROXYETHYL)NITRAMINE,N-Ethyl-N-(2-Nitroxyethyl)Nitramine (EtNENA),NA
 MeNENA,N-Methyl-N-(2-Nitroxyethyl)Nitramine (MeNENA),NA
 MENENA,N-Methyl-N-(2-Nitroxyethyl)Nitramine (MeNENA),NA
 N-Methyl-N-(2-nitroxyethyl)nitramine,N-Methyl-N-(2-Nitroxyethyl)Nitramine (MeNENA),NA
@@ -480,31 +480,31 @@ N-Methyl-N-(2-Nitroxyethyl)Nitramine (MeNENA),N-Methyl-N-(2-Nitroxyethyl)Nitrami
 N-METHYL-N-(2-NITROXYETHYL)NITRAMINE (MENENA),N-Methyl-N-(2-Nitroxyethyl)Nitramine (MeNENA),NA
 Nitrocarbonitrate,Nitrocarbonitrate,NA
 NITROCARBONITRATE,Nitrocarbonitrate,NA
+NC,Nitrocellulose (NC),NA
 NITROCELLULOSE,Nitrocellulose (NC),NA
 Nitrocellulose (NC),Nitrocellulose (NC),NA
 NITROCELLULOSE (NC),Nitrocellulose (NC),NA
- NC,Nitrocellulose (NC),NA
 Nitroethane,Nitroethane,NA
 NITROETHANE,Nitroethane,NA
 Nitroethylpropanediol Dinitrate,Nitroethylpropanediol Dinitrate,NA
 NITROETHYLPROPANEDIOL DINITRATE,Nitroethylpropanediol Dinitrate,NA
 GLYCEROL TRINITRATE,Nitroglycerin (NG),NA
+NG,Nitroglycerin (NG),NA
 NITROGLYCERIN,Nitroglycerin (NG),NA
-NITROGLYCERINE,Nitroglycerin (NG),NA
 Nitroglycerin (NG),Nitroglycerin (NG),NA
 NITROGLYCERIN (NG),Nitroglycerin (NG),NA
- NG,Nitroglycerin (NG),NA
-Nitroglycerine,Nitroglycerine,NA
-NITROGLYCERINE,Nitroglycerine,NA
+NITROGLYCERINE,Nitroglycerin (NG),NA
+Nitroglycerine,Nitroglycerin (NG),NA
+NITROGLYCERINE,Nitroglycerin (NG),NA
 1-NITROGUANIDINE (NQ),Nitroguanidine (NQ),NA
 Nitroguanidine (NQ),Nitroguanidine (NQ),NA
 NITROGUANIDINE (NQ),Nitroguanidine (NQ),NA
-NIBTN,Nitroisobutylglycerol Trinitrate (NIBTN),NA
-NITROISOBUTAMETRIOL TRINITRATE,Nitroisobutylglycerol Trinitrate (NIBTN),NA
-NITROISOBUTYLGLYCEROL TRINITRATE,Nitroisobutylglycerol Trinitrate (NIBTN),NA
-TRIMETHYLOL NITROMETHANE TRINITRATE,Nitroisobutylglycerol Trinitrate (NIBTN),NA
-Nitroisobutylglycerol Trinitrate (NIBTN),Nitroisobutylglycerol Trinitrate (NIBTN),NA
-NITROISOBUTYLGLYCEROL TRINITRATE (NIBTN),Nitroisobutylglycerol Trinitrate (NIBTN),NA
+NIBTN,Nitroisobutylglycerol Trinitrate (NIBTN),No Practical Use
+NITROISOBUTAMETRIOL TRINITRATE,Nitroisobutylglycerol Trinitrate (NIBTN),No Practical Use
+NITROISOBUTYLGLYCEROL TRINITRATE,Nitroisobutylglycerol Trinitrate (NIBTN),No Practical Use
+Nitroisobutylglycerol Trinitrate (NIBTN),Nitroisobutylglycerol Trinitrate (NIBTN),No Practical Use
+NITROISOBUTYLGLYCEROL TRINITRATE (NIBTN),Nitroisobutylglycerol Trinitrate (NIBTN),No Practical Use
+TRIMETHYLOL NITROMETHANE TRINITRATE,Nitroisobutylglycerol Trinitrate (NIBTN),No Practical Use
 NITROMETHANE,Nitromethane (NM),NA
 Nitromethane (NM),Nitromethane (NM),NA
 NITROMETHANE (NM),Nitromethane (NM),NA
@@ -513,13 +513,13 @@ NITROMETHYLPROPANEDIOL DINITRATE,Nitromethylpropanediol Dinitrate,NA
 Nitrostarch,Nitrostarch,NA
 NITROSTARCH,Nitrostarch,NA
 4-NITROTOLUENE,Nitrotoluene (NT),NA
- Nitrotoluene,Nitrotoluene (NT),NA
- NITROTOLUENE,Nitrotoluene (NT),NA
- NT,Nitrotoluene (NT),NA
 MONONITROTOLUENE,Nitrotoluene (NT),NA
 MONONITROTOLUENES,Nitrotoluene (NT),NA
+Nitrotoluene,Nitrotoluene (NT),NA
+NITROTOLUENE,Nitrotoluene (NT),NA
 Nitrotoluene (NT),Nitrotoluene (NT),NA
 NITROTOLUENE (NT),Nitrotoluene (NT),NA
+NT,Nitrotoluene (NT),NA
 Nitrourea,Nitrourea,NA
 NITROUREA,Nitrourea,NA
 Octanitrocubane,Octanitrocubane,NA
@@ -531,17 +531,17 @@ PENTAERITRITOL TETRANITRATE,Pentaerythritol Tetranitrate (PETN),NA
 PENTAERYTHRITE TETRANITRATE,Pentaerythritol Tetranitrate (PETN),NA
 PENTAERYTHRITE TETRANITRATE (PETN),Pentaerythritol Tetranitrate (PETN),NA
 PENTAERYTHRITOL TETRANITRATE,Pentaerythritol Tetranitrate (PETN),NA
+Pentaerythritol Tetranitrate (PETN),Pentaerythritol Tetranitrate (PETN),NA
+PENTAERYTHRITOL TETRANITRATE (PETN),Pentaerythritol Tetranitrate (PETN),NA
 PENTAERYTHRITOLTETRANITRATE,Pentaerythritol Tetranitrate (PETN),NA
 PENTAERYTHRITYL TETRANITRATE,Pentaerythritol Tetranitrate (PETN),NA
 PENTAERYTHROL TETRANITRATE (PETN),Pentaerythritol Tetranitrate (PETN),NA
 PETN,Pentaerythritol Tetranitrate (PETN),NA
 PETN (PENTAERYTHRITOL TETRANITRATE),Pentaerythritol Tetranitrate (PETN),NA
-Pentaerythritol Tetranitrate (PETN),Pentaerythritol Tetranitrate (PETN),NA
-PENTAERYTHRITOL TETRANITRATE (PETN),Pentaerythritol Tetranitrate (PETN),NA
-PENTRINITROL,Pentaerythritol Trinitrate,NA
-PETRIN,Pentaerythritol Trinitrate,NA
-Pentaerythritol Trinitrate,Pentaerythritol Trinitrate,NA
-PENTAERYTHRITOL TRINITRATE,Pentaerythritol Trinitrate,NA
+Pentaerythritol Trinitrate,Pentaerythritol Trinitrate (PETriN),NA
+PENTAERYTHRITOL TRINITRATE,Pentaerythritol Trinitrate (PETriN),NA
+PENTRINITROL,Pentaerythritol Trinitrate (PETriN),NA
+PETRIN,Pentaerythritol Trinitrate (PETriN),NA
 Pentastit,Pentastit,NA
 PENTASTIT,Pentastit,NA
 Pentolite,Pentolite,NA
@@ -557,42 +557,42 @@ PICRATOL,Picratol,NA
 "2,4,6-TRINITROPHENOL (TNP)",Picric Acid (PA),NA
 "2,4,6-TRINITROPHENOL (TNP) EXPLOSIVE",Picric Acid (PA),NA
 "2,4,6-Trinitrpohenol",Picric Acid (PA),NA
-TNP,Picric Acid (PA),NA
-TRINITROPHENOL,Picric Acid (PA),NA
 PICRIC ACID,Picric Acid (PA),NA
-PICRIC ACIDS,Picric Acid (PA),NA
 Picric Acid (PA),Picric Acid (PA),NA
 PICRIC ACID (PA),Picric Acid (PA),NA
+PICRIC ACIDS,Picric Acid (PA),NA
+TNP,Picric Acid (PA),NA
+TRINITROPHENOL,Picric Acid (PA),NA
 "2-CHLORO-1,3,5-TRINITROBENZENE",Picryl Chloride,NA
 "2,4,6-TRINITROCHLOROBENZENE",Picryl Chloride,NA
-TRINITROCHLOROBENZENE,Picryl Chloride,NA
 Picryl Chloride,Picryl Chloride,NA
 PICRYL CHLORIDE,Picryl Chloride,NA
+TRINITROCHLOROBENZENE,Picryl Chloride,NA
 POLY-3-AZIDOMETHYL-3-METHYL-OXETANE,Poly-3-Azidomethyl-3-Methyl-Oxetane (polyAMMO),NA
-POLY-AMMO,Poly-3-Azidomethyl-3-Methyl-Oxetane (polyAMMO),NA
 Poly-3-Azidomethyl-3-Methyl-Oxetane (polyAMMO),Poly-3-Azidomethyl-3-Methyl-Oxetane (polyAMMO),NA
 POLY-3-AZIDOMETHYL-3-METHYL-OXETANE (POLYAMMO),Poly-3-Azidomethyl-3-Methyl-Oxetane (polyAMMO),NA
+POLY-AMMO,Poly-3-Azidomethyl-3-Methyl-Oxetane (polyAMMO),NA
 "POLY-3,3-BIS-(AZIDOMETHYL)-OXETANE","Poly-3,3-Bis-(Azidomethyl)-Oxetane (polyBAMO)",NA
-POLY-BAMO,"Poly-3,3-Bis-(Azidomethyl)-Oxetane (polyBAMO)",NA
 "Poly-3,3-Bis-(Azidomethyl)-Oxetane (polyBAMO)","Poly-3,3-Bis-(Azidomethyl)-Oxetane (polyBAMO)",NA
 "POLY-3,3-BIS-(AZIDOMETHYL)-OXETANE (POLYBAMO)","Poly-3,3-Bis-(Azidomethyl)-Oxetane (polyBAMO)",NA
+POLY-BAMO,"Poly-3,3-Bis-(Azidomethyl)-Oxetane (polyBAMO)",NA
 POLY(3-NITRATOMETHYL-3-METHYLOXETANE),Poly(3-Nitratomethyl-3-Methyloxetane) (polyNIMMO),NA
-POLYNIMMO,Poly(3-Nitratomethyl-3-Methyloxetane) (polyNIMMO),NA
 Poly(3-Nitratomethyl-3-Methyloxetane) (polyNIMMO),Poly(3-Nitratomethyl-3-Methyloxetane) (polyNIMMO),NA
 POLY(3-NITRATOMETHYL-3-METHYLOXETANE) (POLYNIMMO),Poly(3-Nitratomethyl-3-Methyloxetane) (polyNIMMO),NA
+POLYNIMMO,Poly(3-Nitratomethyl-3-Methyloxetane) (polyNIMMO),NA
 PGN,Poly(Glycidyl Nitrate) (polyGLYN),NA
 POLY(GLYCIDYL NITRATE),Poly(Glycidyl Nitrate) (polyGLYN),NA
-POLYGLYN,Poly(Glycidyl Nitrate) (polyGLYN),NA
 Poly(Glycidyl Nitrate) (polyGLYN),Poly(Glycidyl Nitrate) (polyGLYN),NA
 POLY(GLYCIDYL NITRATE) (POLYGLYN),Poly(Glycidyl Nitrate) (polyGLYN),NA
+POLYGLYN,Poly(Glycidyl Nitrate) (polyGLYN),NA
 PNP,Polynitropolyphenylene (PNP),NA
 POLYNITROPOLYPHENYLENE,Polynitropolyphenylene (PNP),NA
 Polynitropolyphenylene (PNP),Polynitropolyphenylene (PNP),NA
 POLYNITROPOLYPHENYLENE (PNP),Polynitropolyphenylene (PNP),NA
 POLYVINYL NITRATE,Polyvinyl Nitrate (PVN),NA
-PVN,Polyvinyl Nitrate (PVN),NA
 Polyvinyl Nitrate (PVN),Polyvinyl Nitrate (PVN),NA
 POLYVINYL NITRATE (PVN),Polyvinyl Nitrate (PVN),NA
+PVN,Polyvinyl Nitrate (PVN),NA
 Potassium Chlorate,Potassium Chlorate,NA
 POTASSIUM CHLORATE,Potassium Chlorate,NA
 Potassium Nitrate,Potassium Nitrate,NA
@@ -607,8 +607,8 @@ METHYLNITROGLYCOL,Propyleneglycol Dinitrate,NA
 PROPYLENEGLYCOL DINITRATE,Propyleneglycol Dinitrate,NA
 Silver Acetylide,Silver Acetylide,NA
 SILVER ACETYLIDE,Silver Acetylide,NA
-Silver Azide,Silver Azide,NA
-SILVER AZIDE,Silver Azide,NA
+Silver Azide,Silver Azide,No Practical Use
+SILVER AZIDE,Silver Azide,No Practical Use
 Silver Fulminate,Silver Fulminate,NA
 SILVER FULMINATE,Silver Fulminate,NA
 Sodatol,Sodatol,NA
@@ -622,11 +622,11 @@ SODIUM PERCHLORATE,Sodium Perchlorate,NA
 Strontium Nitrate,Strontium Nitrate,NA
 STRONTIUM NITRATE,Strontium Nitrate,NA
 "2,4,6-TRINITRO-1,3-DIHYDROXYBENZENE",Styphnic Acid,NA
+Styphnic Acid,Styphnic Acid,NA
+STYPHNIC ACID,Styphnic Acid,NA
 TNR,Styphnic Acid,NA
 TRINITRORESORCIN,Styphnic Acid,NA
 TRINITRORESORCINOL,Styphnic Acid,NA
-Styphnic Acid,Styphnic Acid,NA
-STYPHNIC ACID,Styphnic Acid,NA
 BNCP,Tetraamine-Cis-Bis(5-Nitro-2H-Tetrazolato) Cobalt(III) Perchlorate (BNCP),NA
 TETRAAMINE-CIS-BIS(5-NITRO-2H-TETRAZOLATO) COBALT(III) PERCHLORATE,Tetraamine-Cis-Bis(5-Nitro-2H-Tetrazolato) Cobalt(III) Perchlorate (BNCP),NA
 Tetraamine-Cis-Bis(5-Nitro-2H-Tetrazolato) Cobalt(III) Perchlorate (BNCP),Tetraamine-Cis-Bis(5-Nitro-2H-Tetrazolato) Cobalt(III) Perchlorate (BNCP),NA
@@ -636,43 +636,43 @@ TETRAMETHYLAMMONIUM NITRATE,Tetramethylammonium Nitrate,NA
 Tetramethylolcyclopentanone Tetranitrate,Tetramethylolcyclopentanone Tetranitrate,NA
 TETRAMETHYLOLCYCLOPENTANONE TETRANITRATE,Tetramethylolcyclopentanone Tetranitrate,NA
 TETRANITROCARBAZOLE,Tetranitrocarbazole (TNC),NA
-TNC,Tetranitrocarbazole (TNC),NA
 Tetranitrocarbazole (TNC),Tetranitrocarbazole (TNC),NA
 TETRANITROCARBAZOLE (TNC),Tetranitrocarbazole (TNC),NA
+TNC,Tetranitrocarbazole (TNC),NA
 TACOT,"Tetranitrodibenzo-1,3A,4,6A-Tetrazapentalene (TACOT)",NA
-"TETRANITRODIBENZO-1,3A,4,6A-TRETRAZAPENTALENE","Tetranitrodibenzo-1,3A,4,6A-Tetrazapentalene (TACOT)",NA
 "Tetranitrodibenzo-1,3A,4,6A-Tetrazapentalene (TACOT)","Tetranitrodibenzo-1,3A,4,6A-Tetrazapentalene (TACOT)",NA
 "TETRANITRODIBENZO-1,3A,4,6A-TETRAZAPENTALENE (TACOT)","Tetranitrodibenzo-1,3A,4,6A-Tetrazapentalene (TACOT)",NA
+"TETRANITRODIBENZO-1,3A,4,6A-TRETRAZAPENTALENE","Tetranitrodibenzo-1,3A,4,6A-Tetrazapentalene (TACOT)",NA
 SORGUYL,Tetranitroglycolurile (SORGUYL),NA
-TETRANITROGLYCOLURILE,Tetranitroglycolurile (SORGUYL),NA
 TETRANITROGLYCOLURIL,Tetranitroglycolurile (SORGUYL),NA
+TETRANITROGLYCOLURILE,Tetranitroglycolurile (SORGUYL),NA
 Tetranitroglycolurile (SORGUYL),Tetranitroglycolurile (SORGUYL),NA
 TETRANITROGLYCOLURILE (SORGUYL),Tetranitroglycolurile (SORGUYL),NA
 TETRANITROMETHANE,Tetranitromethane (TNM),NA
-TNM,Tetranitromethane (TNM),NA
 Tetranitromethane (TNM),Tetranitromethane (TNM),NA
 TETRANITROMETHANE (TNM),Tetranitromethane (TNM),NA
+TNM,Tetranitromethane (TNM),NA
 Tetranitronaphthalene,Tetranitronaphthalene,NA
 TETRANITRONAPHTHALENE,Tetranitronaphthalene,NA
 Tetrazene,Tetrazene,NA
 TETRAZENE,Tetrazene,NA
 PICRYLMETHYLNITRAMINE,Tetryl,NA
-"TRINITRO-2,4,6-PHENYLMETHYLNITRAMINE",Tetryl,NA
 Tetryl,Tetryl,NA
 TETRYL,Tetryl,NA
+"TRINITRO-2,4,6-PHENYLMETHYLNITRAMINE",Tetryl,NA
 Tetrytol,Tetrytol,NA
 TETRYTOL,Tetrytol,NA
 Torpex,Torpex,NA
 TORPEX,Torpex,NA
-"3,3,6,6,9,9-HEXAMETHYL-1,2,4,5,7,8-HEXOXONANE",Triacetone Triperoxide (TATP),Homemade
-TATP,Triacetone Triperoxide (TATP),Homemade
-TATP - D<SUB>18</SUB>,Triacetone Triperoxide (TATP),Homemade
-TATP - D18,Triacetone Triperoxide (TATP),Homemade
-TRIACETONE PEROXIDE,Triacetone Triperoxide (TATP),Homemade
-TRIACETONE TRIPEROXIDE,Triacetone Triperoxide (TATP),Homemade
-TRICYCLOACETONE PEROXIDE,Triacetone Triperoxide (TATP),Homemade
-Triacetone Triperoxide (TATP),Triacetone Triperoxide (TATP),Homemade
-TRIACETONE TRIPEROXIDE (TATP),Triacetone Triperoxide (TATP),Homemade
+"3,3,6,6,9,9-HEXAMETHYL-1,2,4,5,7,8-HEXOXONANE",Triacetone Triperoxide (TATP),No Practical Use
+TATP,Triacetone Triperoxide (TATP),No Practical Use
+TATP - D<SUB>18</SUB>,Triacetone Triperoxide (TATP),No Practical Use
+TATP - D18,Triacetone Triperoxide (TATP),No Practical Use
+TRIACETONE PEROXIDE,Triacetone Triperoxide (TATP),No Practical Use
+TRIACETONE TRIPEROXIDE,Triacetone Triperoxide (TATP),No Practical Use
+Triacetone Triperoxide (TATP),Triacetone Triperoxide (TATP),No Practical Use
+TRIACETONE TRIPEROXIDE (TATP),Triacetone Triperoxide (TATP),No Practical Use
+TRICYCLOACETONE PEROXIDE,Triacetone Triperoxide (TATP),No Practical Use
 TAGN,Triaminoguanidine Nitrate (TAGN),NA
 TRIAMINOGUANIDINE NITRATE,Triaminoguanidine Nitrate (TAGN),NA
 Triaminoguanidine Nitrate (TAGN),Triaminoguanidine Nitrate (TAGN),NA
@@ -697,8 +697,8 @@ TNA,Trinitroaniline (TNA),NA
 TRINITROANILINE,Trinitroaniline (TNA),NA
 Trinitroaniline (TNA),Trinitroaniline (TNA),NA
 TRINITROANILINE (TNA),Trinitroaniline (TNA),NA
-Trinitroanisole,Trinitroanisole,NA
-TRINITROANISOLE,Trinitroanisole,NA
+Trinitroanisole,Trinitroanisole,No Practical Use
+TRINITROANISOLE,Trinitroanisole,No Practical Use
 Trinitrobenzoic Acid,Trinitrobenzoic Acid,NA
 TRINITROBENZOIC ACID,Trinitrobenzoic Acid,NA
 Trinitromethane,Trinitromethane,NA

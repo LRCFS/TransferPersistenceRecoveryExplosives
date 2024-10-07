@@ -21,6 +21,7 @@ Scopus_data <- Scopus_data %>%
 
 Scopus_data <- Scopus_data %>%
   filter(between(Year,2001,2022)) 
+Scopus_data <- Scopus_data[1:100,]
 
 #############################################################
 ##### Correct Country Names and Create Affiliations List ####
@@ -37,10 +38,11 @@ Scopus_data$Affiliations <- gsub("United Kingdom", "UK", Scopus_data$Affiliation
 Scopus_data$Affiliations <- gsub("South Korea", "Korea South", Scopus_data$Affiliations, perl = TRUE)
 
 # replace ';' with ',' as multiple affiliations are separated with ';'
-Scopus_data$Affiliations <- gsub(";", ",", Scopus_data$Affiliations)
+ScopusAffiliations <- Scopus_data
+ScopusAffiliations <- gsub(";", ",", ScopusAffiliations$Affiliations)
 
 # split fields by ", "
-ScopusAffiliations <- sapply(Scopus_data$Affiliations, strsplit, split = ", ", USE.NAMES = FALSE)
+ScopusAffiliations <- sapply(ScopusAffiliations, strsplit, split = ", ", USE.NAMES = FALSE)
 
 # extract fields which match a known city making sure that diacritics aren't a problem...
 ScopusCityList <- lapply(ScopusAffiliations, function(x)x[which(removeDiacritics(x) %in% world.cities$name)])
@@ -73,7 +75,6 @@ Scopus_data$Country <-  gsub("character\\(0",NA,Scopus_data$Country)
 #Remove special characters and extra white spaces from Abstract, Title and AI Keywords
 Scopus_data$Abstract <- gsub('[^[:alnum:] ]', ' ', Scopus_data$Abstract)
 Scopus_data$Abstract <- gsub("\\s+", " ", Scopus_data$Abstract)
-
 Scopus_data$Abstract <- toupper(Scopus_data$Abstract)
 
 Scopus_data$Title <- gsub('[^[:alnum:] ]', ' ', Scopus_data$Title)
@@ -136,9 +137,6 @@ Scopus_data <- merge(Scopus_data, ScopusKeywordListCollapsed, all = TRUE)
 
 Scopus_data$KeywordsCorrected <- gsub('[^[:alnum:] ]', ' ', Scopus_data$KeywordsCorrected)
 Scopus_data$KeywordsCorrected <- gsub("\\s+", " ", Scopus_data$KeywordsCorrected)
-
-#### Split Explosive List by Military/Commercial and Home-made #####
-
 
 print("Scopus data prepared for figure generation")
 

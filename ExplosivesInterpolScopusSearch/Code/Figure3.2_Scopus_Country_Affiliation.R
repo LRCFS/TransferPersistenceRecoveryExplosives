@@ -4,7 +4,7 @@
 #######################################################
 ## generate plot of papers per country
 #threshold for Figure 
-threshold <- 10
+threshold <- 100
 
 ScopusCountryListUniqueFig3.2 <- data.frame(Country = removeDiacritics(unlist(ScopusCountryListUnique)), stringsAsFactors = FALSE)
 

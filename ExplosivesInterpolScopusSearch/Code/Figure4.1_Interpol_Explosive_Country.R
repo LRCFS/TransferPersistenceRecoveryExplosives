@@ -54,7 +54,7 @@ InterpolKeywordCountryPairCount <- subset(InterpolKeywordCountryPairCount, Count
 InterpolKeywordCount <- aggregate(InterpolKeywordCountryPairsReduced$Explosive_List_Corrected, by=list(Explosive_List_Corrected = InterpolKeywordCountryPairsReduced$Explosive_List_Corrected), FUN=length)
 
 #select the top 100 Explosive_List appearing in list
-#InterpolKeywordCount <- top_n(InterpolKeywordCount,100)
+InterpolKeywordCount <- top_n(InterpolKeywordCount,90)
 #write.csv(InterpolKeywordCount, file = "InterpolKeywordCount.csv", row.names = FALSE)
 
 # subset against the top list
@@ -66,26 +66,26 @@ InterpolKeywordCountryPairCountExplosiveSubset <- subset(InterpolKeywordCountryP
 # This part instead consider the top n countries and return their individual top n list of explosives reference list. They are then merged together in a list. 
 InterpolCountrySubset <- InterpolKeywordCountryTotal$Country
 # remove existing dataframe that may have been run on previous option selection
-rm(InterpolKeywordCount)
+rm(InterpolKeywordCountryPairsCountSubset)
 
 for (i in 1:length(InterpolCountrySubset)){
   
   InterpolKeywordCountryPairsCount_temp <- InterpolKeywordCountryPairsReduced %>%
-    filter(Country == InterpolCountrySubset[i])
+    filter(Country == InterpolCountrySubset[13])
   
   # count the number of match to the Explosive_List
   InterpolKeywordCountryPairsCount_temp <- aggregate(InterpolKeywordCountryPairsCount_temp$Explosive_List_Corrected, by=list(Explosive_List = InterpolKeywordCountryPairsCount_temp$Explosive_List_Corrected), FUN=length)
   
   #select the top 100 Explosive_List appearing in list
   InterpolKeywordCountryPairsCount_temp <- top_n(InterpolKeywordCountryPairsCount_temp,3)
-  InterpolKeywordCountryPairsCount_temp$Country <- InterpolCountrySubset[i]
+  InterpolKeywordCountryPairsCount_temp$Country <- InterpolCountrySubset[13]
   InterpolKeywordCountryPairsCount_temp <- InterpolKeywordCountryPairsCount_temp %>%
     select(Country,Explosive_List,x)
   # if the merged dataset doesn't exist, create it
   if (!exists("InterpolKeywordCountryPairsCountSubset")){
-    InterpolKeywordCountryPairsCountSubset <- InterpolKeywordCountryPairsCount_temp}
+    InterpolKeywordCountryPairsCountSubset <- InterpolKeywordCountryPairsCount_temp
   # if the merged dataset does exist, append to it
-  else {InterpolKeywordCountryPairsCountSubset <-rbind(InterpolKeywordCountryPairsCountSubset, InterpolKeywordCountryPairsCount_temp)
+  }else {InterpolKeywordCountryPairsCountSubset <-rbind(InterpolKeywordCountryPairsCountSubset, InterpolKeywordCountryPairsCount_temp)
     }
 }
   
@@ -163,9 +163,9 @@ InterpolExplosivesbyCountryPlot <- ggplot(InterpolExplosivesbyCountry_Graph,aes(
         legend.text=element_text(colour=textcol,size=8),
         legend.key.height=grid::unit(0.8,"cm"),
         legend.key.width=grid::unit(0.2,"cm"),
-        axis.text.y=element_text(size=5, vjust=0.2, colour=InterpolKeywordOrder$Colour),
+        axis.text.y=element_text(size=6, vjust=0.2, colour=InterpolKeywordOrder$Colour),
         axis.ticks=element_line(size=0.4),
-        plot.background=element_blank(),  # element_rect(fill, colour, size, linetype, color))
+        plot.background=element_blank(),
         panel.border=element_blank(),
         plot.margin=margin(0.7,0.4,0.1,0.2,"cm"),
         plot.title=element_text(colour=textcol,hjust=0,size=6),
@@ -176,6 +176,6 @@ show(InterpolExplosivesbyCountryPlot)
 #save figure
 Var1 <- paste0("Fig_4.1_Interpol_Explosive_Country")
 
-ggsave(paste0(Figure.dir,sprintf("%s.tiff",Var1)), InterpolExplosivesbyCountryPlot, width = 7.5, height = 8.5, units = "in", dpi=300)
+ggsave(paste0(Figure.dir,sprintf("%s.tiff",Var1)), InterpolExplosivesbyCountryPlot, width = 8, height = 9.5, units = "in", dpi=300)
 
 print("Processing complete. Please check 'Figures/' folder for output")
