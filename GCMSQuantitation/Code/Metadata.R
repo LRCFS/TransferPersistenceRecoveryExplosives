@@ -53,6 +53,38 @@ CalibrationValues <- CombinedResults %>%
 
 for (d in NumCal){
   if(d == 1){
+    CalibrationValues$CalNum <-   assign(paste0("Cal", d), CombinedResults[which(CombinedResults$SampleType=='Cal', arr.ind=TRUE)[d:CalLevels],][1,1])
+  }
+  
+  
+  else{Num <- (CalLevels*d-(CalLevels-1))
+  assign(paste0("Cal", d), CombinedResults[which(CombinedResults$SampleType=='Cal', arr.ind=TRUE)[Num:(Num+6)],])}
+}
+
+Test1 <- data.frame(matrix(ncol = 2, nrow = 0))
+names(Test1)[1] <- "CalStart"
+names(Test1)[2] <- "CalEnd"
+TestVar1 <- as.numeric("-1")
+TestVar2 <- as.numeric("-1")
+
+for (d in 1:nrow(CombinedResults)){
+  if (CombinedResults[d,3]=='Cal' && TestVar1 == "-1"){
+  TestVar1 <- d}
+  else if (CombinedResults[d,3] !='Cal' && TestVar1 != "-1"){
+    Test1[d,1] <- TestVar1
+    Test1[d,2] <- d-1
+    TestVar1 <- "-1"
+  }
+}
+
+Test1 <- Test1[complete.cases(Test1),]
+
+
+
+
+
+for (d in NumCal){
+  if(d == 1){
   CalibrationValues$CalNum <-   assign(paste0("Cal", d), CombinedResults[which(CombinedResults$SampleType=='Cal', arr.ind=TRUE)[d:CalLevels],])
   }
   
@@ -61,13 +93,28 @@ for (d in NumCal){
     assign(paste0("Cal", d), CombinedResults[which(CombinedResults$SampleType=='Cal', arr.ind=TRUE)[Num:(Num+6)],])}
 }
 
-list
+#For x in 1:nrow(Test1){
+ # Test1[x,]
 
-for (d in NumCal){
+CalList <- as.list("1","2")
+
+CalPartition <- list()
+  
+for (d in 1:nrow(Test1)){
+CalPartition <- (CombinedResults[Test1[d,1]:Test1[d,2],])
+if (exists("CalSelection")){
+  CalSelection[[length(CalSelection)+1]] <- CalPartition
+}
+else {CalSelection <- as.list(CalPartition)}
+}
+
+
+
+#####for (d in NumCal){
   # filter the calibration out of data
   calibrationValues <- CombinedResults[Cal"d",] %>%
     filter(CombinedResults$Type=="Cal")
-}
+######}
   # bind calibration range and GC output together
   CalibrationData <- cbind(calibration,calibrationValues)
   
