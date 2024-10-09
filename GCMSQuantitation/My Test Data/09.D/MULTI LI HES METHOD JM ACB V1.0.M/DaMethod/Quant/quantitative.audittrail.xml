@@ -1,0 +1,733 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<AuditTrail hashCode="6A7789D4D07DB266C74D34921744AB987D324303A4BFD24BAB31BC3673233CC53EAFE9A8B83E9BB23396D9BA03F60AC29F2170EBE8051EBA8C0FEA26A3C628CA" SchemaVersion="131073">
+  <AuditTrailEntries>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>9734c638-1543-4530-bbcf-c50a570ba4e4</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:42:13.1233777-07:00</LocalTime>
+      <Category>CmdImportMethodFromAcquisition</Category>
+      <CommandName>CmdImportMethodFromAcquisition</CommandName>
+      <Description>Import method from acquisition using sample D:\MassHunter\GCMS\1\data\ESDI\Gerstel Development\20230721\001.D</Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdImportMethodFromAcquisition</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>15a91f5e-9e1b-4c2a-a8a3-b91cbbf27442</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:42:59.8163222-07:00</LocalTime>
+      <Category>CmdAddMethodTargetCompound</Category>
+      <CommandName>CmdAddMethodTargetCompound</CommandName>
+      <Description>Add compoundId = 2</Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdAddMethodTargetCompound</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>5e4eb4b2-a255-41d2-b775-70c0796ece74</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:43:15.678098-07:00</LocalTime>
+      <Category>CmdSetMethodTargetCompoundAttribute</Category>
+      <CommandName>CmdSetMethodTargetCompoundAttribute</CommandName>
+      <Description>No parameter change for CompoundName</Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdSetMethodTargetCompoundAttribute</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>e9106c2b-31b8-4b72-8063-476c3ce6ad90</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:43:21.3799891-07:00</LocalTime>
+      <Category>CmdRemoveMethodTargetCompound</Category>
+      <CommandName>CmdRemoveMethodTargetCompound</CommandName>
+      <Description>Remove compoundId = 2</Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdRemoveMethodTargetCompound</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>0e217416-5020-450b-964a-c5d4c2e58d08</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:43:24.70829-07:00</LocalTime>
+      <Category>CmdAddMethodCalibration</Category>
+      <CommandName>CmdAddMethodCalibration</CommandName>
+      <Description>Add calibration levelId = 0 to compound Compound_2</Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdAddMethodCalibration</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>29ffbb59-8c0c-4818-a89f-e05dd0e9a7b0</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:43:31.3825144-07:00</LocalTime>
+      <Category>CmdSetMethodCalibrationAttribute</Category>
+      <CommandName>CmdSetMethodCalibrationAttribute</CommandName>
+      <Description>Set LevelName = E100 for calibration level E100, levelId = 0 of compound Compound_2 in sample 001.D; previous value = </Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdSetMethodCalibrationAttribute</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>2335ad3e-4505-4c40-bce2-71fbbc4e59f0</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:43:33.4328761-07:00</LocalTime>
+      <Category>CmdSetMethodCalibrationAttribute</Category>
+      <CommandName>CmdSetMethodCalibrationAttribute</CommandName>
+      <Description>Set LevelConcentration = 100 for calibration level E100, levelId = 0 of compound Compound_2 in sample 001.D; previous value = </Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdSetMethodCalibrationAttribute</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>65e5f55e-827f-44ed-95e4-2788ea59a257</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:43:45.2340098-07:00</LocalTime>
+      <Category>CmdAddMethodCalibration</Category>
+      <CommandName>CmdAddMethodCalibration</CommandName>
+      <Description>Add calibration levelId = 1 to compound Compound_2</Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdAddMethodCalibration</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>1db0fc44-254b-495b-b5cf-33db2b1d1646</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:43:47.21767-07:00</LocalTime>
+      <Category>CmdAddMethodCalibration</Category>
+      <CommandName>CmdAddMethodCalibration</CommandName>
+      <Description>Add calibration levelId = 2 to compound Compound_2</Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdAddMethodCalibration</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>8e93624f-3c5e-4d57-851c-5de3b71beb93</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:43:48.6459499-07:00</LocalTime>
+      <Category>CmdAddMethodCalibration</Category>
+      <CommandName>CmdAddMethodCalibration</CommandName>
+      <Description>Add calibration levelId = 3 to compound Compound_2</Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdAddMethodCalibration</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>1b7054c1-e401-48a0-8463-867eaf5f495b</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:43:50.901172-07:00</LocalTime>
+      <Category>CmdAddMethodCalibration</Category>
+      <CommandName>CmdAddMethodCalibration</CommandName>
+      <Description>Add calibration levelId = 4 to compound Compound_2</Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdAddMethodCalibration</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>975594e9-22d0-4e40-aabf-ee0b0d2dd244</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:43:57.2135401-07:00</LocalTime>
+      <Category>CmdSetMethodCalibrationAttribute</Category>
+      <CommandName>CmdSetMethodCalibrationAttribute</CommandName>
+      <Description>Set LevelName = E50 for calibration level E50, levelId = 4 of compound Compound_2 in sample 001.D; previous value = </Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdSetMethodCalibrationAttribute</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>e2d78cdb-fb07-4d19-90ae-fce87d03c55e</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:44:02.033272-07:00</LocalTime>
+      <Category>CmdSetMethodCalibrationAttribute</Category>
+      <CommandName>CmdSetMethodCalibrationAttribute</CommandName>
+      <Description>Set LevelConcentration = 50 for calibration level E50, levelId = 4 of compound Compound_2 in sample 001.D; previous value = </Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdSetMethodCalibrationAttribute</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>894391b4-9fae-47fe-9455-4d78331cb420</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:44:05.5088197-07:00</LocalTime>
+      <Category>CmdSetMethodCalibrationAttribute</Category>
+      <CommandName>CmdSetMethodCalibrationAttribute</CommandName>
+      <Description>Set LevelName = E25 for calibration level E25, levelId = 3 of compound Compound_2 in sample 001.D; previous value = </Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdSetMethodCalibrationAttribute</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>818ab91a-6264-4683-8222-a25dd126aa7f</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:44:12.5055408-07:00</LocalTime>
+      <Category>CmdSetMethodCalibrationAttribute</Category>
+      <CommandName>CmdSetMethodCalibrationAttribute</CommandName>
+      <Description>Set LevelConcentration = 25 for calibration level E25, levelId = 3 of compound Compound_2 in sample 001.D; previous value = </Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdSetMethodCalibrationAttribute</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>ac1a53fc-0bea-4b26-a508-7da31a7c2138</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:44:18.6663259-07:00</LocalTime>
+      <Category>CmdSetMethodCalibrationAttribute</Category>
+      <CommandName>CmdSetMethodCalibrationAttribute</CommandName>
+      <Description>Set LevelName = E10 for calibration level E10, levelId = 2 of compound Compound_2 in sample 001.D; previous value = </Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdSetMethodCalibrationAttribute</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>5bd5439a-a52c-497b-a7cd-a09d1cbf8a9c</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:44:19.9720081-07:00</LocalTime>
+      <Category>CmdSetMethodCalibrationAttribute</Category>
+      <CommandName>CmdSetMethodCalibrationAttribute</CommandName>
+      <Description>Set LevelConcentration = 10 for calibration level E10, levelId = 2 of compound Compound_2 in sample 001.D; previous value = </Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdSetMethodCalibrationAttribute</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>837d096f-0cdf-4669-8d39-3d411b266857</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:44:23.1940202-07:00</LocalTime>
+      <Category>CmdSetMethodCalibrationAttribute</Category>
+      <CommandName>CmdSetMethodCalibrationAttribute</CommandName>
+      <Description>Set LevelName = E5 for calibration level E5, levelId = 1 of compound Compound_2 in sample 001.D; previous value = </Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdSetMethodCalibrationAttribute</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>cd3563b4-129a-44d4-ab2a-2a862af8d8e5</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:44:24.8033325-07:00</LocalTime>
+      <Category>CmdSetMethodCalibrationAttribute</Category>
+      <CommandName>CmdSetMethodCalibrationAttribute</CommandName>
+      <Description>Set LevelName = 
+ for calibration level 
+, levelId = 3 of compound Compound_2 in sample 001.D; previous value = E25</Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdSetMethodCalibrationAttribute</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>9f75b7a6-8e6a-41a7-89f0-e3bd33def464</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:44:29.1070259-07:00</LocalTime>
+      <Category>CmdSetMethodCalibrationAttribute</Category>
+      <CommandName>CmdSetMethodCalibrationAttribute</CommandName>
+      <Description>Set LevelName = E25 for calibration level E25, levelId = 3 of compound Compound_2 in sample 001.D; previous value = 
+</Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdSetMethodCalibrationAttribute</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>69ae3279-a5e7-423c-b702-1b84a02d5b9f</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:44:37.484202-07:00</LocalTime>
+      <Category>CmdSetMethodCalibrationAttribute</Category>
+      <CommandName>CmdSetMethodCalibrationAttribute</CommandName>
+      <Description>Set LevelConcentration = 5 for calibration level E5, levelId = 1 of compound Compound_2 in sample 001.D; previous value = </Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdSetMethodCalibrationAttribute</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>8f7f0afb-6edb-4cb6-9894-5417ace509da</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:44:45.5276513-07:00</LocalTime>
+      <Category>CmdAddMethodCalibration</Category>
+      <CommandName>CmdAddMethodCalibration</CommandName>
+      <Description>Add calibration levelId = 5 to compound Compound_2</Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdAddMethodCalibration</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>90507d9f-2ef2-4d96-a833-3be964be07f4</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:44:51.5050671-07:00</LocalTime>
+      <Category>CmdSetMethodCalibrationAttribute</Category>
+      <CommandName>CmdSetMethodCalibrationAttribute</CommandName>
+      <Description>Set LevelName = E1 for calibration level E1, levelId = 5 of compound Compound_2 in sample 001.D; previous value = </Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdSetMethodCalibrationAttribute</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>63235075-5eb3-4b6c-b8ed-ab4a4aa0a61d</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:44:57.535831-07:00</LocalTime>
+      <Category>CmdSetMethodCalibrationAttribute</Category>
+      <CommandName>CmdSetMethodCalibrationAttribute</CommandName>
+      <Description>Set LevelConcentration = 1 for calibration level E1, levelId = 5 of compound Compound_2 in sample 001.D; previous value = </Description>
+      <Reason />
+      <EntityName />
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdSetMethodCalibrationAttribute</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+    <AuditTrailEntry>
+      <SchemaVersion>131073</SchemaVersion>
+      <ID>912b5fde-9679-43c6-ba38-faae5a568d5b</ID>
+      <UserName>ISA06016982\User</UserName>
+      <FullName>ISA06016982\User</FullName>
+      <HostName>ISA06016982</HostName>
+      <LocalTime>2023-07-25T11:45:44.2841121-07:00</LocalTime>
+      <Category>CmdSaveMethodAs</Category>
+      <CommandName>CmdSaveMethodAs</CommandName>
+      <Description>Save method to file D:\MassHunter\GCMS\1\methods\ESDI\HES Evaluation\EGDN JM PW v1.M</Description>
+      <Reason />
+      <EntityName>D:\MassHunter\GCMS\1\methods\ESDI\HES Evaluation\EGDN JM PW v1.M</EntityName>
+      <EntityRevisionNumber />
+      <EntityVersion>2023-0725-1842-13107</EntityVersion>
+      <SwVersion>12.0.893.1</SwVersion>
+      <SwName>MassHunter Quantitative Analysis</SwName>
+      <ProjectId>0</ProjectId>
+      <ProjectName />
+      <InstrumentType />
+      <InstrumentName />
+      <EntryType>CmdSaveMethodAs</EntryType>
+      <IsNew>true</IsNew>
+      <ReviewComment />
+      <ReviewedBy />
+      <ReviewTime />
+      <Succeeded>true</Succeeded>
+      <Error />
+      <Exception />
+    </AuditTrailEntry>
+  </AuditTrailEntries>
+</AuditTrail>
