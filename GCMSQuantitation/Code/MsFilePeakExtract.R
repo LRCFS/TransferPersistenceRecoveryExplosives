@@ -53,8 +53,8 @@ DataTicRentention <- GcDataCodeOrdered %>%
   select(RetentionTime, TIC) %>%
   distinct()
 
-  DataTicRentention <- DataTicRentention %>%
-    filter(RetentionTime > 365 & RetentionTime < 750)
+ # DataTicRentention <- DataTicRentention %>%
+ #   filter(RetentionTime > 365 & RetentionTime < 750)
   
 # # plot figure including all data
   p <- ggplot(DataTicRentention, aes(RetentionTime, TIC))+
@@ -63,7 +63,19 @@ DataTicRentention <- GcDataCodeOrdered %>%
   panel.grid.major = element_blank(),
   panel.grid.minor = element_blank()) +
   labs (x ="Retention Time (s)", y = "Abundance")
-  # show(p)
+   show(p)
+   ggsave(
+     sprintf("%s_BL.tiff",GcDataName),
+     plot = p,
+     device = NULL,
+     path = file.path(GCSampleTrace.dir),
+     scale = 1,
+     width = 7.5,
+     height = 5.0,
+     units = c("in"),
+     dpi = 300,
+     limitsize = TRUE
+   )
 
  # smoothDataLowess <- data.frame(lowess(DataTicRentention$RetentionTime,DataTicRentention$TIC, f=0.001))
  # p <- ggplot(smoothDataLowess, aes(x, y))+
@@ -128,8 +140,8 @@ DataTicRentention <- GcDataCodeOrdered %>%
  # https://cran.r-project.org/web/packages/baseline/baseline.pdf
  # method should be: “als”, “fillPeaks”, “irls”, “lowpass”, “medianWindow”, “modpolyfit”, “peakDetection”, “rfbaseline”, “rollingBall”, “shirley”, “TAP”
  
- baseline.peakDetection <- baseline(tempFileDataTICmatrix[1,, drop=FALSE], method='peakDetection', snminimum=1000,
-                                     left=30, right=350, lwin=60, rwin=300)
+ baseline.peakDetection <- baseline(tempFileDataTICmatrix[1,, drop=FALSE], method='peakDetection', snminimum=100,
+                                     left=5, right=350, lwin=5, rwin=350)
  
  #baseline.peakDetection <- baseline(tempFileDataTICmatrix[1,, drop=FALSE], method='rollingBall',  wm=150, ws=40)
  
@@ -160,10 +172,10 @@ DataTicRentention <- GcDataCodeOrdered %>%
  p <- ggplot(Combined.bc.fillPeak, aes(x=RetentionTime)) +
    geom_line(aes(y = TIC, colour = "GC trace")) +
    geom_line(aes(y = BaselineTrend, colour = "baseline")) +
-   ylim(0,25000) +
-   xlim(350,750)
+   ylim(10000,20000) +
+   xlim(150,600)
  
- # show(p)
+  show(p)
  # When running single file don't run line below (skip to ggsave)
  #  GcDataName <- gsub('.{4}$', '', GcDataName)
  ggsave(
@@ -179,7 +191,7 @@ DataTicRentention <- GcDataCodeOrdered %>%
    limitsize = TRUE
  )
 
- 
+} 
 # # convert data to hyperSpec format
 # file <- as.data.frame(DataTicRentention)
 # temp_hyper_0 <- new ("hyperSpec", wavelength = file [,1], spc = t (file [, -1]))

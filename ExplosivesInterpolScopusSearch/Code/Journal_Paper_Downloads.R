@@ -13,7 +13,7 @@ for(d in 297:nrow(PropPapers)){
   link <- paste("https://api.wiley.com/onlinelibrary/tdm/v1/articles/",doi, sep ="")
   FileName <- paste("Papers/",doi,".pdf",sep="")
   req <- request(link) %>%
-    req_headers(`Wiley-TDM-Client-Token` = 'b082a446-7d79-4b13-93d1-6fc06b5f51eb') %>%
+    req_headers(`Wiley-TDM-Client-Token` = '###############################') %>%
     req_throttle(rate = 20 / 60)
   resp <- req_perform(req)
   resp <- resp_body_raw(resp)

@@ -28,11 +28,11 @@ GcResults$DataName <- as.numeric(GcResults$DataName)
 CombinedResults <- full_join(Metadata,GcResults)
 
 # peak area ratios
-CombinedResults$ratio <- CombinedResults$PA/CombinedResults$I.S.PA
-
+CombinedResults$ratio <- as.numeric(CombinedResults$PA/CombinedResults$I.S.PA)
 
 # To read simulated data
-# CombinedResults <-read.csv2("Results/CombinedResultsFALSE.csv",header = T, sep = ",")
+#CombinedResults <-read.csv2("Results/CombinedResultsFALSE.csv",header = T, sep = ",")
+CombinedResults$ratio <- as.numeric(CombinedResults$ratio)
 
 #Determine how many calibrations are in the data
 # calibration range
@@ -45,111 +45,72 @@ calibration$calibration <- as.numeric(calibration$calibration)
 #Number of calibration standards
 CalLevels <- nrow(calibration)
 
-NumCal <- as.list(1:(nrow(calibrationValues <- CombinedResults %>%
+NumCal <- as.list(1:(nrow(CalibrationValues <- CombinedResults %>%
                  filter(CombinedResults$Type=="Cal"))/CalLevels))
 
-CalibrationValues <- CombinedResults %>%
-  filter(CombinedResults$Type=="Cal")
+Cals <- list()
 
-for (d in NumCal){
-  if(d == 1){
-    CalibrationValues$CalNum <-   assign(paste0("Cal", d), CombinedResults[which(CombinedResults$SampleType=='Cal', arr.ind=TRUE)[d:CalLevels],][1,1])
-  }
-  
-  
-  else{Num <- (CalLevels*d-(CalLevels-1))
-  assign(paste0("Cal", d), CombinedResults[which(CombinedResults$SampleType=='Cal', arr.ind=TRUE)[Num:(Num+6)],])}
-}
-
-Test1 <- data.frame(matrix(ncol = 2, nrow = 0))
-names(Test1)[1] <- "CalStart"
-names(Test1)[2] <- "CalEnd"
-TestVar1 <- as.numeric("-1")
-TestVar2 <- as.numeric("-1")
-
-for (d in 1:nrow(CombinedResults)){
-  if (CombinedResults[d,3]=='Cal' && TestVar1 == "-1"){
-  TestVar1 <- d}
-  else if (CombinedResults[d,3] !='Cal' && TestVar1 != "-1"){
-    Test1[d,1] <- TestVar1
-    Test1[d,2] <- d-1
-    TestVar1 <- "-1"
-  }
-}
-
-Test1 <- Test1[complete.cases(Test1),]
-
-
-
-
-
-for (d in NumCal){
-  if(d == 1){
-  CalibrationValues$CalNum <-   assign(paste0("Cal", d), CombinedResults[which(CombinedResults$SampleType=='Cal', arr.ind=TRUE)[d:CalLevels],])
-  }
-  
-  
-  else{Num <- (CalLevels*d-(CalLevels-1))
-    assign(paste0("Cal", d), CombinedResults[which(CombinedResults$SampleType=='Cal', arr.ind=TRUE)[Num:(Num+6)],])}
-}
-
-#For x in 1:nrow(Test1){
- # Test1[x,]
-
-CalList <- as.list("1","2")
-
-CalPartition <- list()
-  
-for (d in 1:nrow(Test1)){
-CalPartition <- (CombinedResults[Test1[d,1]:Test1[d,2],])
-if (exists("CalSelection")){
-  CalSelection[[length(CalSelection)+1]] <- CalPartition
-}
-else {CalSelection <- as.list(CalPartition)}
-}
-
-
-
-#####for (d in NumCal){
-  # filter the calibration out of data
-  calibrationValues <- CombinedResults[Cal"d",] %>%
-    filter(CombinedResults$Type=="Cal")
-######}
-  # bind calibration range and GC output together
-  CalibrationData <- cbind(calibration,calibrationValues)
-  
+for (i in NumCal){
+  Num <- (CalLevels*i-(CalLevels-1))
+  Cals[[i]] <- CombinedResults[which(CombinedResults$SampleType=='Cal', arr.ind=TRUE)[Num:(Num+6)],]
+  CalData <- Cals[[i]]
+  Cals[[i]] <- cbind(calibration,CalData)
   # determine the quadratic fit 
-  model <- lm(CalibrationData$ratio ~ poly(CalibrationData$calibration, degree = 2, raw = T))
+  model <- lm(Cals[[i]]$ratio ~ poly(Cals[[i]]$calibration, degree = 2, raw = T))
   
   # extract the values from list
   QuadraticValues <- model[[1]]
   
-  # convert to dataframe
-  QuadraticValues <- as.data.frame(QuadraticValues)
-  
-  
-}
-
-
+   if (exists("AllQuadraticValues")){
+      AllQuadraticValues[[i]] <- as.data.frame(QuadraticValues)
+      } else {AllQuadraticValues <- as.list("NA")
+       AllQuadraticValues[[i]] <- as.data.frame(QuadraticValues)
+       }
+  }
+  #Associate the data with the correct calibration
+  for (i in NumCal){ 
+   if (i < length(NumCal)) {  
+      if (exists("SampleBrackets")) {
+      SampleBrackets[[i]] <- as.data.frame(CombinedResults[(Cals[[i]][CalLevels,2]+1):(Cals[[i+1]][1,2]-1), ])
+      } else {
+        SampleBrackets <- list()
+        SampleBrackets[[i]] <- as.data.frame(CombinedResults[(Cals[[i]][CalLevels,2]+1):(Cals[[i+1]][1,2]-1), ])
+      }
+    } else { 
+      if (exists("SampleBrackets")) {
+          SampleBrackets[[i]] <- as.data.frame(CombinedResults[(Cals[[i]][CalLevels,2]+1):nrow(CombinedResults), ])
+    } else {
+      SampleBrackets <- as.list("NA")
+      SampleBrackets[[i]] <- as.data.frame(CombinedResults[(Cals[[i]][CalLevels,2]+1):nrow(CombinedResults), ])     } 
+    }
+  }
 
 
 # solving for x the quadractic equation: y = c*x^2 + b*x + a
 # x = (±(b^2+4c(y−a))^(1/2)−b)/2c
 # The order from the list [1], [2] and [3] are for a, b and c
 # only the positive part of the equation is considered
-CombinedResults$ValuesPositive <- (((QuadraticValues$QuadraticValues[2])^2 + 4*QuadraticValues$QuadraticValues[3]*(CombinedResults$ratio-QuadraticValues$QuadraticValues[1]))^(1/2)-QuadraticValues$QuadraticValues[2])/(2*QuadraticValues$QuadraticValues[3])
 
-CalibrationData$ValuesPositive <- (((QuadraticValues$QuadraticValues[2])^2 + 4*QuadraticValues$QuadraticValues[3]*(CalibrationData$ratio-QuadraticValues$QuadraticValues[1]))^(1/2)-QuadraticValues$QuadraticValues[2])/(2*QuadraticValues$QuadraticValues[3])
+for (i in NumCal){
+SampleBrackets[[i]]$ValuesPositive <- (((AllQuadraticValues[[i]][2,1])^2 + 4*(AllQuadraticValues[[i]][3,1])*(SampleBrackets[[i]]$ratio-(AllQuadraticValues[[i]][1,1])))^(1/2)-(AllQuadraticValues[[i]][2,1]))/(2*(AllQuadraticValues[[i]][3,1]))
 
-# filter out the sample only results
-sample.data <- CombinedResults %>%
-  filter(CombinedResults$Type =="Sample")
+Cals[[i]]$ValuesPositive <- (((AllQuadraticValues[[i]][2,1])^2 + 4*(AllQuadraticValues[[i]][3,1])*(Cals[[i]]$ratio-(AllQuadraticValues[[i]][1,1])))^(1/2)-(AllQuadraticValues[[i]][2,1]))/(2*(AllQuadraticValues[[i]][3,1]))
+
+if (i==1){
+  CombinedResults <- bind_rows(SampleBrackets[[i]],Cals[[i]])
+} else {
+  CombinedResults <- bind_rows(CombinedResults, SampleBrackets[[i]], Cals[[i]])
+}
+
+CombinedResults <- CombinedResults[order(CombinedResults$X), ]
+CombinedResults <- CombinedResults[complete.cases(CombinedResults[ , c('ValuesPositive')]), ] 
+SampleBrackets[[i]] <- SampleBrackets[[i]][complete.cases(SampleBrackets[[i]][ , c('ValuesPositive')]), ] 
 
 # plot the results for the metadata
 p<- ggplot() + 
-  geom_point(data=CalibrationData, aes(x=calibration, y=ratio), colour="red") + 
-  geom_line(data=CalibrationData, aes(x=ValuesPositive, y=ratio), colour="green") +
-  geom_point(data=sample.data, aes(x = ValuesPositive, y=ratio), colour="black", size=2) +
+  geom_point(data=Cals[[i]][1:CalLevels,], aes(x=calibration, y=ratio), colour="red") + 
+  geom_line(data=Cals[[i]][1:CalLevels,], aes(x=ValuesPositive, y=ratio), colour="green") +
+  geom_point(data=SampleBrackets[[i]], aes(x = ValuesPositive, y=ratio), colour="black", size=2) +
   theme_bw() +
   ylab("Etizolam - Internal Standard peak area ratio / arb. unit") +
   xlab(bquote("Concentration Etizolam /" ~mu~g%.%mL^{-1})) +
@@ -160,7 +121,7 @@ p<- ggplot() +
 filenameMetadata <- gsub('\\..*', '', filenameMetadata)
 filenameMetadata <- gsub('\\//*', '-', filenameMetadata)
 ggsave(
-  sprintf("%s.tiff",filenameMetadata),
+  sprintf(paste0(i,"%s.tiff"),filenameMetadata),
   plot = p,
   device = NULL,
   path = file.path(MetadataOutput.dir),
@@ -171,11 +132,12 @@ ggsave(
   dpi = 300,
   limitsize = TRUE
 )
+}
 
 #Add columns to account for dilution, convert to mg and calculate total etizolam in sample 
 CombinedResults$CorrectedConcentration <- CombinedResults$ValuesPositive * CombinedResults$Dilution
 CombinedResults$ConcentrationMg <- CombinedResults$CorrectedConcentration /1000
-CombinedResults$SampleTotal <- CombinedResults$ConcentrationMg * CombinedResults$Volume
+CombinedResults$SampleTotal <- as.numeric(CombinedResults$ConcentrationMg) * as.numeric(CombinedResults$Volume)
 
 # If a tablet or powder calculate % Etizolam in total sample and total Etizolam (in mg) in original Tablet/Powder
 CombinedResults$EtizolamPercentage <- NA

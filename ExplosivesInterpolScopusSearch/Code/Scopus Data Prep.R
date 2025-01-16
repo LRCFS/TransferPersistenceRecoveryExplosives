@@ -19,9 +19,8 @@ Scopus_data <- Scopus_data %>%
   select(Year,Title,Source.title,Authors,Affiliations,AuthorID,Abstract,Author.Keywords,Index.Keywords,EID,DOI)%>%
   distinct()
 
-Scopus_data <- Scopus_data %>%
-  filter(between(Year,2001,2022)) 
-Scopus_data <- Scopus_data[1:100,]
+#Scopus_data <- Scopus_data %>%
+ # filter(between(Year,2001,2022)) 
 
 #############################################################
 ##### Correct Country Names and Create Affiliations List ####
@@ -137,6 +136,11 @@ Scopus_data <- merge(Scopus_data, ScopusKeywordListCollapsed, all = TRUE)
 
 Scopus_data$KeywordsCorrected <- gsub('[^[:alnum:] ]', ' ', Scopus_data$KeywordsCorrected)
 Scopus_data$KeywordsCorrected <- gsub("\\s+", " ", Scopus_data$KeywordsCorrected)
+
+ScopusAuthKey <- Scopus_data
+ScopusAuthKey$AIKeywords[ScopusAuthKey$AIKeywords==""] <- NA
+ScopusAuthKey <- ScopusAuthKey %>%
+  filter(!is.na(AIKeywords))
 
 print("Scopus data prepared for figure generation")
 

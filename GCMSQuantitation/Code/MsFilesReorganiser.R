@@ -3,8 +3,8 @@
 # This code will convert the MS1 files to a readable format and save them in a folder called in the subsequent code 
 # 
 # Generate file list for Proteo Wizard/MsConvert
-FilestoConvert <- list.files("Example Data", full.names = FALSE)
-write.table(FilestoConvert, file = "files.txt", quote = FALSE, row.names = FALSE, col.names = FALSE)
+#FilestoConvert <- list.files("Example Data", full.names = FALSE)
+#write.table(FilestoConvert, file = "files.txt", quote = FALSE, row.names = FALSE, col.names = FALSE)
 
 #####################################################################
 #####              Run Global Code in first instance            #####
@@ -16,7 +16,7 @@ for (file in filenameGcDataConverterMs) {
 DataName <- gsub(extensionMS1, "", file)
 
 # for testing code on a single file (first on list) in filenameGcDataConverterMs
-# DataName <- gsub(extensionMS1, "", filenameGcDataConverterMs[2])
+#DataName <- gsub(extensionMS1, "", filenameGcDataConverterMs[2])
 
 DataName <- gsub(".*/", "", DataName)
 
@@ -58,7 +58,7 @@ ConvertedData <- ConvertedData %>%
 ConvertedData <- ConvertedData %>% 
   filter(!str_detect(ConvertedData$V2, "TIC"))
 
-# replace blanck with "NA"
+# replace blank with "NA"
 ConvertedData$V2[ConvertedData$V2==""]<-0
 
 n <- nrow(ConvertedData)
@@ -79,7 +79,6 @@ for(i in 1:nrow(ConvertedData)) { # for-loop over rows
   }
   i <- i+1
 }
-
 # remove rows containing "S"
 ConvertedData <- ConvertedData %>% 
   filter(!str_detect(V1, 'S'))
@@ -104,4 +103,6 @@ DataHeatMap$RetentionTime <- DataHeatMap$RetentionTime *60
 
 # write the files in the converted folder
 write.csv(DataHeatMap, file=paste0(GcDataConvertedRcode.dir,DataName,".csv"), row.names = F)
+
+print(paste0(file," complete",now()))
 }
