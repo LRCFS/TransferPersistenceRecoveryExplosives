@@ -102,26 +102,26 @@ ScopusKeywordPlot <- ggplot(ScopusTopKeywordsGraph,aes(x=Year,y=reorder(Keywords
   scale_x_continuous(breaks=c(1960,1970,1980,1990,2000,2010,2020))+
   scale_fill_manual(values=c(pal),na.value = "grey90")+
   #coord_fixed()+
-  theme_grey(base_size=8)+
+  theme_grey(base_size=6)+
   theme(text = element_text(family = "sans"),
         legend.position="right",legend.direction="vertical",
         legend.title=element_text(colour=textcol),
         legend.margin=margin(grid::unit(0,"cm")),
-        legend.text=element_text(colour=textcol,size=7),
+        legend.text=element_text(colour=textcol,size=6),
         legend.key.height=grid::unit(0.8,"cm"),
         legend.key.width=grid::unit(0.2,"cm"),
-        axis.text.x=element_text(size=8,colour=textcol),
-        axis.text.y=element_text(vjust=0.2,colour=textcol),
+        axis.text.x=element_text(size=6,colour=textcol),
+        axis.text.y=element_text(size=6,vjust=0.2,colour=textcol),
         axis.ticks=element_line(size=0.4),
         plot.background=element_blank(),  # element_rect(fill, colour, size, linetype, color))
         panel.border=element_blank(),
-        plot.margin=margin(-0.2,0.4,0.1,0.2,"cm"),
-        plot.title=element_text(colour=textcol,hjust=0,size=12))
+        plot.margin=margin(0.2,0.2,0.2,0.2,"cm"),
+        plot.title=element_text(colour=textcol,hjust=0,size=6))
 
 #save figure
 Var1 <- paste0("Fig_1_Scopus_",KeywordEntries)
 
-ggsave(paste0(Figure.dir,sprintf("%s.tiff",Var1)), ScopusKeywordPlot, width = 6.88, height = 8.5, units = "in", dpi=300)
+ggsave(paste0(Figure.dir,sprintf("%s.tiff",Var1)), ScopusKeywordPlot, width = 14, height = 20, units = "cm", dpi=600)
 
 show(ScopusKeywordPlot)
 

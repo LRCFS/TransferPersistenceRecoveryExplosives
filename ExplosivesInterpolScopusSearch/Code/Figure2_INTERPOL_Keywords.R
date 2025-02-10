@@ -80,29 +80,28 @@ InterpolKeywordPlot <- ggplot(InterpolTopKeywordsGraph,aes(x=Year,y=reorder(Keyw
   guides(fill=guide_legend(title="Count"))+
   labs(x="Year",y="",title="")+
   scale_y_discrete(expand=c(0,0))+
-  scale_x_continuous(breaks=c(2000,2002,2004,2006,2008,2010,2012,2014,2016,2018,2020,2022))+
+  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020))+
   scale_fill_manual(values=c(pal),na.value = "grey90")+
-  #coord_fixed()+
-  theme_grey(base_size=8)+
+  theme_grey(base_size=6)+
   theme(text = element_text(family = "sans"),
         legend.position="right",legend.direction="vertical",
         legend.title=element_text(colour=textcol),
         legend.margin=margin(grid::unit(0,"cm")),
-        legend.text=element_text(colour=textcol,size=7),
+        legend.text=element_text(colour=textcol,size=6),
         legend.key.height=grid::unit(0.8,"cm"),
         legend.key.width=grid::unit(0.2,"cm"),
-        axis.text.x=element_text(size=7,colour=textcol),
-        axis.text.y=element_text(vjust=0.2,colour=textcol),
+        axis.text.x=element_text(size=6,colour=textcol),
+        axis.text.y=element_text(size=6,vjust=0.2,colour=textcol),
         axis.ticks=element_line(size=0.4),
         plot.background=element_blank(),  # element_rect(fill, colour, size, linetype, color))
         panel.border=element_blank(),
-        plot.margin=margin(-0.2,0.4,0.1,0.2,"cm"),
-        plot.title=element_text(colour=textcol,hjust=0,size=12))
+        plot.margin=margin(0.2,0.2,0.2,0.2,"cm"),
+        plot.title=element_text(colour=textcol,hjust=0,size=6))
 
 #save figure
 Var1 <- paste0("Fig_2_INTERPOL_",KeywordEntries)
 
-ggsave(paste0(Figure.dir,sprintf("%s.tiff",Var1)), InterpolKeywordPlot, width = 6.88, height = 8.5, units = "in", dpi=300)
+ggsave(paste0(Figure.dir,sprintf("%s.tiff",Var1)), InterpolKeywordPlot, width = 14, height = 20, units = "cm", dpi=600)
 
 show(InterpolKeywordPlot)
 

@@ -282,14 +282,14 @@ ExplosivesMentionsbySource <- ggplot(ExplosivesCountSubsetGraph)+
   scale_y_continuous(sec.axis = sec_axis(transform = ~./100-1 , name = "Ratio of Counts"),limits=c(0,200))+
   labs(y="Number of Papers")+
   theme(legend.position="none",
-        axis.text.y=element_text(size=5, vjust=0.2),
-        axis.title.y=element_text(size=5),
+        axis.text.y=element_text(size=6, vjust=0.2),
+        axis.title.y=element_text(size=6),
         axis.ticks=element_line(size=0.4),
         plot.background=element_blank(),
         panel.border=element_blank(),
-        plot.margin=margin(0.7,0.6,0.1,0.8,"cm"),
-        plot.title=element_text(colour=textcol,hjust=0,size=5),
-        axis.text.x = element_text(size=5, angle = 90, hjust=1),
+        plot.margin=margin(0.2,0.2,0.2,0.2,"cm"),
+        plot.title=element_text(colour=textcol,hjust=0,size=6),
+        axis.text.x = element_text(size=6, angle = 90, hjust=1),
         axis.title.x = element_blank())
 
 show(ExplosivesMentionsbySource)
@@ -297,4 +297,5 @@ show(ExplosivesMentionsbySource)
 #save figure
 Var1 <- paste0("Fig_4_ExplosivesMentionsbySource")
 
-ggsave(paste0(Figure.dir,sprintf("%s.tiff",Var1)), ExplosivesMentionsbySource, width = 8, height = 10, units = "cm", dpi=600)
+ggsave(paste0(Figure.dir,sprintf("%s.tiff",Var1)), ExplosivesMentionsbySource, width = 9, height = 12, units = "cm", dpi=600)
+

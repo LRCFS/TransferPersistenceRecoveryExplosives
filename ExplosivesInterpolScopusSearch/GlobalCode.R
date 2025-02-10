@@ -749,4 +749,4 @@ source("Code/Figure4_Full_Text_Mining.R")
 # source("Code/Scopus_Country_Network_Figure.R")
 
 ##To illustrate the percentage of papers published with international collaboration
-# source("Code/Scopus_International_Collaboration_Figure.R")
+#source("Code/Scopus_International_Collaboration_Figure.R")

@@ -35,8 +35,8 @@ InterpolKeywordCountryPairCount <- aggregate(InterpolKeywordCountryPairsReduced$
 # count the number of match to the Explosive_List list per country
 InterpolKeywordCountryTotal <- aggregate(InterpolKeywordCountryPairsReduced$Country, by=list(Country=InterpolKeywordCountryPairsReduced$Country), FUN=length)
 
-#select the top 10 countries with the most matching keywords
-InterpolKeywordCountryTotal <- top_n(InterpolKeywordCountryTotal,30)
+#select the top 25 countries with the most matching keywords
+InterpolKeywordCountryTotal <- top_n(InterpolKeywordCountryTotal,25)
 
 # subset against the top list
 InterpolKeywordCountryPairCount <- subset(InterpolKeywordCountryPairCount, Country %in% InterpolKeywordCountryTotal$Country)
@@ -54,7 +54,7 @@ InterpolKeywordCountryPairCount <- subset(InterpolKeywordCountryPairCount, Count
 InterpolKeywordCount <- aggregate(InterpolKeywordCountryPairsReduced$Explosive_List_Corrected, by=list(Explosive_List_Corrected = InterpolKeywordCountryPairsReduced$Explosive_List_Corrected), FUN=length)
 
 #select the top 100 Explosive_List appearing in list
-InterpolKeywordCount <- top_n(InterpolKeywordCount,90)
+InterpolKeywordCount <- top_n(InterpolKeywordCount,50)
 #write.csv(InterpolKeywordCount, file = "InterpolKeywordCount.csv", row.names = FALSE)
 
 # subset against the top list
@@ -152,31 +152,29 @@ InterpolKeywordOrder$Colour <- gsr(as.character(InterpolKeywordOrder$Colour),as.
 textcol <- "black"
 
 InterpolExplosivesbyCountryPlot <- ggplot(InterpolExplosivesbyCountry_Graph,aes(x=reorder(Country, CountryOrder),y=reorder(ExplosiveProperName,desc(InterpolKeywordOrder)),fill=countfactor))+
-  geom_tile(colour=InterpolExplosivesbyCountry_Graph$ColourCode,width=0.85, height=0.85, size=0.1) + 
+  geom_tile(colour=InterpolExplosivesbyCountry_Graph$ColourCode,width=0.85, height=0.85, size=0.3) + 
   guides(fill=guide_legend(title="Count")) +
   scale_fill_manual(values=c("#d53e4f","#f46d43","#fdae61","#fee08b","#d5ee52","#77c86c","#66afc6","#ddf1da", "#8968CD"),na.value = "grey90") +
-  #                           c("#990000","#FF5D00","#FFB900","#FFFF00","#ACFF00","#00CC00","#33FFFF","#008BFF","#0000FF","#8968CD","#551A8B")
-  # scale_fill_manual(values=c(pal),na.value = "grey90")+
   theme(text = element_text(family = "sans"),
         legend.position="right",legend.direction="vertical",
-        legend.title=element_text(colour=textcol),
+        legend.title=element_text(colour=textcol,size=6),
         legend.margin=margin(grid::unit(0,"cm")),
-        legend.text=element_text(colour=textcol,size=8),
+        legend.text=element_text(colour=textcol,size=6),
         legend.key.height=grid::unit(0.8,"cm"),
         legend.key.width=grid::unit(0.2,"cm"),
         axis.text.y=element_text(size=6, vjust=0.2, colour=InterpolKeywordOrder$Colour),
         axis.ticks=element_line(size=0.4),
         plot.background=element_blank(),
         panel.border=element_blank(),
-        plot.margin=margin(0.7,0.4,0.1,0.2,"cm"),
+        plot.margin=margin(0.2,0.2,0.2,0.2,"cm"),
         plot.title=element_text(colour=textcol,hjust=0,size=6),
-        axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(size=6, angle = 60, hjust=1))
+        axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(size=6, angle = 60, hjust=1, colour="black"))
 
 show(InterpolExplosivesbyCountryPlot)
 
 #save figure
 Var1 <- paste0("Fig_3_Interpol_Explosive_Country")
 
-ggsave(paste0(Figure.dir,sprintf("%s.tiff",Var1)), InterpolExplosivesbyCountryPlot, width = 8, height = 9.5, units = "in", dpi=300)
+ggsave(paste0(Figure.dir,sprintf("%s.tiff",Var1)), InterpolExplosivesbyCountryPlot, width = 14, height = 15, units = "cm", dpi=600)
 
 print("Processing complete. Please check 'Figures/' folder for output")
