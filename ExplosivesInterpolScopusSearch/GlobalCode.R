@@ -63,7 +63,7 @@ library(mgsub)
 library(httr2)
 library(pdftools)
 library(tm)
-library(RWeka)
+# library(RWeka)
 library(ggtext)
 library(ggsci)
 
@@ -351,7 +351,7 @@ if (file.exists("SCOPUS/SCOPUS_Combined.csv",recursive = TRUE)){
   Scopus_data <- read.csv(file = "SCOPUS/SCOPUS_Combined.csv")
 }else{Scopus_data <- list.files(cit.path.SCOPUS, pattern=extension, full.names=TRUE)
 Scopus_data <- rbindlist(lapply(Scopus_data,fread, encoding='UTF-8'))
-write.csv(Scopus_data,file = "SCOPUS/SCOPUS_Combined.csv",row.names = TRUE)
+write.csv(Scopus_data,file = "SCOPUS/SCOPUS_Combined.csv",row.names = FALSE)
 print("SCOPUS data has been combined")
 Scopus_data <- read.csv(file = "SCOPUS/SCOPUS_Combined.csv")
 }
