@@ -25,7 +25,7 @@ InterpolKeywordList_KeywordsPerTitle <- InterpolKeywordList  %>%
   distinct()
 InterpolKeywordList_KeywordsPerTitle[InterpolKeywordList_KeywordsPerTitle==""] <- NA
 InterpolKeywordList_KeywordsPerTitle <-InterpolKeywordList_KeywordsPerTitle[complete.cases(InterpolKeywordList_KeywordsPerTitle), ]
-sum(is.na(InterpolKeywordList$KeywordsCorrected))
+#sum(is.na(InterpolKeywordList$KeywordsCorrected))
 
 InterpolKeywordYearCount <- aggregate(InterpolKeywordList_KeywordsPerTitle$Year, by=list(Year=InterpolKeywordList_KeywordsPerTitle$Year, Keyword=InterpolKeywordList_KeywordsPerTitle$KeywordsCorrected), FUN=length)
 InterpolKeywordTotalCount <- aggregate(InterpolKeywordList_KeywordsPerTitle$Year, by=list(Keyword=InterpolKeywordList_KeywordsPerTitle$KeywordsCorrected), FUN=length)

@@ -44,7 +44,6 @@ ScopusKeywordList_KeywordsPerTitle <- ScopusKeywordList  %>%
 
 ScopusKeywordList_KeywordsPerTitle[ScopusKeywordList_KeywordsPerTitle==""] <- NA
 ScopusKeywordList_KeywordsPerTitle <-ScopusKeywordList_KeywordsPerTitle[complete.cases(ScopusKeywordList_KeywordsPerTitle[ ,4]), ]
-sum(is.na(ScopusKeywordList$KeywordsCorrected))
 
 ScopusKeywordYearCount <- aggregate(ScopusKeywordList_KeywordsPerTitle$Year, by=list(Year=ScopusKeywordList_KeywordsPerTitle$Year, Keyword=ScopusKeywordList_KeywordsPerTitle$KeywordsCorrected), FUN=length)
 ScopusKeywordTotalCount <- aggregate(ScopusKeywordList_KeywordsPerTitle$Year, by=list(Keyword=ScopusKeywordList_KeywordsPerTitle$KeywordsCorrected), FUN=length)

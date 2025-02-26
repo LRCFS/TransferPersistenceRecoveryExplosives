@@ -1,0 +1,21 @@
+"Explosive","Explosives from Full Text","Explosives from Abstract, Title, and Keywords","Explosives that make up more than 1% of mentions","Ratio"
+"1,1-Diamino-2,2-Dinitroethylene (FOX-7)",17,3,17,0.176470588235294
+"1,3,5-Triamino-2,4,6-Trinitrobenzene (TATB)",73,20,72,0.273972602739726
+"2,4,6-Trinitrotoluene (TNT)",119,23,118,0.19327731092437
+"3-Nitro-1,2,4-Triazol-5-One (NTO)",19,4,19,0.210526315789474
+"Ammonium Dinitramide (ADN)",18,6,18,0.333333333333333
+"Ammonium Nitrate (AN)",50,12,49,0.24
+"Ammonium Perchlorate",42,14,42,0.333333333333333
+"Composition B",16,2,14,0.125
+"Cyclotetramethylene-Tetranitramine (HMX)",157,38,158,0.24203821656051
+"Cyclotrimethylene-Trinitramine (RDX)",186,53,185,0.28494623655914
+"Hexanitrohexaazaisowurtzitane (CL-20)",68,20,68,0.294117647058824
+"Hexanitrostilbene (HNS)",20,1,19,0.05
+"Lead Azide",18,3,18,0.166666666666667
+"Nitrocellulose (NC)",40,10,41,0.25
+"Nitroglycerin (NG)",29,7,28,0.241379310344828
+"Nitromethane (NM)",20,1,18,0.05
+"Pentaerythritol Tetranitrate (PETN)",88,19,83,0.215909090909091
+"Tetryl",15,2,14,0.133333333333333
+"Thermite",19,8,19,0.421052631578947
+"Triacetone Triperoxide (TATP)",17,11,17,0.647058823529412
