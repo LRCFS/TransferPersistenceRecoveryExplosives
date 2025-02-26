@@ -63,7 +63,32 @@ library(mgsub)
 library(httr2)
 library(pdftools)
 library(tm)
-# library(RWeka)
+
+# This is computer specific and needs editing to the location of Java.
+# This is for computer with limited Admin rights.
+# Eclipse Temurin (an OpenJDK distribution from the Adoptium project) is also a great alternative to Java
+# Download and install Eclipse Temurin (JDK 8, 11, or later) from: https://adoptium.net/
+# Choose JDK (not JRE) and install it.
+#
+# To make it permanent ( with Admin rights)
+# Manually Set JAVA_HOME in Windows:
+# Open Control Panel → System → Advanced system settings.
+# Click Environment Variables.
+# Under System Variables, click New, and add:
+# Variable name: JAVA_HOME
+# Variable value: C:\Program Files\Eclipse Adoptium\jdk-XX.X.X (Replace with your installed path)
+# Find the Path variable under System Variables, click Edit, and add:
+# C:\Program Files\Eclipse Adoptium\jdk-XX.X.X\bin
+# Restart your computer to apply the changes.
+# 
+
+Sys.setenv(JAVA_HOME = "C:/Program Files/Eclipse Adoptium/jdk-23.0.2.7-hotspot") # This ensures JAVA_HOME is set for the entire R session 
+# to edit .Renviron in R:
+# file.edit("~/.Renviron")
+# Save and restart R to apply changes automatically at each session start.
+
+library(rJava)
+library(RWeka)
 library(ggtext)
 library(ggsci)
 
