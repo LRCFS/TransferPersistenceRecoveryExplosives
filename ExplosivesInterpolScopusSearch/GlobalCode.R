@@ -295,3 +295,5 @@ if (file.exists("Results/Scopus_Processed_Data.csv",recursive = TRUE)){
 
 ##To illustrate the percentage of papers published with international collaboration
 #source("Code/Scopus_International_Collaboration_Figure.R")
+
+#test change
