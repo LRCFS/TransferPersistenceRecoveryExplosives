@@ -4,13 +4,13 @@ ScopusOutputs/
 #Propellants, Explosives, Pyrotechnics articles
 Papers/
 
-# History files
+#History files
 .Rhistory
 .Rapp.history
 
-# Session Data files
+#Session Data files
 .RData
 .Ruserdata
 
-# RStudio files
+#RStudio files
 .Rproj.user/
