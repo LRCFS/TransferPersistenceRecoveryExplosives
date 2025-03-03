@@ -1,0 +1,16 @@
+#Scopus files which are too large for Github
+ScopusOutputs/
+
+#Propellants, Explosives, Pyrotechnics articles
+Papers/
+
+# History files
+.Rhistory
+.Rapp.history
+
+# Session Data files
+.RData
+.Ruserdata
+
+# RStudio files
+.Rproj.user/
