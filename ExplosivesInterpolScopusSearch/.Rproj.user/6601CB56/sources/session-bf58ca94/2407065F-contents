@@ -11,24 +11,6 @@
 Scopus_Fig1_Data <- Scopus_data
 
 #############################################################
-#####                  Data cleansing                   #####
-#############################################################
-
-#Correction to the keywords can be applied at this stage. This can be done in Notepad++, Excel etc. The ultimate order of the list must be kept so it can be binded to the orignial data.
-#read the corrected list of keywords and combine it to the original list
-
-ScopusKeywordList$KeywordsCorrected <- gsr(as.character(ScopusKeywordList$AIKeywords),as.character(KeywordCorrectionList$AIKeywords),as.character(KeywordCorrectionList$CorAIKeywordsAcronym))
-
-ScopusKeywordListCollapsed <- ScopusKeywordList %>% 
-  group_by(Title) %>%
-  summarize(KeywordsCorrected=paste0(KeywordsCorrected, collapse = ", "))
-
-# number of distinct Keywords after correction
-ScopusDistinctKeywordListCorrected <- ScopusKeywordList %>%
-  select(KeywordsCorrected) %>%
-  distinct()
-
-#############################################################
 #####               Data analysis - Keywords            #####
 #############################################################
 

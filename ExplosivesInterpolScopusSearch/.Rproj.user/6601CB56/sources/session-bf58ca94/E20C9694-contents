@@ -1,23 +1,30 @@
 #############################################################
 #####          Load and Format Scopus Data              #####
 #############################################################
-#####      Generate SCOPUS combined list                #####
+#####      Generate Scopus combined list                #####
 
-if (file.exists("SCOPUS/SCOPUS_Combined.csv",recursive = TRUE)){
+#Scopus combined list is too large to be hosted on GitHub, and is instead present as a compressed file (Scopus_Combined.zip)
+#This will check if the combined data is present and has already been extracted from the zip file
+if (file.exists("Scopus Outputs/Scopus_Combined.csv",recursive = TRUE)){
   print("SCOPUS data already combined")
-  Scopus_data <- read.csv(file = "SCOPUS/SCOPUS_Combined.csv")
-}else{Scopus_data <- list.files(cit.path.SCOPUS, pattern=extension, full.names=TRUE)
-Scopus_data <- rbindlist(lapply(Scopus_data,fread, encoding='UTF-8'))
-write.csv(Scopus_data,file = "SCOPUS/SCOPUS_Combined.csv",row.names = TRUE)
-print("SCOPUS data has been combined")
-Scopus_data <- read.csv(file = "SCOPUS/SCOPUS_Combined.csv")
+  Scopus_data <- read.csv(file = "Scopus Outputs/Scopus_Combined.csv")
+
+#This will check if the zip file is present, and if so extract the Scopus_Combined.csv file
+}else if (file.exists("Scopus Compressed/Scopus_Combined.zip",recursive = TRUE)){
+  unzip("Scopus Outputs/Scopus_Combined.zip", exdir = "Scopus Outputs/")
+  Scopus_data <- read.csv(file = "Scopus Outputs/Scopus_Combined.csv")
+
+#If the Scopus combined data is not present,  this will combine all csv files in the Scopus Inputs folder to create it
+}else{
+Scopus_data <- list.files(cit.path.Scopus_Inputs, pattern=extension, full.names=TRUE)
+Scopus_data <- rbindlist(lapply(Scopus_data,fread, encoding='UTF-8')) %>%
+  select("Authors","Title","Year","Source title","DOI","Affiliations","Abstract","Author Keywords","Index Keywords","EID") %>%
+  distinct()
+  write.csv(Scopus_data,file = "Scopus Outputs/Scopus_Combined.csv",row.names = FALSE)
+print("Scopus data has been combined")
 }
 
-names(Scopus_data)[3] <- c("AuthorID")
-
-Scopus_data <- Scopus_data %>%
-  select(Year,Title,Source.title,Authors,Affiliations,AuthorID,Abstract,Author.Keywords,Index.Keywords,EID,DOI)%>%
-  distinct()
+names(Scopus_data)[3] <- c("Year")
 
 #############################################################
 ##### Correct Country Names and Create Affiliations List ####
@@ -41,6 +48,7 @@ ScopusAffiliations <- gsub(";", ",", ScopusAffiliations$Affiliations)
 ScopusAffiliations <- sapply(ScopusAffiliations, strsplit, split = ", ", USE.NAMES = FALSE)
 
 # extract fields which match a known city making sure that diacritics aren't a problem...
+
 ScopusCityList <- lapply(ScopusAffiliations, function(x)x[which(removeDiacritics(x) %in% world.cities$name)])
 
 # ... or country
@@ -56,7 +64,7 @@ ScopusCountryListbyPaperUnique <- as.data.table(matrix(ScopusCountryListUnique))
 Scopus_data<- cbind(Scopus_data,ScopusCountryListbyPaperUnique)
 
 # rename Country column
-names(Scopus_data)[12] <- c("Country")
+names(Scopus_data)[11] <- c("Country")
 
 #convert to character
 Scopus_data$Country <- as.character(Scopus_data$Country)
@@ -118,7 +126,7 @@ ScopusDistinctKeywordList <- ScopusKeywordList %>%
 ScopusKeywordList$KeywordsCorrected <- gsr(as.character(ScopusKeywordList$AIKeywords),as.character(KeywordCorrectionList$AIKeywords),as.character(KeywordCorrectionList$CorAIKeywordsAcronym))
 
 #Save Scopus keyword list
-write.csv(ScopusKeywordList, file=paste0(Results.dir,sprintf("%s.csv","Scopus_Keyword_List")), row.names = F)
+write.csv(ScopusKeywordList, file=paste0(cit.path.Scopus_Outputs,sprintf("%s.csv","Scopus_Keyword_List")), row.names = F)
 
 # number of distinct Keywords after correction
 ScopusDistinctKeywordListCorrected <- ScopusKeywordList %>%
@@ -142,7 +150,7 @@ ScopusAuthKey$AIKeywords[ScopusAuthKey$AIKeywords==""] <- NA
 ScopusAuthKey <- ScopusAuthKey %>%
   filter(!is.na(AIKeywords))
 
-write.csv(Scopus_data, file=paste0(Results.dir,sprintf("%s.csv","Scopus_processed_data")), row.names = F)
+write.csv(Scopus_data, file=paste0(cit.path.Scopus_Outputs,sprintf("%s.csv","Scopus_processed_data")), row.names = F)
 
 #######################################################
 #####       Scopus Explosive Keywords           #####
@@ -252,3 +260,5 @@ Scopus_Title_Country <- Scopus_data %>%
 ScopusExplosives <- full_join(ScopusExplosivesCollapsed,Scopus_Title_Country, by = "EID")
 
 print("Scopus data prepared for figure generation")
+new <- Sys.time() - old # calculate difference
+print(new) # print in nice format

@@ -62,6 +62,7 @@ library(mgsub)
 library(httr2)
 library(pdftools)
 library(tm)
+library(zip)
 
 # This is computer specific and needs editing to the location of Java.
 # This is for computer with limited Admin rights.
@@ -113,8 +114,10 @@ removeDiacritics <- function(string) {
 
 # set extension and Citation
 extension <- ".csv"
-cit.path.INTERPOL <- "INTERPOL/"
-cit.path.SCOPUS <- "Scopus/"
+cit.path.Interpol_Inputs <- "Interpol Inputs/"
+cit.path.Interpol_Outputs <- "Interpol Outputs/"
+cit.path.Scopus_Inputs <- "Scopus Inputs/"
+cit.path.Scopus_Outputs <- "Scopus outputs/"
 
 # where the generated figures are saved, create folder if not existing
 Results.dir <- "Results/"
@@ -227,6 +230,8 @@ Count <- number
 #############################################################
 #####       Load and Format INTERPOL Data               #####
 #############################################################
+#This will check if the Interpol data has already been processed and saved, and if so will read the file
+#This allows figures to be generated without reprocessing the data
 if (file.exists("Results/Interpol_Processed_Data.csv",recursive = TRUE)){
   Interpol_data <- read.csv(file = "Results/INTERPOL_Processed_Data.csv")
   InterpolKeywordList <- read.csv(file = "Results/Interpol_Keyword_List.csv")
@@ -240,11 +245,22 @@ if (file.exists("Results/Interpol_Processed_Data.csv",recursive = TRUE)){
 #############################################################
 #####       Load and Format Scopus Data               #####
 #############################################################
-if (file.exists("Results/Scopus_Processed_Data.csv",recursive = TRUE)){
-  Scopus_data <- read.csv(file = "Results/Scopus_Processed_Data.csv")
-  ScopusKeywordList <- read.csv(file = "Results/Scopus_Keyword_List.csv")
-  print("INTERPOL data already processed")
-}else{ source("Code/Scopus_Data_Prep.R")
+#This will check if the Scopus processed data is present and has already been extracted from the zip file
+if (file.exists("Scopus Outputs/Scopus_Processed_Data.csv",recursive = TRUE)){
+  Scopus_data <- read.csv(file = "Scopus Outputs/Scopus_Processed_Data.csv")
+  ScopusKeywordList <- read.csv(file = "Scopus Outputs/Scopus_Keyword_List.csv")
+  print("Scopus data already processed")
+  
+#This will check if the zip file is present, and if so extract the Scopus_Processed_Data.csv file
+  }else if (file.exists("Scopus Compressed/Scopus_processed_data.zip",recursive = TRUE)){
+  unzip("Scopus_processed_data.zip", exdir = "Scopus_Outputs")
+    unzip("Scopus_Keyword_List.zip", exdir = "Scopus_Outputs")
+  Scopus_data <- read.csv(file = "Scopus Outputs/Scopus_processed_data.csv")
+  ScopusKeywordList <- read.csv(file = "Scopus Outputs/Scopus_Keyword_List.csv")
+  print("Scopus processed data extracted")
+
+#If the Scopus processed data is not present,  this will run the code to process the data
+}else{source("Code/Scopus_Data_Prep.R")
   
 }
 
@@ -295,5 +311,3 @@ if (file.exists("Results/Scopus_Processed_Data.csv",recursive = TRUE)){
 
 ##To illustrate the percentage of papers published with international collaboration
 #source("Code/Scopus_International_Collaboration_Figure.R")
-
-#test change
