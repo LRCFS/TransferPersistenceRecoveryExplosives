@@ -1,24 +1,27 @@
 #############################################################
-#####       Load and Format INTERPOL Data               #####
+#####       Load and Format Interpol Data               #####
 #############################################################
-#####      Generate INTERPOL combined list              #####
+#####      Generate Interpol combined list              #####
 
-if (file.exists("INTERPOL/INTERPOL_Combined.csv",recursive = TRUE)){
-  print("INTERPOL data already combined")
-  Interpol_data <- read.csv(file = "INTERPOL/INTERPOL_Combined.csv")
-}else{Interpol_data <- list.files(cit.path.INTERPOL, pattern=extension, full.names=TRUE)
+if (file.exists("InterpolOutputs/Interpol_Combined.csv",recursive = TRUE)){
+  print("Interpol data already combined")
+  Interpol_data <- read.csv(file = "InterpolOutputs/Interpol_Combined.csv")
+}else{
+  Interpol_data <- list.files(cit.path.InterpolInputs, pattern=extension, full.names=TRUE)
 Interpol_data <- rbindlist(lapply(Interpol_data,fread, encoding='UTF-8'))
-write.csv(Interpol_data,file = "INTERPOL/INTERPOL_Combined.csv",row.names = TRUE)
-print("INTERPOL data has been combined")
-Interpol_data <- read.csv(file = "INTERPOL/INTERPOL_Combined.csv")
+write.csv(Interpol_data,file = "InterpolOutputs/Interpol_Combined.csv",row.names = FALSE)
+print("Interpol data has been combined")
 }
+
+colnames(Interpol_data)[4] <- "AuthorID"
 
 Interpol_data <- Interpol_data %>%
   select(Year,Title,Source.title,Authors,Affiliations,AuthorID,Abstract,Author.Keywords,Index.Keywords,EID,DOI)%>%
-  distinct()
+  distinct(Title, .keep_all=TRUE)
 
 Interpol_data <- Interpol_data %>%
-  filter(between(Year,2001,2022)) 
+  filter(between(Year,2001,2022))
+
 
 #############################################################
 ##### Correct Country Names and Create Affiliations List ####
@@ -121,7 +124,7 @@ InterpolDistinctKeywordList <- InterpolKeywordList %>%
 InterpolKeywordList$KeywordsCorrected <- gsr(as.character(InterpolKeywordList$AIKeywords),as.character(KeywordCorrectionList$AIKeywords),as.character(KeywordCorrectionList$CorAIKeywordsAcronym))
 
 #Save Interpol keyword list
-write.csv(InterpolKeywordList, file=paste0(Results.dir,sprintf("%s.csv","Interpol_Keyword_List")), row.names = F)
+write.csv(InterpolKeywordList, file=paste0(cit.path.InterpolOutputs,sprintf("%s.csv","Interpol_Keyword_List")), row.names = F)
 
 # number of distinct Keywords after correction
 InterpolDistinctKeywordListCorrected <- InterpolKeywordList %>%
@@ -140,7 +143,7 @@ Interpol_data <- merge(Interpol_data, InterpolKeywordListCollapsed, all = TRUE)
 Interpol_data$KeywordsCorrected <- gsub('[^[:alnum:] ]', ' ', Interpol_data$KeywordsCorrected)
 Interpol_data$KeywordsCorrected <- gsub("\\s+", " ", Interpol_data$KeywordsCorrected)
 
-write.csv(Interpol_data, file=paste0(Results.dir,sprintf("%s.csv","Interpol_processed_data")), row.names = F)
+write.csv(Interpol_data, file=paste0(cit.path.InterpolOutputs,sprintf("%s.csv","Interpol_processed_data")), row.names = F)
 
 #######################################################
 #####       Interpol Explosive Keywords           #####
@@ -191,7 +194,7 @@ InterpolExplosivesFromTitle <- data.frame(Interpol_data$Title,InterpolExplosives
 # remane fist column to match original dataset 
 names(InterpolExplosivesFromTitle)[1] <- c("Title")
 
-InterpolExplosivesFromAbsTitle <- full_join(InterpolExplosivesFromAbs,InterpolExplosivesFromTitle)
+InterpolExplosivesFromAbsTitle <- full_join(InterpolExplosivesFromAbs,InterpolExplosivesFromTitle, relationship = "many-to-many")
 
 # #########################################################
 # #####                For keywords                   #####
@@ -216,7 +219,7 @@ InterpolExplosivesFromKeyword <- data.frame(Interpol_data$Title,InterpolExplosiv
 # remane fist column to match original dataset 
 names(InterpolExplosivesFromKeyword)[1] <- c("Title")
 
-InterpolExplosives <- full_join(InterpolExplosivesFromAbsTitle,InterpolExplosivesFromKeyword)
+InterpolExplosives <- full_join(InterpolExplosivesFromAbsTitle,InterpolExplosivesFromKeyword, relationship = "many-to-many")
 
 ############
 # Combine Columns Abs,Titles,Keywords and place in Column name "Explosive_List" and remove original columns
@@ -249,10 +252,10 @@ Interpol_Title_Country <- Interpol_data %>%
 
 InterpolExplosives <- full_join(InterpolExplosivesCollapsed,Interpol_Title_Country, by = "Title")
 
-write.csv(InterpolExplosives, file=paste0(Results.dir,sprintf("%s.csv","Interpol_Explosives")), row.names = F)
+write.csv(InterpolExplosives, file=paste0(cit.path.InterpolOutputs,sprintf("%s.csv","Interpol_Explosives")), row.names = F)
 
 #############################################################
-#####  Load and Process INTERPOL Full Text Data         #####
+#####  Load and Process Interpol Full Text Data         #####
 #############################################################
 
 # Step 1: Define your specific corpus (keywords or phrases) to search for
@@ -386,7 +389,7 @@ names(FullTextExploTopn)[2] <- paste0("Explosives that make up more than ",n,"% 
 
 ######## Get Keywords from abstract, title and author keywords ##########
 # Step 2: Get abstract, title and author keywords for searching
-InterpolSelectedData <- read.csv(file = "INTERPOL/INTERPOL_Combined.csv")
+InterpolSelectedData <- read.csv(file = "InterpolOutputs/Interpol_Combined.csv")
 InterpolSelectedData <- InterpolSelectedData %>%
   select(Title,Abstract,Author.Keywords,DOI,Source.title)%>%
   distinct()
@@ -459,10 +462,10 @@ CombinedCount<- full_join(AbsTitleKeywordsCountReduced,FullTextCountReduced, by 
 #names(FullTextCountReduced)[2] ="AbsTitleKeywordsExplosives"
 
 # Join with Interpol data to get titles
-CombinedCount <- right_join(Interpol_data,CombinedCount, by = "DOI") %>%
+CombinedCount <- right_join(Interpol_data,CombinedCount, by = "DOI", relationship = "many-to-many") %>%
   select(DOI, Title, AbsTitleKeywordsExplosives, FullTextExplosives)
 
-CombinedCount <- right_join(InterpolSelectedData, CombinedCount, by ="DOI") %>%
+CombinedCount <- right_join(InterpolSelectedData, CombinedCount, by ="DOI", relationship = "many-to-many") %>%
   select(DOI, Title.x, AbsTitleKeywordsExplosives, FullTextExplosives, AbsTitleKeywords)
 
 CombinedCountTitleAbsKey <- CombinedCount
@@ -523,6 +526,6 @@ ExplosivesCountSubset <-subset(ExplosivesCount,Explosive %in% TopExplosives$Expl
 
 ExplosivesCountSubset$Ratio <- ExplosivesCountSubset$`Explosives from Abstract, Title, and Keywords`/ ExplosivesCountSubset$`Explosives from Full Text`
 
-write.csv(ExplosivesCountSubset, file=paste0(Results.dir,sprintf("%s.csv","Full_Text_Top20_Explo")), row.names = F)
+write.csv(ExplosivesCountSubset, file=paste0(cit.path.InterpolOutputs,sprintf("%s.csv","Full_Text_Top20_Explo")), row.names = F)
 
 print("Interpol data prepared for figure generation")

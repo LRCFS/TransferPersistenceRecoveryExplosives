@@ -114,10 +114,10 @@ removeDiacritics <- function(string) {
 
 # set extension and Citation
 extension <- ".csv"
-cit.path.Interpol_Inputs <- "Interpol Inputs/"
-cit.path.Interpol_Outputs <- "Interpol Outputs/"
-cit.path.Scopus_Inputs <- "Scopus Inputs/"
-cit.path.Scopus_Outputs <- "Scopus outputs/"
+cit.path.InterpolInputs <- "InterpolInputs/"
+cit.path.InterpolOutputs <- "InterpolOutputs/"
+cit.path.ScopusInputs <- "ScopusInputs/"
+cit.path.ScopusOutputs <- "Scopusoutputs/"
 
 # where the generated figures are saved, create folder if not existing
 Results.dir <- "Results/"
@@ -167,7 +167,7 @@ NumberCountry <- 20
 #read the corrected list of keywords and combine it to the original list
 
 #Load Keyword correction list
-KeywordCorrectionList <- read.csv("CorrectionLists/KeywordsCorrectionFull.txt", sep="\t", header=TRUE)
+KeywordCorrectionList <- read.csv("ReferenceLists/KeywordsCorrectionFull.txt", sep="\t", header=TRUE)
 KeywordCorrectionList <- as.data.frame(KeywordCorrectionList)
 
 #############################################################
@@ -175,7 +175,7 @@ KeywordCorrectionList <- as.data.frame(KeywordCorrectionList)
 #############################################################
 
 # Load the Corpus of interest to search in the Interpol output entries
-ExplosiveList <- read.csv("ExplosiveDatabase.csv", header = TRUE)
+ExplosiveList <- read.csv("ReferenceLists/ExplosiveDatabase.csv", header = TRUE)
 
 ExplosiveList$UncorrectedNoSpecials <- ExplosiveList$Uncorrected.Explosive
 ExplosiveList$UncorrectedNoSpecials <- paste0(" ", ExplosiveList$UncorrectedNoSpecials)
@@ -228,16 +228,16 @@ name <- "_Scopus"
 Count <- number
 
 #############################################################
-#####       Load and Format INTERPOL Data               #####
+#####       Load and Format Interpol Data               #####
 #############################################################
 #This will check if the Interpol data has already been processed and saved, and if so will read the file
 #This allows figures to be generated without reprocessing the data
-if (file.exists("Results/Interpol_Processed_Data.csv",recursive = TRUE)){
-  Interpol_data <- read.csv(file = "Results/INTERPOL_Processed_Data.csv")
-  InterpolKeywordList <- read.csv(file = "Results/Interpol_Keyword_List.csv")
-  InterpolExplosives <- read.csv(file = "Results/Interpol_Explosives.csv")
-  ExplosivesCountSubset <- read.csv(file = "Results/Full_Text_Top20_Explo.csv")
-  print("INTERPOL data already processed")
+if (file.exists("InterpolOutputs/Interpol_Processed_Data.csv",recursive = TRUE)){
+  Interpol_data <- read.csv(file = "InterpolOutputs/Interpol_Processed_Data.csv")
+  InterpolKeywordList <- read.csv(file = "InterpolOutputs/Interpol_Keyword_List.csv")
+  InterpolExplosives <- read.csv(file = "InterpolOutputs/Interpol_Explosives.csv")
+  ExplosivesCountSubset <- read.csv(file = "InterpolOutputs/Full_Text_Top20_Explo.csv")
+  print("Interpol data already processed")
 }else{ source("Code/Interpol_Data_Prep.R")
 
 }
@@ -273,7 +273,7 @@ if (file.exists("Scopus Outputs/Scopus_Processed_Data.csv",recursive = TRUE)){
 # # Figure 1, Scopus Keywords as a function of year
 #source("Code/Figure1_Scopus_Keywords.R")
 
-# # Figure 2, INTERPOL Keywords as a function of year
+# # Figure 2, Interpol Keywords as a function of year
 #source("Code/Figure2_Interpol_Keywords.R")
 
 # # Figure 3, Interpol Explosive Country
@@ -291,7 +291,7 @@ if (file.exists("Scopus Outputs/Scopus_Processed_Data.csv",recursive = TRUE)){
 #source("Code/Evidence Comparison.R")
 
 ####Unused Figures#####
-##To illustrate countries publishing papers included in INTERPOL reviews
+##To illustrate countries publishing papers included in Interpol reviews
 #source("Code/Interpol_Country_Affiliation_Figure.R")
 
 ##To illustrate countries publishing papers included in Scopus dataset
@@ -300,7 +300,7 @@ if (file.exists("Scopus Outputs/Scopus_Processed_Data.csv",recursive = TRUE)){
 ##To illustrate the most-mentioned explosives by country in Scopus dataset
 #source("Code/Scopus_Explosive_Country_Figure.R")
 
-##To illustrate the occurrence of explosives by year in INTERPOL reviews
+##To illustrate the occurrence of explosives by year in Interpol reviews
 #source("Code/Interpol_Explosive_Year_Figure.R")
 
 ##To illustrate the occurrence of explosives by year in Scopus dataset
