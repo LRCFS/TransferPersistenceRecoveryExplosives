@@ -10,6 +10,7 @@ Papers/
 
 # Session Data files
 .RData
+.Ruserdata
 
 # RStudio files
 .Rproj.user/
