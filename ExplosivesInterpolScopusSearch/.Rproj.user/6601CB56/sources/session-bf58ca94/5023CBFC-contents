@@ -246,17 +246,17 @@ if (file.exists("InterpolOutputs/Interpol_Processed_Data.csv",recursive = TRUE))
 #####       Load and Format Scopus Data               #####
 #############################################################
 #This will check if the Scopus processed data is present and has already been extracted from the zip file
-if (file.exists("Scopus Outputs/Scopus_Processed_Data.csv",recursive = TRUE)){
-  Scopus_data <- read.csv(file = "Scopus Outputs/Scopus_Processed_Data.csv")
-  ScopusKeywordList <- read.csv(file = "Scopus Outputs/Scopus_Keyword_List.csv")
+if (file.exists("ScopusOutputs/Scopus_Processed_Data.csv",recursive = TRUE)){
+  Scopus_data <- read.csv(file = "ScopusOutputs/Scopus_Processed_Data.csv")
+  ScopusKeywordList <- read.csv(file = "ScopusOutputs/Scopus_Keyword_List.csv")
   print("Scopus data already processed")
   
 #This will check if the zip file is present, and if so extract the Scopus_Processed_Data.csv file
   }else if (file.exists("Scopus Compressed/Scopus_processed_data.zip",recursive = TRUE)){
   unzip("Scopus_processed_data.zip", exdir = "Scopus_Outputs")
     unzip("Scopus_Keyword_List.zip", exdir = "Scopus_Outputs")
-  Scopus_data <- read.csv(file = "Scopus Outputs/Scopus_processed_data.csv")
-  ScopusKeywordList <- read.csv(file = "Scopus Outputs/Scopus_Keyword_List.csv")
+  Scopus_data <- read.csv(file = "ScopusOutputs/Scopus_processed_data.csv")
+  ScopusKeywordList <- read.csv(file = "ScopusOutputs/Scopus_Keyword_List.csv")
   print("Scopus processed data extracted")
 
 #If the Scopus processed data is not present,  this will run the code to process the data
@@ -271,16 +271,16 @@ if (file.exists("Scopus Outputs/Scopus_Processed_Data.csv",recursive = TRUE)){
 # These codes can be run subsequently or independently
 
 # # Figure 1, Scopus Keywords as a function of year
-#source("Code/Figure1_Scopus_Keywords.R")
+source("Code/Figure1_Scopus_Keywords.R")
 
 # # Figure 2, Interpol Keywords as a function of year
-#source("Code/Figure2_Interpol_Keywords.R")
+source("Code/Figure2_Interpol_Keywords.R")
 
 # # Figure 3, Interpol Explosive Country
-#source("Code/Figure3_Interpol_Explosive_Country.R")
+source("Code/Figure3_Interpol_Explosive_Country.R")
 
 # # Figure 4, Full Text Mining Comparison
-#source("Code/Figure4_Full_Text_Mining.R")
+source("Code/Figure4_Full_Text_Mining.R")
 
 
 ##Other Code
