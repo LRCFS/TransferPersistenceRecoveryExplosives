@@ -128,10 +128,6 @@ Figure.dir <- "Figures/"
 if (!dir.exists("Figures/")){
   dir.create(file.path(Figures.dir),recursive = TRUE)
 }
-Papers.dir <- "Papers/"
-if (!dir.exists("Papers/")){
-  dir.create(file.path(Figures.dir),recursive = TRUE)
-}
 
 # filename for figure export
 FigureName <- "Fig1_Scopus_Keyword_"
@@ -154,7 +150,7 @@ NumberCountry <- 20
 #####           keywords will be searched               #####
 #############################################################
 
-#     Select one of the following three options
+# Select one of the following three options
  KeywordEntries <- "Author_Keywords"
 # KeywordEntries <- "Database_Keywords"
 # KeywordEntries <- "All_Keywords"
@@ -246,17 +242,17 @@ if (file.exists("InterpolOutputs/Interpol_Processed_Data.csv",recursive = TRUE))
 #####       Load and Format Scopus Data               #####
 #############################################################
 #This will check if the Scopus processed data is present and has already been extracted from the zip file
-if (file.exists("Scopus Outputs/Scopus_Processed_Data.csv",recursive = TRUE)){
-  Scopus_data <- read.csv(file = "Scopus Outputs/Scopus_Processed_Data.csv")
-  ScopusKeywordList <- read.csv(file = "Scopus Outputs/Scopus_Keyword_List.csv")
+if (file.exists("ScopusOutputs/Scopus_Processed_Data.csv",recursive = TRUE)){
+  Scopus_data <- read.csv(file = "ScopusOutputs/Scopus_Processed_Data.csv")
+  ScopusKeywordList <- read.csv(file = "ScopusOutputs/Scopus_Keyword_List.csv")
   print("Scopus data already processed")
   
 #This will check if the zip file is present, and if so extract the Scopus_Processed_Data.csv file
   }else if (file.exists("Scopus Compressed/Scopus_processed_data.zip",recursive = TRUE)){
-  unzip("Scopus_processed_data.zip", exdir = "Scopus_Outputs")
-    unzip("Scopus_Keyword_List.zip", exdir = "Scopus_Outputs")
-  Scopus_data <- read.csv(file = "Scopus Outputs/Scopus_processed_data.csv")
-  ScopusKeywordList <- read.csv(file = "Scopus Outputs/Scopus_Keyword_List.csv")
+  unzip("Scopus_processed_data.zip", exdir = "ScopusOutputs")
+    unzip("Scopus_Keyword_List.zip", exdir = "ScopusOutputs")
+  Scopus_data <- read.csv(file = "ScopusOutputs/Scopus_processed_data.csv")
+  ScopusKeywordList <- read.csv(file = "ScopusOutputs/Scopus_Keyword_List.csv")
   print("Scopus processed data extracted")
 
 #If the Scopus processed data is not present,  this will run the code to process the data

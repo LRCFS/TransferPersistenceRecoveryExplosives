@@ -13,6 +13,7 @@ if (file.exists("ScopusOutputs/Scopus_Combined.csv",recursive = TRUE)){
 }else if (file.exists("ScopusCompressed/Scopus_Combined.zip",recursive = TRUE)){
   unzip("ScopusCompressed/Scopus_Combined.zip", exdir = "ScopusOutputs/")
   Scopus_data <- read.csv(file = "ScopusOutputs/Scopus_Combined.csv")
+  print("SCOPUS data extracted")
 
 #If the Scopus combined data is not present,  this will combine all csv files in the ScopusInputs folder to create it
 }else{
@@ -21,7 +22,7 @@ Scopus_data <- rbindlist(lapply(Scopus_data,fread, encoding='UTF-8')) %>%
   select("Authors","Title","Year","Source title","DOI","Affiliations","Abstract","Author Keywords","Index Keywords","EID") %>%
   distinct()
   write.csv(Scopus_data,file = "ScopusOutputs/Scopus_Combined.csv",row.names = FALSE)
-print("Scopus data has been combined")
+  print("Scopus data has been combined")
 }
 
 names(Scopus_data)[3] <- c("Year")
