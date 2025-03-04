@@ -248,9 +248,9 @@ if (file.exists("ScopusOutputs/Scopus_Processed_Data.csv",recursive = TRUE)){
   print("Scopus data already processed")
   
 #This will check if the zip file is present, and if so extract the Scopus_Processed_Data.csv file
-  }else if (file.exists("Scopus Compressed/Scopus_processed_data.zip",recursive = TRUE)){
-  unzip("Scopus_processed_data.zip", exdir = "ScopusOutputs")
-    unzip("Scopus_Keyword_List.zip", exdir = "ScopusOutputs")
+  }else if (file.exists("ScopusCompressed/Scopus_processed_data.zip",recursive = TRUE)){
+  unzip("ScopusCompressed/Scopus_processed_data.zip", exdir = "ScopusOutputs")
+    unzip("ScopusCompressed/Scopus_Keyword_List.zip", exdir = "ScopusOutputs")
   Scopus_data <- read.csv(file = "ScopusOutputs/Scopus_processed_data.csv")
   ScopusKeywordList <- read.csv(file = "ScopusOutputs/Scopus_Keyword_List.csv")
   print("Scopus processed data extracted")
