@@ -269,16 +269,16 @@ if (file.exists("ScopusOutputs/Scopus_Processed_Data.csv",recursive = TRUE)){
 # These codes can be run subsequently or independently
 
 # # Figure 1, Scopus Keywords as a function of year
-#source("Code/Figure1_Scopus_Keywords.R")
+source("Code/Figure1_Scopus_Keywords.R")
 
 # # Figure 2, Interpol Keywords as a function of year
-#source("Code/Figure2_Interpol_Keywords.R")
+source("Code/Figure2_Interpol_Keywords.R")
 
 # # Figure 3, Interpol Explosive Country
-#source("Code/Figure3_Interpol_Explosive_Country.R")
+source("Code/Figure3_Interpol_Explosive_Country.R")
 
 # # Figure 4, Full Text Mining Comparison
-#source("Code/Figure4_Full_Text_Mining.R")
+source("Code/Figure4_Full_Text_Mining.R")
 
 
 ##Other Code
@@ -303,9 +303,6 @@ if (file.exists("ScopusOutputs/Scopus_Processed_Data.csv",recursive = TRUE)){
 
 ##To illustrate the occurrence of explosives by year in Scopus dataset
 #source("Code/Scopus_Explosive_Year_Figure.R")
-
-##To generate a country network from Scopus dataset
-# source("Code/Scopus_Country_Network_Figure.R")
 
 ##To illustrate the percentage of papers published with international collaboration
 #source("Code/Scopus_International_Collaboration_Figure.R")

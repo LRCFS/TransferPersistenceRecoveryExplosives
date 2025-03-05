@@ -19,9 +19,11 @@ ScopusPublicationYear<- data.frame(table(Scopus_Fig1_Data$Year))
 names(ScopusPublicationYear) <- c("Year","Publications")
 ScopusPublicationYear$Year <- as.numeric(as.character(ScopusPublicationYear$Year))
 
+names(ScopusKeywordList)[4] <- "Source.Title"
+
 #count the number of keywords per title paper 
 ScopusKeywordList_KeywordsPerTitle <- ScopusKeywordList  %>%
-  select(Year,Title,Source.title,KeywordsCorrected) %>%
+  select(Year,Title,Source.Title,KeywordsCorrected) %>%
   distinct()
 
 ScopusKeywordList_KeywordsPerTitle[ScopusKeywordList_KeywordsPerTitle==""] <- NA
