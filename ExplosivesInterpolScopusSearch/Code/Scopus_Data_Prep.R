@@ -49,7 +49,6 @@ ScopusAffiliations <- gsub(";", ",", ScopusAffiliations$Affiliations)
 ScopusAffiliations <- sapply(ScopusAffiliations, strsplit, split = ", ", USE.NAMES = FALSE)
 
 # extract fields which match a known city making sure that diacritics aren't a problem...
-
 ScopusCityList <- lapply(ScopusAffiliations, function(x)x[which(removeDiacritics(x) %in% world.cities$name)])
 
 # ... or country
@@ -60,6 +59,9 @@ ScopusCountryListUnique <- lapply(ScopusAffiliations, function(x)unique(x[which(
 
 #extract the list of country per paper and place in dataframe
 ScopusCountryListbyPaperUnique <- as.data.table(matrix(ScopusCountryListUnique))
+
+ScopusCountryListbyPaperUnique$V1 <- as.character(ScopusCountryListbyPaperUnique$V1)
+write.csv(ScopusCountryListbyPaperUnique,file = "ScopusOutputs/ScopusCountryListUnique.csv",row.names = FALSE)
 
 # bind to the original data
 Scopus_data<- cbind(Scopus_data,ScopusCountryListbyPaperUnique)
@@ -259,5 +261,7 @@ Scopus_Title_Country <- Scopus_data %>%
   select(Title,Year,Country,EID)
 
 ScopusExplosives <- full_join(ScopusExplosivesCollapsed,Scopus_Title_Country, by = "EID")
+write.csv(ScopusExplosives,file = "ScopusOutputs/Scopus_Explosives.csv",row.names = FALSE)
+
 
 print("Scopus data prepared for figure generation")

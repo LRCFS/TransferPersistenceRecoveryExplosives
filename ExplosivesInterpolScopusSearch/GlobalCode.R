@@ -253,6 +253,8 @@ if (file.exists("ScopusOutputs/Scopus_Processed_Data.csv",recursive = TRUE)){
     unzip("ScopusCompressed/Scopus_Keyword_List.zip", exdir = "ScopusOutputs")
   Scopus_data <- read.csv(file = "ScopusOutputs/Scopus_processed_data.csv")
   ScopusKeywordList <- read.csv(file = "ScopusOutputs/Scopus_Keyword_List.csv")
+  ScopusExplosives <- read.csv(file = "ScopusOutputs/Scopus_Explosives.csv")
+  ScopusCountryListUnique <- read.csv(file = "ScopusOutputs/ScopusCountryListUnique.csv")
   print("Scopus processed data extracted")
 
 #If the Scopus processed data is not present,  this will run the code to process the data
