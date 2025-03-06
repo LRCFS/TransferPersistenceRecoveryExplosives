@@ -58,13 +58,19 @@ ScopusCountryList <- lapply(ScopusAffiliations, function(x)x[which(removeDiacrit
 ScopusCountryListUnique <- lapply(ScopusAffiliations, function(x)unique(x[which(x %in% world.cities$country.etc)]))
 
 #extract the list of country per paper and place in dataframe
-ScopusCountryListbyPaperUnique <- as.data.table(matrix(ScopusCountryListUnique))
+ScopusCountryListUnique <- as.data.table(matrix(ScopusCountryListUnique))
 
-ScopusCountryListbyPaperUnique$V1 <- as.character(ScopusCountryListbyPaperUnique$V1)
-write.csv(ScopusCountryListbyPaperUnique,file = "ScopusOutputs/ScopusCountryListUnique.csv",row.names = FALSE)
+names(ScopusCountryListUnique)[1] <- "Country"
+
+# remove unwanted characters  
+ScopusCountryListUnique$Country <-  gsub("c\\(","",ScopusCountryListUnique$Country)
+ScopusCountryListUnique$Country <-  gsub("\\)","",ScopusCountryListUnique$Country)
+ScopusCountryListUnique$Country <-  gsub("\"","",ScopusCountryListUnique$Country)
+ScopusCountryListUnique$Country <-  gsub(", ",",",ScopusCountryListUnique$Country)
+ScopusCountryListUnique$Country <-  gsub("character\\(0",NA,ScopusCountryListUnique$Country)
 
 # bind to the original data
-Scopus_data<- cbind(Scopus_data,ScopusCountryListbyPaperUnique)
+Scopus_data<- cbind(Scopus_data,ScopusCountryListUnique)
 
 # rename Country column
 names(Scopus_data)[11] <- c("Country")
@@ -72,12 +78,48 @@ names(Scopus_data)[11] <- c("Country")
 #convert to character
 Scopus_data$Country <- as.character(Scopus_data$Country)
 
-# remove unwanted characters  
-Scopus_data$Country <-  gsub("c\\(","",Scopus_data$Country)
-Scopus_data$Country <-  gsub("\\)","",Scopus_data$Country)
-Scopus_data$Country <-  gsub("\"","",Scopus_data$Country)
-Scopus_data$Country <-  gsub(", ",",",Scopus_data$Country)
-Scopus_data$Country <-  gsub("character\\(0",NA,Scopus_data$Country)
+#threshold for Figure 
+threshold <- 100
+
+ScopusCountryListUnique <- data.frame(Country = removeDiacritics(unlist(ScopusCountryListUnique)), stringsAsFactors = FALSE)
+
+ScopusCountryListUnique <- ScopusCountryListUnique %>% 
+  mutate(Country = strsplit(as.character(Country), ",")) %>% 
+  unnest(Country)
+
+# define continent for each country
+ScopusCountryListUnique$Continent <- countrycode(sourcevar = ScopusCountryListUnique$Country,
+                                                 origin = "country.name",
+                                                 destination = "continent")
+
+# get countries under threshold
+ThresholdCountries <- ScopusCountryListUnique %>% 
+  group_by(Country, Continent) %>% 
+  dplyr::summarise(Count = dplyr::n()) %>% 
+  filter(Count <= threshold)
+
+# aggregate counts as 'Others'
+ThresholdCountries <- data.frame(Country = "Others", Continent = "Other", Count = sum(ThresholdCountries$Count))
+
+# order by count
+ThresholdCountries$Country <- reorder(ThresholdCountries$Country, ThresholdCountries$Count)
+ThresholdCountries <- as.data.frame(ThresholdCountries)
+
+# Collate counts for countries over threshold
+ScopusCountryListUnique <- ScopusCountryListUnique %>% 
+  group_by(Country, Continent) %>% 
+  dplyr::summarise(Count = dplyr::n()) %>%  
+  filter(Count > threshold)
+
+# order by count
+ScopusCountryListUnique$Country <- reorder(ScopusCountryListUnique$Country, ScopusCountryListUnique$Count)
+
+# add in 'Others'
+ScopusCountryListUnique <- rbind(ThresholdCountries, ScopusCountryListUnique)
+ScopusCountryListUnique <- ScopusCountryListUnique %>%
+  filter(!is.na(Conutry))
+
+write.csv(ScopusCountryListUnique,file = "ScopusOutputs/ScopusCountryListUnique.csv",row.names = FALSE)
 
 #Remove special characters and extra white spaces from Abstract, Title and AI Keywords
 Scopus_data$Abstract <- gsub('[^[:alnum:] ]', ' ', Scopus_data$Abstract)

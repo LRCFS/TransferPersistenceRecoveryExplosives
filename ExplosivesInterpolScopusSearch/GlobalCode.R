@@ -313,6 +313,3 @@ source("Code/Figure4_Full_Text_Mining.R")
 
 ##To illustrate the occurrence of explosives by year in Scopus dataset
 #source("Code/Scopus_Explosive_Year_Figure.R")
-
-##To illustrate the percentage of papers published with international collaboration
-#source("Code/Scopus_International_Collaboration_Figure.R")

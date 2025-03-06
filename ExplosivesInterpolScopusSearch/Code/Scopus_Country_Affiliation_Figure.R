@@ -3,42 +3,8 @@
 ######              Figure 3.2                   ######
 #######################################################
 ## generate plot of papers per country
-#threshold for Figure 
-threshold <- 100
-
-ScopusCountryListUniqueFig3.2 <- data.frame(Country = removeDiacritics(unlist(ScopusCountryListUnique)), stringsAsFactors = FALSE)
-
-# define continent for each country
-ScopusCountryListUniqueFig3.2$Continent <- countrycode(sourcevar = ScopusCountryListUniqueFig3.2[, "Country"],
-                                             origin = "country.name",
-                                             destination = "continent")
-
-# get countries under threshold
-ThresholdCountries <- ScopusCountryListUniqueFig3.2 %>% 
-  group_by(Country, Continent) %>% 
-  dplyr::summarise(Count = dplyr::n()) %>% 
-  filter(Count <= threshold)
-
-# aggregate counts as 'Others'
-ThresholdCountries <- data.frame(Country = "Others", Continent = "Other", Count = sum(ThresholdCountries$Count))
-
-# order by count
-ThresholdCountries$Country <- reorder(ThresholdCountries$Country, ThresholdCountries$Count)
-ThresholdCountries <- as.data.frame(ThresholdCountries)
-
-# Collate counts for countries over threshold
-ScopusCountryListUniqueFig3.2 <- ScopusCountryListUniqueFig3.2 %>% 
-  group_by(Country, Continent) %>% 
-  dplyr::summarise(Count = dplyr::n()) %>%  
-  filter(Count > threshold)
-
-# order by count
-ScopusCountryListUniqueFig3.2$Country <- reorder(ScopusCountryListUniqueFig3.2$Country, ScopusCountryListUniqueFig3.2$Count)
-ScopusCountryListUniqueFig3.2 <- as.data.frame(ScopusCountryListUniqueFig3.2)
-# add in 'Others'
-ScopusCountryListUniqueFig3.2 <- rbind(ThresholdCountries, ScopusCountryListUniqueFig3.2)
 # plot
-ScopusCountryAffiliationsPlot <-  ggplot(ScopusCountryListUniqueFig3.2, (aes(x=Country, y=Count, fill=Continent))) + 
+ScopusCountryAffiliationsPlot <-  ggplot(ScopusCountryListUnique, (aes(x=Country, y=Count, fill=Continent))) + 
   geom_col() +
   scale_fill_manual(values = c("gray", brewer.pal(5, "Set1")), breaks = c("Africa", "Americas", "Asia", "Europe", "Oceania", "Other")) +
   xlab('Country Affiliation') +
