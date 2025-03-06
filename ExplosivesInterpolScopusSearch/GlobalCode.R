@@ -129,6 +129,14 @@ if (!dir.exists("Figures/")){
   dir.create(file.path(Figures.dir),recursive = TRUE)
 }
 
+if (!dir.exists("ScopusOutputs/")){
+  dir.create(file.path(cit.path.ScopusOutputs),recursive = TRUE)
+}
+
+if (!dir.exists("InterpolOutputs/")){
+  dir.create(file.path(cit.path.InterpolOutputs),recursive = TRUE)
+}
+
 # filename for figure export
 FigureName <- "Fig1_Scopus_Keyword_"
 TableName <- "Table1_Scopus_Keyword_"
@@ -250,7 +258,9 @@ if (file.exists("ScopusOutputs/Scopus_Processed_Data.csv",recursive = TRUE)){
 #This will check if the zip file is present, and if so extract the Scopus_Processed_Data.csv file
   }else if (file.exists("ScopusCompressed/Scopus_processed_data.zip",recursive = TRUE)){
   unzip("ScopusCompressed/Scopus_processed_data.zip", exdir = "ScopusOutputs")
-    unzip("ScopusCompressed/Scopus_Keyword_List.zip", exdir = "ScopusOutputs")
+  unzip("ScopusCompressed/Scopus_Keyword_List.zip", exdir = "ScopusOutputs")
+  unzip("ScopusCompressed/Scopus_Explosives.zip", exdir = "ScopusOutputs")
+  unzip("ScopusCompressed/ScopusCountryListUnique.zip", exdir = "ScopusOutputs")
   Scopus_data <- read.csv(file = "ScopusOutputs/Scopus_processed_data.csv")
   ScopusKeywordList <- read.csv(file = "ScopusOutputs/Scopus_Keyword_List.csv")
   ScopusExplosives <- read.csv(file = "ScopusOutputs/Scopus_Explosives.csv")
