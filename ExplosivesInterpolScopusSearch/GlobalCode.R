@@ -181,28 +181,8 @@ KeywordCorrectionList <- as.data.frame(KeywordCorrectionList)
 # Load the Corpus of interest to search in the Interpol output entries
 ExplosiveList <- read.csv("ReferenceLists/ExplosiveDatabase.csv", header = TRUE)
 
-ExplosiveList$UncorrectedNoSpecials <- ExplosiveList$Uncorrected.Explosive
-ExplosiveList$UncorrectedNoSpecials <- paste0(" ", ExplosiveList$UncorrectedNoSpecials)
-ExplosiveList$UncorrectedNoSpecials<- gsub('[^[:alnum:] ]', ' ', ExplosiveList$UncorrectedNoSpecials)
-ExplosiveList$UncorrectedNoSpecials <- gsub("\\s+", " ", ExplosiveList$UncorrectedNoSpecials)
-
-# Remove trailing (right) whitespace and make lowercase
-ExplosiveList$UncorrectedNoSpecials <- trimws(ExplosiveList$UncorrectedNoSpecials, which = c("right"))
-ExplosiveList$UncorrectedNoSpecials <- toupper(ExplosiveList$UncorrectedNoSpecials)
-
-ExplosiveList$UncorrectedNoSpaces <- ExplosiveList$UncorrectedNoSpecials
-ExplosiveList$UncorrectedNoSpaces <- trimws(ExplosiveList$UncorrectedNoSpaces, which = c("both"))
-
-ExplosiveList$Colour <- ExplosiveList$No.Practical.Use.
-ExplosiveList$Colour <-gsub('No Practical Use','tomato',ExplosiveList$Colour)
-ExplosiveList$Colour <- replace_na(ExplosiveList$Colour,'black')
-
-# Convert to Object
-ExplosiveListString <- ExplosiveList$UncorrectedNoSpecials
-
-#Get distinct explosives list
-ExplosiveListDistinct <- data.frame(ExplosiveList$Corrected.Explosive) %>%
-  distinct()
+# Format the Corpus to remove special characters etc.
+source("Code/Explosive_Corpus_Prep")
 
 #############################################################
 #####           Figure Settings                         #####
@@ -237,9 +217,13 @@ Count <- number
 #This will check if the Interpol data has already been processed and saved, and if so will read the file
 #This allows figures to be generated without reprocessing the data
 if (file.exists("InterpolOutputs/Interpol_Processed_Data.csv",recursive = TRUE)){
+  #Interpol_Processed_data contains the list of interpol papers and associated info (title, authors, country etc and corrected keywords)
   Interpol_data <- read.csv(file = "InterpolOutputs/Interpol_Processed_Data.csv")
+  #IntepolKeywordList contains the list of distinct keywords found in the Interpol papers
   InterpolKeywordList <- read.csv(file = "InterpolOutputs/Interpol_Keyword_List.csv")
+  #InterpolExplosives contains the terms from the Explosive Corpus found in the Interpol title, abstract and keywords
   InterpolExplosives <- read.csv(file = "InterpolOutputs/Interpol_Explosives.csv")
+  #Full_Text_Top20_Explo contains the 20 most mentioned terms from the Explosive Corpus in the Interpol full text papers
   ExplosivesCountSubset <- read.csv(file = "InterpolOutputs/Full_Text_Top20_Explo.csv")
   print("Interpol data already processed")
 }else{ source("Code/Interpol_Data_Prep.R")
@@ -251,8 +235,14 @@ if (file.exists("InterpolOutputs/Interpol_Processed_Data.csv",recursive = TRUE))
 #############################################################
 #This will check if the Scopus processed data is present and has already been extracted from the zip file
 if (file.exists("ScopusOutputs/Scopus_Processed_Data.csv",recursive = TRUE)){
+  #Scopus_Processed_data contains the list of scopus papers and associated info (title, authors, country etc and corrected keywords)
   Scopus_data <- read.csv(file = "ScopusOutputs/Scopus_Processed_Data.csv")
+  #ScopusKeywordList contains the list of distinct keywords found in the Scopus papers
   ScopusKeywordList <- read.csv(file = "ScopusOutputs/Scopus_Keyword_List.csv")
+  #ScopusExplosives contains the terms from the Explosive Corpus found in the Scopus title, abstract and keywords
+  ScopusExplosives <- read.csv(file = "ScopusOutputs/Scopus_Explosives.csv")
+  #ScopusCountryListUnique contains the list of distinct countries found in the scopus papers
+  ScopusCountryListUnique <- read.csv(file = "ScopusOutputs/ScopusCountryListUnique.csv")
   print("Scopus data already processed")
   
 #This will check if the zip file is present, and if so extract the Scopus_Processed_Data.csv file
@@ -261,9 +251,13 @@ if (file.exists("ScopusOutputs/Scopus_Processed_Data.csv",recursive = TRUE)){
   unzip("ScopusCompressed/Scopus_Keyword_List.zip", exdir = "ScopusOutputs")
   unzip("ScopusCompressed/Scopus_Explosives.zip", exdir = "ScopusOutputs")
   unzip("ScopusCompressed/ScopusCountryListUnique.zip", exdir = "ScopusOutputs")
+  #Scopus_Processed_data contains the list of scopus papers and associated info (title, authors, country etc and corrected keywords)
   Scopus_data <- read.csv(file = "ScopusOutputs/Scopus_processed_data.csv")
+  #ScopusKeywordList contains the list of distinct keywords found in the Scopus papers
   ScopusKeywordList <- read.csv(file = "ScopusOutputs/Scopus_Keyword_List.csv")
+  #ScopusExplosives contains the terms from the Explosive Corpus found in the Scopus title, abstract and keywords
   ScopusExplosives <- read.csv(file = "ScopusOutputs/Scopus_Explosives.csv")
+  #ScopusCountryListUnique contains the list of distinct countries found in the scopus papers
   ScopusCountryListUnique <- read.csv(file = "ScopusOutputs/ScopusCountryListUnique.csv")
   print("Scopus processed data extracted")
 
@@ -296,7 +290,7 @@ source("Code/Figure4_Full_Text_Mining.R")
 #source("Code/Journal_Paper_Downloads.R")
 
 ## To compare keywords between evidence types
-#source("Code/Evidence Comparison.R")
+#source("Code/Evidence_Comparison.R")
 
 ####Unused Figures#####
 ##To illustrate countries publishing papers included in Interpol reviews

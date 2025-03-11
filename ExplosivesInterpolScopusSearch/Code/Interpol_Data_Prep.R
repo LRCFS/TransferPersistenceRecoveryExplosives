@@ -257,6 +257,15 @@ write.csv(InterpolExplosives, file=paste0(cit.path.InterpolOutputs,sprintf("%s.c
 #############################################################
 #####  Load and Process Interpol Full Text Data         #####
 #############################################################
+#This section requires the papers to be search to be downloaded to be saved in a folder named "Papers" in the directory
+#To download Propellants, Explosives, Pyrotechnics papers using the Wiley API
+#First obtain an API token here
+#https://onlinelibrary.wiley.com/library-info/resources/text-and-datamining
+#Note: academic institutional access is required
+#Define API token
+#APIToken <- '###############################'
+#Then the following code can be used to automatically download the papers
+#source("Code/Journal_Paper_Downloads.R")
 
 # Step 1: Define your specific corpus (keywords or phrases) to search for
 ExplosiveKeywords <- as.character(ExplosiveList$Uncorrected.Explosive)
