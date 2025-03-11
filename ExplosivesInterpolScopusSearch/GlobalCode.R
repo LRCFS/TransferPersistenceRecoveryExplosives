@@ -182,7 +182,7 @@ KeywordCorrectionList <- as.data.frame(KeywordCorrectionList)
 ExplosiveList <- read.csv("ReferenceLists/ExplosiveDatabase.csv", header = TRUE)
 
 # Format the Corpus to remove special characters etc.
-source("Code/Explosive_Corpus_Prep")
+source("Code/Explosive_Corpus_Prep.R")
 
 #############################################################
 #####           Figure Settings                         #####

@@ -117,7 +117,7 @@ ScopusCountryListUnique$Country <- reorder(ScopusCountryListUnique$Country, Scop
 # add in 'Others'
 ScopusCountryListUnique <- rbind(ThresholdCountries, ScopusCountryListUnique)
 ScopusCountryListUnique <- ScopusCountryListUnique %>%
-  filter(!is.na(Conutry))
+  filter(!is.na(Country))
 
 write.csv(ScopusCountryListUnique,file = "ScopusOutputs/ScopusCountryListUnique.csv",row.names = FALSE)
 
