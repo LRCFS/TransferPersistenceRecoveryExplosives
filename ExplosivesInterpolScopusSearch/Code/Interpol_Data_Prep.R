@@ -267,6 +267,8 @@ write.csv(InterpolExplosives, file=paste0(cit.path.InterpolOutputs,sprintf("%s.c
 #Then the following code can be used to automatically download the papers
 #source("Code/Journal_Paper_Downloads.R")
 
+if(file.exists("Papers",recursive = TRUE)){
+  
 # Step 1: Define your specific corpus (keywords or phrases) to search for
 ExplosiveKeywords <- as.character(ExplosiveList$Uncorrected.Explosive)
 ExplosiveKeywords <-tolower(ExplosiveKeywords)
@@ -536,5 +538,7 @@ ExplosivesCountSubset <-subset(ExplosivesCount,Explosive %in% TopExplosives$Expl
 ExplosivesCountSubset$Ratio <- ExplosivesCountSubset$`Explosives from Abstract, Title, and Keywords`/ ExplosivesCountSubset$`Explosives from Full Text`
 
 write.csv(ExplosivesCountSubset, file=paste0(cit.path.InterpolOutputs,sprintf("%s.csv","Full_Text_Top20_Explo")), row.names = F)
+
+}else{ print("Full Text Papers unavailable")}
 
 print("Interpol data prepared for figure generation")

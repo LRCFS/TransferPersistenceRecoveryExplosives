@@ -2,7 +2,8 @@
 #####           Interpol Full Text                #####
 #####           Explosive Keywords                #####
 #######################################################
-
+if(exists("ExplosivesCountSubset")){
+  
 names(ExplosivesCountSubset)[2] <- "Explosives from Full Text"
 names(ExplosivesCountSubset)[3] <- "Explosives from Abstract, Title, and Keywords"
 names(ExplosivesCountSubset)[4] <- "Explosives that make up more than % of mentions"
@@ -43,3 +44,5 @@ Var1 <- paste0("Fig_4_ExplosivesMentionsbySource")
 ggsave(paste0(Figure.dir,sprintf("%s.tiff",Var1)), ExplosivesMentionsbySource, width = 9, height = 12, units = "cm", dpi=600)
 
 print("Processing complete. Please check 'Figures/' folder for output")
+
+}else{print("Full text data unavailable. Figure 4 cannot be generated.")}

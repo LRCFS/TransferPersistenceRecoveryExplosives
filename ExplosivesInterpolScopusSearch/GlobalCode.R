@@ -223,8 +223,10 @@ if (file.exists("InterpolOutputs/Interpol_Processed_Data.csv",recursive = TRUE))
   InterpolKeywordList <- read.csv(file = "InterpolOutputs/Interpol_Keyword_List.csv")
   #InterpolExplosives contains the terms from the Explosive Corpus found in the Interpol title, abstract and keywords
   InterpolExplosives <- read.csv(file = "InterpolOutputs/Interpol_Explosives.csv")
-  #Full_Text_Top20_Explo contains the 20 most mentioned terms from the Explosive Corpus in the Interpol full text papers
-  ExplosivesCountSubset <- read.csv(file = "InterpolOutputs/Full_Text_Top20_Explo.csv")
+  if(file.exists("InterpolOutputs/Full_Text_Top20_Explo.csv")){
+    #Full_Text_Top20_Explo contains the 20 most mentioned terms from the Explosive Corpus in the Interpol full text papers
+    ExplosivesCountSubset <- read.csv(file = "InterpolOutputs/Full_Text_Top20_Explo.csv")
+  }else{print("Full text data unavailable")} 
   print("Interpol data already processed")
 }else{ source("Code/Interpol_Data_Prep.R")
 
