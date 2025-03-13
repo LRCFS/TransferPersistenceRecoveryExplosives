@@ -195,7 +195,7 @@ textcol <- "black"
 #############################################################
 ##### Keyword Figures
 # the number of keywords (top most frequent) appearing in the figure
-number <- 100   # target number of keywords apearing in the keyword figure
+number <- 100   # target number of keywords appearing in the keyword figure
 maximum <- 105  # maximum number of keywords appearing in the keyword figure
 
 # colour palette for the Keyword figure
@@ -293,6 +293,9 @@ source("Code/Figure4_Full_Text_Mining.R")
 
 ## To compare keywords between evidence types
 #source("Code/Evidence_Comparison.R")
+
+## For data analysis in paper
+#source("Code/Data_Analysis.R")
 
 ####Unused Figures#####
 ##To illustrate countries publishing papers included in Interpol reviews

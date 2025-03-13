@@ -78,47 +78,6 @@ names(Scopus_data)[11] <- c("Country")
 #convert to character
 Scopus_data$Country <- as.character(Scopus_data$Country)
 
-#threshold for Figure 
-threshold <- 100
-
-ScopusCountryListUnique <- data.frame(Country = removeDiacritics(unlist(ScopusCountryListUnique)), stringsAsFactors = FALSE)
-
-ScopusCountryListUnique <- ScopusCountryListUnique %>% 
-  mutate(Country = strsplit(as.character(Country), ",")) %>% 
-  unnest(Country)
-
-# define continent for each country
-ScopusCountryListUnique$Continent <- countrycode(sourcevar = ScopusCountryListUnique$Country,
-                                                 origin = "country.name",
-                                                 destination = "continent")
-
-# get countries under threshold
-ThresholdCountries <- ScopusCountryListUnique %>% 
-  group_by(Country, Continent) %>% 
-  dplyr::summarise(Count = dplyr::n()) %>% 
-  filter(Count <= threshold)
-
-# aggregate counts as 'Others'
-ThresholdCountries <- data.frame(Country = "Others", Continent = "Other", Count = sum(ThresholdCountries$Count))
-
-# order by count
-ThresholdCountries$Country <- reorder(ThresholdCountries$Country, ThresholdCountries$Count)
-ThresholdCountries <- as.data.frame(ThresholdCountries)
-
-# Collate counts for countries over threshold
-ScopusCountryListUnique <- ScopusCountryListUnique %>% 
-  group_by(Country, Continent) %>% 
-  dplyr::summarise(Count = dplyr::n()) %>%  
-  filter(Count > threshold)
-
-# order by count
-ScopusCountryListUnique$Country <- reorder(ScopusCountryListUnique$Country, ScopusCountryListUnique$Count)
-
-# add in 'Others'
-ScopusCountryListUnique <- rbind(ThresholdCountries, ScopusCountryListUnique)
-ScopusCountryListUnique <- ScopusCountryListUnique %>%
-  filter(!is.na(Country))
-
 write.csv(ScopusCountryListUnique,file = "ScopusOutputs/ScopusCountryListUnique.csv",row.names = FALSE)
 
 #Remove special characters and extra white spaces from Abstract, Title and AI Keywords
