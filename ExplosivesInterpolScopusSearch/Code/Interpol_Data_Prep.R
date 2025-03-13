@@ -121,7 +121,7 @@ InterpolDistinctKeywordList <- InterpolKeywordList %>%
   distinct()
 
 # Apply corrections to Interpol Keyword list
-InterpolKeywordList$KeywordsCorrected <- gsr(as.character(InterpolKeywordList$AIKeywords),as.character(KeywordCorrectionList$AIKeywords),as.character(KeywordCorrectionList$CorAIKeywordsAcronym))
+InterpolKeywordList$KeywordsCorrected <- gsr(as.character(InterpolKeywordList$AIKeywords),as.character(KeywordCorrectionList$AIKeywords),as.character(KeywordCorrectionList$CorrectedAIKeywords))
 
 #Save Interpol keyword list
 write.csv(InterpolKeywordList, file=paste0(cit.path.InterpolOutputs,sprintf("%s.csv","Interpol_Keyword_List")), row.names = F)
@@ -341,21 +341,7 @@ FullTextCountReduced <- FullTextCount %>%
 FullTextExplo <- FullTextCount %>%
   group_by(FullTextExplosives, DOI) %>%
   summarise(Occurence=sum(FullTextExplosivesCount))
-FullTextExplo$Occurence <- factor(FullTextExplo$Occurence)
-FullTextExplo$Frequency <- FullTextExplo$Occurence
-
-FullTextExploHist <- aggregate(FullTextExplo$Frequency, by=list(Occurence=FullTextExplo$Occurence), FUN=length)
-
-######Histogram########
-ExplosivesHistogram <- ggplot(FullTextExploHist, aes(x=Occurence, y=x))+
-  geom_bar(stat="identity")
-
-show(ExplosivesHistogram)
-
 FullTextExplo$Occurence <- as.numeric(FullTextExplo$Occurence)
-TotalMentions = sum(FullTextExplo$Occurence)
-FullTextMeanMentions <- mean(FullTextExplo$Occurence)
-FullTextMedianMentions <- median(FullTextExplo$Occurence)
 
 FullTextDOI <- data.frame(FullTextExplo$DOI)
 FullTextDOI <- distinct(FullTextDOI)
@@ -379,7 +365,7 @@ FullTextDOI <- distinct(FullTextDOI)
 # FullTextExploTop$Source <- "Top Explosive Per Paper"
 
 #To limit the explosive count to only explosives with more than n mentions
-n = 1
+n = 10
 for (i in 1:nrow(FullTextDOI)){
   FullTextExplo_temp <- FullTextExplo %>%
     filter(DOI == FullTextDOI[i,1])
@@ -477,12 +463,19 @@ CombinedCount <- right_join(Interpol_data,CombinedCount, by = "DOI", relationshi
   select(DOI, Title, AbsTitleKeywordsExplosives, FullTextExplosives)
 
 CombinedCount <- right_join(InterpolSelectedData, CombinedCount, by ="DOI", relationship = "many-to-many") %>%
-  select(DOI, Title.x, AbsTitleKeywordsExplosives, FullTextExplosives, AbsTitleKeywords)
+  select(DOI, Title.x, AbsTitleKeywordsExplosives, FullTextExplosives, AbsTitleKeywords) %>%
+  filter(!DOI=="")%>%
+  distinct(DOI,.keep_all = T)
 
 CombinedCountTitleAbsKey <- CombinedCount
 
 CombinedCountNoTitleAbsKey <- CombinedCount %>%
   filter(is.na(AbsTitleKeywordsExplosives))
+
+CombinedCountHasTitleAbsKey <- CombinedCount %>%
+  filter(!is.na(AbsTitleKeywordsExplosives))
+
+
 CombinedCountHasTitleAbsKey <- subset(CombinedCountTitleAbsKey, !(DOI %in% CombinedCountNoTitleAbsKey$DOI))
 CombinedCountTitleAbsKeyExpEng <- CombinedCountTitleAbsKey %>%
   filter(grepl("explosive", AbsTitleKeywords, ignore.case=T))

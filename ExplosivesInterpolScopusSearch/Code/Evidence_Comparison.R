@@ -1,3 +1,7 @@
+#############################################################
+#####   Comparison to Drug Evidence Type                #####
+#############################################################
+
 InterpolDataEIDs <- Interpol_data
 InterpolDataEIDs[InterpolDataEIDs==""] <- NA
 InterpolDataEIDs <- InterpolDataEIDs[complete.cases(InterpolDataEIDs[ ,10]),]
@@ -9,7 +13,7 @@ DrugKeywords <- aggregate(DrugKeywords$x, by=list(Keyword=DrugKeywords$Keyword),
 DrugKeywords <- DrugKeywords[order(DrugKeywords$x,decreasing = T),]
 DrugKeywords <- top_n(DrugKeywords,100)
 DrugKeywords$KeywordsCorrected <- DrugKeywords$Keyword
-DrugKeywords$KeywordsCorrected <- gsr(as.character(DrugKeywords$Keywords),as.character(KeywordCorrectionList$AIKeywords),as.character(KeywordCorrectionList$CorAIKeywordsAcronym))
+DrugKeywords$KeywordsCorrected <- gsr(as.character(DrugKeywords$Keywords),as.character(KeywordCorrectionList$AIKeywords),as.character(KeywordCorrectionList$CorrectedAIKeywords))
 InterpolDrugKeyword <- subset(InterpolKeywordNarrowRangeGraph, Keyword %in% DrugKeywords$KeywordsCorrected)
 
 Drug_data <- read.csv(file = "DrugsEvidence/IFSMS_DG.csv")

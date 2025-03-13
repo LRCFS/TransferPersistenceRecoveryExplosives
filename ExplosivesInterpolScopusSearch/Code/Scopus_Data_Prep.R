@@ -168,7 +168,7 @@ ScopusDistinctKeywordList <- ScopusKeywordList %>%
   distinct()
 
 # Apply corrections to Scopus Keyword list
-ScopusKeywordList$KeywordsCorrected <- gsr(as.character(ScopusKeywordList$AIKeywords),as.character(KeywordCorrectionList$AIKeywords),as.character(KeywordCorrectionList$CorAIKeywordsAcronym))
+ScopusKeywordList$KeywordsCorrected <- gsr(as.character(ScopusKeywordList$AIKeywords),as.character(KeywordCorrectionList$AIKeywords),as.character(KeywordCorrectionList$CorrectedAIKeywords))
 
 #Save Scopus keyword list
 write.csv(ScopusKeywordList, file=paste0(cit.path.ScopusOutputs,sprintf("%s.csv","Scopus_Keyword_List")), row.names = F)
