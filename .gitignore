@@ -1,7 +1,16 @@
-.Rproj.user
+#Scopus files which are too large for Github
+ScopusOutputs/
+
+#Propellants, Explosives, Pyrotechnics articles
+Papers/
+
+#History files
 .Rhistory
+.Rapp.history
+
+#Session Data files
 .RData
 .Ruserdata
-.RDataTmp
-.RDataTmp1
-ScopusOutputs/
+
+#RStudio files
+.Rproj.user/
