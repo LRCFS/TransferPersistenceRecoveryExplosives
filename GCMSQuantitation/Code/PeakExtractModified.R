@@ -87,7 +87,15 @@ for (file in filenameGcData) {
   names(Combined.bc.fillPeakTIC)[1] <- "RetentionTime"
   
   Combined.bc.fillPeakTIC$Subtracted <- Combined.bc.fillPeakTIC$TIC-Combined.bc.fillPeakTIC$BaselineTrend
-
+  
+   p <- ggplot(Combined.bc.fillPeakTIC, aes(x=RetentionTime)) +
+    geom_line(aes(y = TIC, colour = "GC trace")) +
+    geom_line(aes(y = BaselineTrend, colour = "baseline")) +   
+    labs(
+      x = "Retention Time (s)",
+      y = "TIC")
+  show (p)
+  
   # When running single file don't run line below (skip to ggsave)
   #  GcDataName <- gsub('.{4}$', '', GcDataName)
   ggsave(

@@ -69,7 +69,7 @@ extensionXLSX <- ".xlsx"
 extensionMS1 <- ".ms1"
 
 #Specify the parent folder of the GC Data
-DataFolder <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/Troubleshooting/PETN Test"
+DataFolder <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/Troubleshooting/MT Test"
 ParentFolder <- sub(".*/", "", DataFolder)
 
 # This is where the .D files from the instrument will be placed  
