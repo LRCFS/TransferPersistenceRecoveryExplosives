@@ -1,181 +1,417 @@
+
 #####################################################################
 #####              Run Global Code in first instance            #####
 #####################################################################
-# Load Metadata files
-filenameMetadata <- list.files(Metadata.dir, pattern=extensionXLSX, full.names=TRUE)
 
-Metadata <- read_xlsx(filenameMetadata)
+# Load MetaData Files
 
-# create the date from DataName
-Metadata$Date <- str_sub(Metadata$DataName,1,6)
+# Read the log file
+
+# List all .txt files in the directory
+log_file <- list.files(path = DataFolder, pattern = "Sequence", full.names = TRUE)[1]
+
+# Read the log file
+log_lines <- readLines(log_file)
+
+# Extract the date from the "Starting sequence" line
+date_line <- log_lines[grepl("Starting sequence", log_lines)]
+date <- str_extract(date_line, "\\w+ \\w+ \\d+ \\d{2}:\\d{2}:\\d{2} \\d{4}")
+
+# Find lines that match the metadata entries
+metadata_lines <- log_lines[grepl("^\\s*\\d+\\)", log_lines)]
+
+# Parse each line into components
+parsed_data <- lapply(metadata_lines, function(line) {
+  matches <- str_match(line, "^\\s*(\\d+)\\)\\s+(\\w+)\\s+(\\d+)\\s+(\\d+)\\s+(.*)$")
+  if (!is.na(matches[1])) {
+    sample_name <- matches[6]
+    
+    # Extract calibration level if it's a Cal type
+    cal_level <- NA
+    if (matches[3] == "Cal") {
+      cal_level_match <- str_match(sample_name, "(\\d+(\\.\\d+)?)ng")
+      if (!is.na(cal_level_match[1])) {
+        cal_level <- as.numeric(cal_level_match[2])
+      }
+    }
+    
+    return(data.frame(
+      Date = date,
+      Line = as.integer(matches[2]),
+      Type = matches[3],
+      Vial = as.integer(matches[4]),
+      DataFile = matches[5],
+      SampleName = sample_name,
+      CalLevel = cal_level,
+      stringsAsFactors = FALSE
+    ))
+  } else {
+    return(NULL)
+  }
+})
+
+# Combine all parsed rows into a single dataframe
+Metadata <- do.call(rbind, parsed_data)
+Metadata$DataFile <- paste0(Metadata$DataFile, "Summary.csv")
+Metadata$Date <- as.POSIXct(Metadata$Date, format = "%a %b %d %H:%M:%S %Y", tz = "UTC")
+Metadata$Date <- format(Metadata$Date, "%Y%m%d")
 
 # Load GC results
-filenameGcData <- list.files(GcData.dir, pattern=extensionCSV, full.names=TRUE)
+filenameGcData <- list.files(GcData.dir, pattern = "\\Summary.csv$", full.names = TRUE)
 
-GcResults <- do.call(rbind, lapply(filenameGcData, function(x) transform(read.csv(x), File = basename(x))))
+# Get all column names across files
+ColNames <- unique(unlist(lapply(filenameGcData, function(x) names(read.csv(x)))))
 
-# GcResults <- read.csv(filenameGcData, header = TRUE, encoding = "UTF-8")
-# names(GcResults)[1] <- "DataName"
+# Read and align each file
+GcResults <- do.call(rbind, lapply(filenameGcData, function(x) {
+  df <- read.csv(x)
+  df$File <- basename(x)
+  missing_cols <- setdiff(ColNames, names(df))
+  df[missing_cols] <- NA
+  df <- df[ColNames]
+  return(df)
+}))
 
-# Extract the date from the filename
-GcResults$DataName <- gsub('.{4}$', '', GcResults$File)
-# Rename column 
-#colnames(GcResults)[colnames(GcResults) == 'File'] <- 'DataName'
-# change to numeric
-GcResults$DataName <- as.numeric(GcResults$DataName)
+# Join GC results to metadata
+CombinedResults <- full_join(Metadata, GcResults, by = join_by(DataFile == File))
 
-# join GC results to metadata
-CombinedResults <- full_join(Metadata,GcResults)
+#CombinedResults[8,9] <- CombinedResults[8,9]/2
+#CombinedResults[9,9] <- CombinedResults[9,9]/2
+#CombinedResults <- CombinedResults[1:36,]
 
-# peak area ratios
-CombinedResults$ratio <- as.numeric(CombinedResults$PA/CombinedResults$I.S.PA)
+# Peak area ratios
+CombinedResults$ratio <- as.numeric(CombinedResults$PETN.PA / CombinedResults$I.S.PA)
+CombinedResults$Row <- 1:nrow(CombinedResults)
 
-# To read simulated data
-#CombinedResults <-read.csv2("Results/CombinedResultsFALSE.csv",header = T, sep = ",")
-CombinedResults$ratio <- as.numeric(CombinedResults$ratio)
+# Filter calibration data
+CalibrationValues <- CombinedResults %>%
+  filter(Type == "Cal")
 
-#Determine how many calibrations are in the data
-# calibration range
-calibration <- c("25","50","75","100","150","200","250")
+CalLevels <-  length(unique(CalibrationValues[["CalLevel"]]))
 
-#convert to a dataframe
-calibration <- as.data.frame(calibration)
-calibration$calibration <- as.numeric(calibration$calibration)
-
-#Number of calibration standards
-CalLevels <- nrow(calibration)
-
-NumCal <- as.list(1:(nrow(CalibrationValues <- CombinedResults %>%
-                 filter(CombinedResults$Type=="Cal"))/CalLevels))
-
-Cals <- list()
-
-for (i in NumCal){
-  Num <- (CalLevels*i-(CalLevels-1))
-  Cals[[i]] <- CombinedResults[which(CombinedResults$SampleType=='Cal', arr.ind=TRUE)[Num:(Num+6)],]
-  CalData <- Cals[[i]]
-  Cals[[i]] <- cbind(calibration,CalData)
-  # determine the quadratic fit 
-  model <- lm(Cals[[i]]$ratio ~ poly(Cals[[i]]$calibration, degree = 2, raw = T))
+if (CalLevels != 0){
   
-  # extract the values from list
-  QuadraticValues <- model[[1]]
+  #Get calibration concentrations
+  original_conc <- unique(CalibrationValues[["CalLevel"]])
   
-   if (exists("AllQuadraticValues")){
-      AllQuadraticValues[[i]] <- as.data.frame(QuadraticValues)
-      } else {AllQuadraticValues <- as.list("NA")
-       AllQuadraticValues[[i]] <- as.data.frame(QuadraticValues)
-       }
+  # Adjust calibration concentrations based on dilution factor given in Global Code
+  #adjusted_conc <- original_conc * Dilution
+  #calibration <- data.frame(calibration = adjusted_conc)
+  #CalLevels <- nrow(calibration)
+  
+  # Calculate number of calibration sets
+  NumCal <- seq_len(nrow(CalibrationValues) / CalLevels)
+  
+  Cals <- list()
+  AllQuadraticValues <- list()
+  
+  for (i in NumCal) {
+    Num <- (CalLevels * i - (CalLevels - 1))
+    Cals[[i]] <- CalibrationValues[Num:(Num + CalLevels - 1), ]
+    #Get calibration concentrations
+    original_conc <- (Cals[[i]][["CalLevel"]])
+    
+    # Adjust calibration concentrations based on dilution factor given in Global Code
+    adjusted_conc <- original_conc * Dilution
+    CalLevel <- data.frame(CalLevel = adjusted_conc)
+    
+    CalLevels <- nrow(CalLevel)
+    Cals[[i]][,7] <- CalLevel
+    Cals[[i]]$CalibrationSet <- i
+    
+    # Fit quadratic model
+    model <- lm(ratio ~ CalLevel + I(CalLevel^2), data = Cals[[i]])
+    AllQuadraticValues[[i]] <- coef(model)
   }
-  #Associate the data with the correct calibration
-  for (i in NumCal){ 
-   if (i < length(NumCal)) {  
-      if (exists("SampleBrackets")) {
-      SampleBrackets[[i]] <- as.data.frame(CombinedResults[(Cals[[i]][CalLevels,2]+1):(Cals[[i+1]][1,2]-1), ])
-      } else {
-        SampleBrackets <- list()
-        SampleBrackets[[i]] <- as.data.frame(CombinedResults[(Cals[[i]][CalLevels,2]+1):(Cals[[i+1]][1,2]-1), ])
-      }
-    } else { 
-      if (exists("SampleBrackets")) {
-          SampleBrackets[[i]] <- as.data.frame(CombinedResults[(Cals[[i]][CalLevels,2]+1):nrow(CombinedResults), ])
-    } else {
-      SampleBrackets <- as.list("NA")
-      SampleBrackets[[i]] <- as.data.frame(CombinedResults[(Cals[[i]][CalLevels,2]+1):nrow(CombinedResults), ])     } 
-    }
-  }
-
-
-# solving for x the quadractic equation: y = c*x^2 + b*x + a
-# x = (±(b^2+4c(y−a))^(1/2)−b)/2c
-# The order from the list [1], [2] and [3] are for a, b and c
-# only the positive part of the equation is considered
-
-for (i in NumCal){
-SampleBrackets[[i]]$ValuesPositive <- (((AllQuadraticValues[[i]][2,1])^2 + 4*(AllQuadraticValues[[i]][3,1])*(SampleBrackets[[i]]$ratio-(AllQuadraticValues[[i]][1,1])))^(1/2)-(AllQuadraticValues[[i]][2,1]))/(2*(AllQuadraticValues[[i]][3,1]))
-
-Cals[[i]]$ValuesPositive <- (((AllQuadraticValues[[i]][2,1])^2 + 4*(AllQuadraticValues[[i]][3,1])*(Cals[[i]]$ratio-(AllQuadraticValues[[i]][1,1])))^(1/2)-(AllQuadraticValues[[i]][2,1]))/(2*(AllQuadraticValues[[i]][3,1]))
-
-if (i==1){
-  CombinedResults <- bind_rows(SampleBrackets[[i]],Cals[[i]])
-} else {
-  CombinedResults <- bind_rows(CombinedResults, SampleBrackets[[i]], Cals[[i]])
-}
-
-CombinedResults <- CombinedResults[order(CombinedResults$X), ]
-CombinedResults <- CombinedResults[complete.cases(CombinedResults[ , c('ValuesPositive')]), ] 
-SampleBrackets[[i]] <- SampleBrackets[[i]][complete.cases(SampleBrackets[[i]][ , c('ValuesPositive')]), ] 
-
-# plot the results for the metadata
-p<- ggplot() + 
-  geom_point(data=Cals[[i]][1:CalLevels,], aes(x=calibration, y=ratio), colour="red") + 
-  geom_line(data=Cals[[i]][1:CalLevels,], aes(x=ValuesPositive, y=ratio), colour="green") +
-  geom_point(data=SampleBrackets[[i]], aes(x = ValuesPositive, y=ratio), colour="black", size=2) +
-  theme_bw() +
-  ylab("Etizolam - Internal Standard peak area ratio / arb. unit") +
-  xlab(bquote("Concentration Etizolam /" ~mu~g%.%mL^{-1})) +
-  theme(text = element_text(size = 12))
-
- show(p)
-# save figures in output folder in metadata
-filenameMetadata <- gsub('\\..*', '', filenameMetadata)
-filenameMetadata <- gsub('\\//*', '-', filenameMetadata)
-ggsave(
-  sprintf(paste0(i,"%s.tiff"),filenameMetadata),
-  plot = p,
-  device = NULL,
-  path = file.path(MetadataOutput.dir),
-  scale = 1,
-  width = 7.5,
-  height = 5.0,
-  units = c("in"),
-  dpi = 300,
-  limitsize = TRUE
-)
-}
-
-#Add columns to account for dilution, convert to mg and calculate total etizolam in sample 
-CombinedResults$CorrectedConcentration <- CombinedResults$ValuesPositive * CombinedResults$Dilution
-CombinedResults$ConcentrationMg <- CombinedResults$CorrectedConcentration /1000
-CombinedResults$SampleTotal <- as.numeric(CombinedResults$ConcentrationMg) * as.numeric(CombinedResults$Volume)
-
-# If a tablet or powder calculate % Etizolam in total sample and total Etizolam (in mg) in original Tablet/Powder
-CombinedResults$EtizolamPercentage <- NA
-CombinedResults$TotalEtizolam <- NA
-for (i in 1:nrow(CombinedResults)) {
-  a <-  CombinedResults[i,2]
-  if (a == "Powder" | a == "Tablet") {
-    CombinedResults$EtizolamPercentage[i] <- (CombinedResults$SampleTotal[i]/CombinedResults$QuantWeight[i])*100
-    CombinedResults$TotalEtizolam <- (CombinedResults$TotalWeight/100)*CombinedResults$EtizolamPercentage
-    i <- i+1
-  } 
   
-}
-
-# This is to create the export of the results
-# If previous series of data already exists, an archive copy will be saved and
-# the new data file including the latest results will be created
-
-# file to check if it is present in the designated folder
-filename_data <- paste0(Results.dir,'GCMSResultsCardData.csv')
-
-if(file.exists(filename_data)){
+  # Associate the data with the correct calibration
+  SampleBrackets <- list()
   
-  # read file
-  ProcessedData <- read.csv(filename_data)
-  
-  ###### Saving an archived copy of the library #####
-  filename.date = paste(gsub(":", "-", Sys.time()),"_GCMSResults.csv",sep="")
-  
-  # to write the archive using system date
-  write.csv(ProcessedData, file=paste0(Backup.dir,filename.date), row.names = F)
-  
-  # Combined the existing results to the new one
-  CombinedData <- rbind(ProcessedData,CombinedResults)
-  
-  write.table(CombinedData,file = paste0(Results.dir,"GCMSResultsCardData.csv"),  sep = ",", row.names = F)
+  if (length(Cals) == 1) {
+    start_row <- max(Cals[[1]]$Row) + 1
+    end_row <- nrow(CombinedResults)
+    
+    cat("Bracket 1: rows", start_row, "to", end_row, "\n")
+    SampleBrackets[[1]] <- CombinedResults[start_row:end_row, ]
+    SampleBrackets[[1]]$CalibrationSet <- 1
   } else {
-    write.table(CombinedResults,file = paste0(Results.dir,"GCMSResultsCardData.csv"),  sep = ",", row.names = F)
+    for (i in seq_along(Cals)) {
+      start_row <- max(Cals[[i]]$Row) + 1
+      
+      if (i < length(Cals)) {
+        end_row <- min(Cals[[i + 1]]$Row) - 1
+        cat("Bracket", i, ": rows", start_row, "to", end_row, "\n")
+        SampleBrackets[[i]] <- CombinedResults[start_row:end_row, ]
+      } else {
+        if (start_row > nrow(CombinedResults)) {
+          cat("Bracket", i, ": no data after last calibration\n")
+          SampleBrackets[[i]] <- CombinedResults[0, ]  # Create empty bracket with correct structure
+        } else {
+          end_row <- nrow(CombinedResults)
+          cat("Bracket", i, ": rows", start_row, "to", end_row, "\n")
+          SampleBrackets[[i]] <- CombinedResults[start_row:end_row, ]
+        }
+      }
+      
+      if (nrow(SampleBrackets[[i]]) > 0){
+        SampleBrackets[[i]]$CalibrationSet <- i
+      }
     }
+  }
+  
+  # Solve quadratic and apply to samples
+  solve_quadratic <- function(y, a, b, c) {
+    if (is.na(y) || is.na(a) || is.na(b) || is.na(c)) return(NA)
+    discriminant <- b^2 - 4 * a * (c - y)
+    if (is.na(discriminant) || discriminant < 0) return(NA)
+    x1 <- (-b + sqrt(discriminant)) / (2 * a)
+    x2 <- (-b - sqrt(discriminant)) / (2 * a)
+    return(ifelse(x1 >= 0, x1, x2))
+  }
+  
+  for (i in NumCal) {
+    QuadraticValues <- AllQuadraticValues[[i]]
+    a <- as.numeric(QuadraticValues["I(CalLevel^2)"])
+    b <- as.numeric(QuadraticValues["CalLevel"])
+    c <- as.numeric(QuadraticValues["(Intercept)"])
+    
+    SampleBrackets[[i]]$ValuesPositive <- sapply(SampleBrackets[[i]]$ratio, solve_quadratic, a = a, b = b, c = c)
+    Cals[[i]]$ValuesPositive <- sapply(Cals[[i]]$ratio, solve_quadratic, a = a, b = b, c = c)
+    
+    if (nrow(SampleBrackets[[i]])) {
+      QuantResults <- bind_rows(SampleBrackets[[i]], Cals[[i]]) %>%
+        select(DataFile, ValuesPositive, CalLevel, CalibrationSet)
+    } else {
+      QuantResults <- Cals[[i]] %>%
+        select(DataFile, ValuesPositive, CalLevel, CalibrationSet)
+    }
+    CombinedResults <- full_join(CombinedResults, QuantResults, by = "DataFile")
+    SampleBrackets
+    
+    if ("ValuesPositive.x" %in% names(CombinedResults)) {
+      CombinedResults <- CombinedResults %>%
+        mutate(
+          ValuesPositive = coalesce(ValuesPositive.x, ValuesPositive.y),
+        ) %>%
+        select(-ValuesPositive.x, -ValuesPositive.y)
+    }
+    
+    if ("CalLevel.x" %in% names(CombinedResults)) {
+      CombinedResults <- CombinedResults %>%
+        mutate(
+          CalLevel = coalesce(CalLevel.y, CalLevel.x),
+        ) %>%
+        select(-CalLevel.x, -CalLevel.y)
+    }
+    
+    if ("CalibrationSet.x" %in% names(CombinedResults)) {
+      CombinedResults <- CombinedResults %>%
+        mutate(
+          CalibrationSet = coalesce(CalibrationSet.x, CalibrationSet.y),
+        ) %>%
+        select(-CalibrationSet.x, -CalibrationSet.y)
+    }
+    
+    # Reorder columns
+    CombinedResults <- CombinedResults %>%
+      relocate("ratio", .after = "PETN.PA") %>%
+      relocate("ValuesPositive", .after = "ratio") %>%
+      relocate("CalibrationSet", .after = "ValuesPositive")
+    
+    CombinedResults <- CombinedResults[order(CombinedResults$DataFile), ]
+    if (!all(is.na(SampleBrackets[[i]]$ValuesPositive))){  
+      # Plot the results
+      p <- ggplot() +
+        geom_point(data = Cals[[i]][1:CalLevels, ], aes(x = CalLevel, y = ratio), colour = "red") +
+        geom_line(data = Cals[[i]][1:CalLevels, ], aes(x = ValuesPositive, y = ratio), colour = "black") +
+        geom_point(data = SampleBrackets[[i]], aes(x=ValuesPositive, y = ratio, colour = Type))+
+        theme_bw() +
+        ylab("PETN - Internal Standard peak area ratio / arb. unit") +
+        xlab(bquote("Concentration PETN /" ~ mu * g %.% mL^{-1})) +
+        theme(text = element_text(size = 12))
+      
+      show(p)
+    }else{
+      # Plot the results
+      p <- ggplot() +
+        geom_point(data = Cals[[i]][1:CalLevels, ], aes(x = CalLevel, y = ratio), colour = "red") +
+        geom_line(data = Cals[[i]][1:CalLevels, ], aes(x = ValuesPositive, y = ratio), colour = "black") +
+        theme_bw() +
+        ylab("PETN - Internal Standard peak area ratio / arb. unit") +
+        xlab(bquote("Concentration PETN /" ~ mu * g %.% mL^{-1})) +
+        theme(text = element_text(size = 12))  
+      
+      show(p)
+    }
+    
+    ggsave(
+      paste0("Calibration Results_", i, "_.png"),
+      plot = p,
+      path = file.path(MetadataOutput.dir),
+      width = 7.5,
+      height = 5.0,
+      dpi = 300
+    )
+  }
+  
+  # Save model statistics to CSV
+  ModelStats <- data.frame(
+    CalibrationSet = integer(),
+    Intercept = numeric(),
+    Linear = numeric(),
+    Quadratic = numeric(),
+    R_Squared = numeric(),
+    Adj_R_Squared = numeric(),
+    stringsAsFactors = FALSE
+  )
+  
+  for (i in NumCal) {
+    model <- lm(ratio ~ CalLevel + I(CalLevel^2), data = Cals[[i]])
+    coefs <- coef(model)
+    stats <- summary(model)
+    
+    ModelStats[i, ] <- list(
+      CalibrationSet = i,
+      Intercept = coefs["(Intercept)"],
+      Linear = coefs["CalLevel"],
+      Quadratic = coefs["I(CalLevel^2)"],
+      R_Squared = stats$r.squared,
+      Adj_R_Squared = stats$adj.r.squared
+    )
+  }
+  
+  write.csv(ModelStats, file = file.path(Results.dir, "CalibrationModelStats.csv"), row.names = FALSE)
+  
+  # Plot all calibration curves on one plot
+  AllCalData <- do.call(rbind, lapply(seq_along(Cals), function(i) {
+    df <- Cals[[i]]
+    df$Set <- paste0("Cal ", i)
+    df
+  }))
+  
+  AllCalData$Fitted <- NA
+  for (i in seq_along(Cals)) {
+    model <- lm(ratio ~ CalLevel + I(CalLevel^2), data = Cals[[i]])
+    AllCalData$Fitted[AllCalData$Set == paste0("Cal ", i)] <- predict(model, newdata = Cals[[i]])
+  }
+  
+  p_combined <- ggplot(AllCalData, aes(x = CalLevel, y = ratio, color = Set)) +
+    geom_point() +
+    geom_line(aes(y = Fitted)) +
+    theme_bw() +
+    labs(
+      title = "Combined Calibration Curves",
+      x = expression("Calibration Concentration (ng/"*mu*"L)"),
+      y = "Peak Area Ratio"
+    ) +
+    theme(text = element_text(size = 12))
+  
+  print(p_combined)
+  ggsave(
+    filename = "Combined_Calibration_Curves.png",
+    plot = p_combined,
+    path = Results.dir,
+    width = 8,
+    height = 6,
+    dpi = 300
+  )
+  
+  # Add columns to account for dilution, convert to mg and calculate total PETN in sample
+  CombinedResults <- CombinedResults %>%
+    rename(Concentration = ValuesPositive)
+  CombinedResults$SampleConc <- CombinedResults$Concentration / Dilution
+  CombinedResults$MassinSample <- CombinedResults$SampleConc * SampleVol
+  CombinedResults$PercentRecovery <- CombinedResults$MassinSample / DepositMass * 100
+  
+  #Reorder columns
+  CombinedResults <- CombinedResults %>%
+    relocate("CalLevel", .after = "ratio") %>%
+    relocate("SampleConc", .after = "CalibrationSet") %>%
+    relocate("MassinSample", .after = "SampleConc") %>%
+    relocate("PercentRecovery", .after = "MassinSample") %>%
+    arrange(SampleName)
+  
+}
 
-print("Processing complete. Please check 'Results' folder for output")
+# Export results: append new data to existing file if it exists
+filename_data <- file.path(Results.dir, paste0(ParentFolder, "_GCMSResults.csv"))
+
+if (file.exists(filename_data)) {
+  # Read existing data
+  ExistingData <- read.csv(filename_data)
+  CombinedResults$Date <- as.integer(CombinedResults$Date)
+  
+  # Combine with new results
+  CombinedData <- bind_rows(ExistingData, CombinedResults)
+  
+  # Optional: remove duplicates based on DataFile
+  CombinedData <- CombinedData %>%
+    distinct(DataFile, .keep_all = TRUE)
+  
+  # Backup old file
+  filename.date <- paste0(format(Sys.time(), "%Y-%m-%d_%H-%M-%S"), "_GCMSResults.csv")
+  write.csv(ExistingData, file = file.path(Backup.dir, filename.date), row.names = FALSE)
+  
+  # Save updated data
+  write.csv(CombinedData, file = filename_data, row.names = FALSE)
+  
+} else {
+  # Save new results if file doesn't exist
+  write.csv(CombinedResults, file = filename_data, row.names = FALSE)
+}
+
+# Save ResponseCheck results to master spreadsheet
+if ("QC" %in% CombinedResults$Type){
+  QCResults <- CombinedResults %>%
+    filter(Type == "QC") %>%
+    select(Date, DataFile, CalLevel,SampleConc, Q.P.IS, I.S.PA, Q.P.PETN, PETN.PA)
+  
+  QC_file <- file.path("C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/System Monitoring", "SystemMonitoring.csv")
+  
+  if (file.exists(QC_file)) {
+    ExistingQC <- read.csv(QC_file)
+    QCResults$Date <- as.integer(QCResults$Date)
+    
+    # Combine and remove duplicates
+    CombinedQC <- bind_rows(ExistingQC, QCResults) %>%
+      distinct(DataFile, .keep_all = TRUE)
+    
+    # Backup old file
+    qc_backup <- paste0(format(Sys.time(), "%Y-%m-%d_%H-%M-%S"), "_QC_Master.csv")
+    write.csv(ExistingQC, file = file.path(Backup.dir, qc_backup), row.names = FALSE)
+    
+    # Save updated file
+    write.csv(CombinedQC, file = QC_file, row.names = FALSE)
+    
+  } else {
+    # Save new file if it doesn't exist
+    write.csv(QCResults, file = QC_file, row.names = FALSE)
+  }
+  
+  # # Save ResponseCheck results to master spreadsheet
+  # QCResults <- CombinedResults %>%
+  #   filter(Type == "QC") %>%
+  #   select(Date, DataFile, CalLevel,SampleConc, Q.P.IS, I.S.PA, Q.P.PETN, PETN.PA)
+  # 
+  # QC_file <- file.path("C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/GC Data/System Monitoring", "QCMonitoring.csv")
+  # 
+  # if (file.exists(QC_file)) {
+  #   ExistingQC <- read.csv(QC_file)
+  #   
+  #   # Combine and remove duplicates
+  #   CombinedQC <- bind_rows(ExistingQC, QCResults) %>%
+  #     distinct(DataFile, .keep_all = TRUE)
+  #   
+  #   # Backup old file
+  #   qc_backup <- paste0(format(Sys.time(), "%Y-%m-%d_%H-%M-%S"), "_QC_Master.csv")
+  #   write.csv(ExistingQC, file = file.path(Backup.dir, qc_backup), row.names = FALSE)
+  #   
+  #   # Save updated file
+  #   write.csv(CombinedQC, file = QC_file, row.names = FALSE)
+  #   
+  # } else {
+  #   # Save new file if it doesn't exist
+  #   write.csv(QCResults, file = QC_file, row.names = FALSE)
+  #}
+}
+print("Results saved and updated successfully.")

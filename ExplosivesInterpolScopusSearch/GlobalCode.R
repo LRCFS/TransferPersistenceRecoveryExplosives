@@ -1,15 +1,14 @@
 ###########################################################################
 #
-# TBC - Copyright (C) 2021
+# TBC - Copyright (C) 2025
 #
-# Leverhulme Research Centre for Forensic Science
+#Forensic Explosives Laboratory, Dstl, Porton Down, Salisbury, Wiltshire SP4 0JQ, UK
+#Police Academy of the Netherlands The Netherlands Police Academy, Department of Forensic Science, Apeldoorn, The Netherlands
+#Ghana Police Service, Forensic Science Laboratory, Accra, Ghana	
+#Leverhulme Research Centre for Forensic Science, School of Science and Engineering, University of Dundee, Nethergate, Dundee, DD1 4HN, UK
 
-# Centre for Forensic Science, Department of Pure and Applied Chemistry,
-# University of Strathclyde, Royal College, 204 George Street, Glasgow
-# Chiron AS, Stiklestadveien 1, NO-7041 Trondheim, Norway
-
-# Caitlyn Norman, Dorothy Xi Yue Lim , Taylor Henderson, Fabio Casali,
-# Niamh Nic Daéid, Lorna Nisbet, Hervé Ménard
+#Amy Bruce, Lotte E. Timmerman, Nana A. Fiakpui, Lauren Lessey, 
+#Matthew S. Beardah, Niamh Nic Daéid, Hervé Ménard
 
 # Website: https://github.com/HerveMenard/CollaborationNetwork-DrugsEvidence
 # Contact: lrc@dundee.ac.uk
@@ -182,7 +181,7 @@ KeywordCorrectionList <- as.data.frame(KeywordCorrectionList)
 ExplosiveList <- read.csv("ReferenceLists/ExplosiveDatabase.csv", header = TRUE)
 
 # Format the Corpus to remove special characters etc.
-source("Code/Explosive_Corpus_Prep.R")
+source("Code/1-Explosive_Corpus_Prep.R")
 
 #############################################################
 #####           Figure Settings                         #####
@@ -228,7 +227,7 @@ if (file.exists("InterpolOutputs/Interpol_Processed_Data.csv",recursive = TRUE))
     ExplosivesCountSubset <- read.csv(file = "InterpolOutputs/Full_Text_Top20_Explo.csv")
   }else{print("Full text data unavailable")} 
   print("Interpol data already processed")
-}else{ source("Code/Interpol_Data_Prep.R")
+}else{ source("Code/2-Interpol_Data_Prep.R")
 
 }
 
@@ -264,7 +263,7 @@ if (file.exists("ScopusOutputs/Scopus_Processed_Data.csv",recursive = TRUE)){
   print("Scopus processed data extracted")
 
 #If the Scopus processed data is not present,  this will run the code to process the data
-}else{source("Code/Scopus_Data_Prep.R")
+}else{source("Code/3-Scopus_Data_Prep.R")
   
 }
 
@@ -275,40 +274,41 @@ if (file.exists("ScopusOutputs/Scopus_Processed_Data.csv",recursive = TRUE)){
 # These codes can be run subsequently or independently
 
 # # Figure 1, Scopus Keywords as a function of year
-source("Code/Figure1_Scopus_Keywords.R")
+source("Code/4-Figure1_Scopus_Keywords.R")
 
 # # Figure 2, Interpol Keywords as a function of year
-source("Code/Figure2_Interpol_Keywords.R")
+source("Code/5-Figure2_Interpol_Keywords.R")
 
 # # Figure 3, Interpol Explosive Country
-source("Code/Figure3_Interpol_Explosive_Country.R")
+source("Code/6-Figure3_Interpol_Explosive_Country.R")
 
 # # Figure 4, Full Text Mining Comparison
-source("Code/Figure4_Full_Text_Mining.R")
+source("Code/7-Figure4_Full_Text_Mining.R")
 
 
 ##Other Code
-## To determine the most used journal and download papers using the Wiley API
-#source("Code/Journal_Paper_Downloads.R")
+## For data analysis in paper
+#source("Code/8-Data_Analysis.R")
 
 ## To compare keywords between evidence types
-#source("Code/Evidence_Comparison.R")
+#source("Code/9-Evidence_Comparison.R")
 
-## For data analysis in paper
-#source("Code/Data_Analysis.R")
+## To determine the most used journal and download papers using the Wiley API
+#source("Code/10-Journal_Paper_Downloads.R")
+
 
 ####Unused Figures#####
 ##To illustrate countries publishing papers included in Interpol reviews
-#source("Code/Interpol_Country_Affiliation_Figure.R")
+#source("Code/11-Interpol_Country_Affiliation_Figure.R")
 
 ##To illustrate countries publishing papers included in Scopus dataset
-#source("Code/Scopus_Country_Affiliation_Figure.R")
+#source("Code/12-Scopus_Country_Affiliation_Figure.R")
 
 ##To illustrate the most-mentioned explosives by country in Scopus dataset
-#source("Code/Scopus_Explosive_Country_Figure.R")
+#source("Code/13-Scopus_Explosive_Country_Figure.R")
 
 ##To illustrate the occurrence of explosives by year in Interpol reviews
-#source("Code/Interpol_Explosive_Year_Figure.R")
+#source("Code/14-Interpol_Explosive_Year_Figure.R")
 
 ##To illustrate the occurrence of explosives by year in Scopus dataset
-#source("Code/Scopus_Explosive_Year_Figure.R")
+#source("Code/15-Scopus_Explosive_Year_Figure.R")

@@ -68,31 +68,47 @@ extensionCSV <- ".csv"
 extensionXLSX <- ".xlsx"
 extensionMS1 <- ".ms1"
 
-# For the code dealing with the MS1 files conversion
-# This is where the MS1 files converted using ProteoWizard - MSConvert are placed  
-GcDataConverterMs.dir <- "GcDataConverterMs/"
-# This is where the MS1 files are saved after their content is reordered in specific columns and rows  
-GcDataConvertedRcode.dir <- "GcDataConvertedRcode/"
-dir.create(file.path(GcDataConvertedRcode.dir),recursive = TRUE) # will create folder if not already there.
+#Specify the parent folder of the GC Data
+DataFolder <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/Troubleshooting/PETN Test"
+ParentFolder <- sub(".*/", "", DataFolder)
 
-# For code dealing in background substraction
+# This is where the .D files from the instrument will be placed  
+GcDataConverterMs.dir <- paste0(DataFolder,"/GcDataConverterMs/")
+dir.create(file.path(paste0(DataFolder, "/RawData/")))
+
+# For the code dealing with the MS1 files conversion
+# This is where the MS1 TIC files converted using ProteoWizard - MSConvert will be placed  
+GcDataConverterMs.dir <- paste0(DataFolder,"/GcDataConverterMs/")
+dir.create(file.path(GcDataConverterMs.dir),recursive = TRUE)
+
+# This is where the MS1 TIC files are saved after their content is reordered in specific columns and rows  
+GcDataConvertedRcodeTIC.dir <- paste0(DataFolder,"/GcDataConvertedRcode/TIC/")
+dir.create(file.path(GcDataConvertedRcodeTIC.dir),recursive = TRUE) # will create folder if not already there.
+
+# This is where the MS1 SIM files are saved after their content is reordered in specific columns and rows  
+GcDataConvertedRcodeSIM.dir <- paste0(DataFolder,"/GcDataConvertedRcode/SIM/")
+dir.create(file.path(GcDataConvertedRcodeSIM.dir),recursive = TRUE) # will create folder if not already there.
+
+# For code dealing in background subtraction
 # where the generated figures are saved, create folder if not existing
-GCSampleTrace.dir <- "Results/GCSampleTrace/"
+GCSampleTrace.dir <- paste0(DataFolder,"/Results/GCSampleTrace/")
 dir.create(file.path(GCSampleTrace.dir),recursive = TRUE) # will create folder if not already there.
 
 # where the output data is saved
-GcData.dir <- "GcData/"
+GcData.dir <- paste0(DataFolder,"/GcData/")
 dir.create(file.path(GcData.dir),recursive = TRUE) # will create folder if not already there.
  
 # This is for the code for processing the data
-Metadata.dir <- "Metadata/"
-MetadataOutput.dir <- "Results/FiguresOutput/"
+Metadata.dir <- paste0(DataFolder,"/Metadata/")
+dir.create(file.path(Metadata.dir),recursive = TRUE) # will create folder if not already there.
+
+MetadataOutput.dir <- paste0(DataFolder,"/Results/FiguresOutput/")
 dir.create(file.path(MetadataOutput.dir),recursive = TRUE) # will create folder if not already there.
 
-Results.dir <- "Results/"
+Results.dir <- paste0(DataFolder,"/Results/")
 dir.create(file.path(Results.dir),recursive = TRUE) # will create folder if not already there.
 
-Backup.dir <- "Results/Backup/"
+Backup.dir <- paste0(DataFolder,"/Results/Backup/")
 dir.create(file.path(Backup.dir),recursive = TRUE) # will create folder if not already there.
 
 #############################################################
@@ -105,11 +121,44 @@ dir.create(file.path(Backup.dir),recursive = TRUE) # will create folder if not a
 # Mass.precision <- 0.2
 
 #smooth.loop <- 10 # number of smoothing repeat applied to the data
-SignalMaxThreshold <- 8000  # minimum peak height after background removal
-                            # or there will be no peaks
+SignalMaxThresholdTIC <- 100000  # minimum peak height after background removal for TIC
+                                # or there will be no peaks
+SignalMaxThresholdSIM <- 80 # minimum peak height after background removal for SIM
+                              # or there will be no peaks
 rolling.average <- 3 # value for rolling average
-IS.Exp.Range <- 390  # the retention time Internal Standard is expected at
-Etizolam.Exp.Range <- 616  # the retention time Etizolam is expected at
+IS.Exp.Range <- 466.5  # the retention time Internal Standard is expected at
+PETN.Exp.Range <- 392.5  # the retention time PETN is expected at
+
+#############################################################
+#####                     Sample Volumes                #####
+#############################################################
+
+#Total Volume of GCMS vial in uL
+VialVol <- 100
+
+#Volume of sample in GCMS vial in uL
+AliquotVol <- 90
+
+#Calculate dilution factor
+Dilution <- AliquotVol / VialVol
+
+#Total sample volume in uL
+SampleVol <- 1000
+
+#Volume of standard deposited on surface in uL
+DepositVol <- 50
+
+#Concentration of standard in ng/uL
+DepositConc <- 200
+
+#Mass deposited on surface
+DepositMass <- DepositVol * DepositConc
+
+#############################################################
+#####                   Functions                       #####
+#############################################################
+
+source("Code/ModPeaks.R")
 
 #############################################################
 #####                       Codes                       #####
@@ -125,7 +174,7 @@ Etizolam.Exp.Range <- 616  # the retention time Etizolam is expected at
 # source("Code/MsFilesReorganiser.R")
 
 # This code takes the files reordered from the previous code and calculate the areas for the relevant peaks
-# IMPORTANT NOTE: before running this file, make sure the correct retention times for the Internal Standard and Etizolam are correct !
+# IMPORTANT NOTE: before running this file, make sure the correct retention times for the Internal Standard and PETN are correct !
 # otherwise, NA will appear for peak areas and it will not process with the Metadata
 # source("Code/MsFilePeakExtract.R")
 

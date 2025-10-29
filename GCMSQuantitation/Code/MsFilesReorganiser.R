@@ -3,11 +3,14 @@
 # This code will convert the MS1 files to a readable format and save them in a folder called in the subsequent code 
 # 
 # Generate file list for Proteo Wizard/MsConvert
-#FilestoConvert <- list.files("Example Data", full.names = FALSE)
+#FilestoConvert <- list.files("Example Data", full.names = FALSE)\
 #write.table(FilestoConvert, file = "files.txt", quote = FALSE, row.names = FALSE, col.names = FALSE)
 
 #####################################################################
 #####              Run Global Code in first instance            #####
+#####################################################################
+#####################################################################
+#####                      Convert TIC Files                    #####
 #####################################################################
 # Load Metadata files
 filenameGcDataConverterMs <- list.files(GcDataConverterMs.dir, extensionMS1, full.names=TRUE)
@@ -15,16 +18,16 @@ filenameGcDataConverterMs <- list.files(GcDataConverterMs.dir, extensionMS1, ful
 for (file in filenameGcDataConverterMs) {
 DataName <- gsub(extensionMS1, "", file)
 
-# for testing code on a single file (first on list) in filenameGcDataConverterMs
-#DataName <- gsub(extensionMS1, "", filenameGcDataConverterMs[2])
+# for testing code on a single file (first on list) in filenameGcDataConverterMsTIC
+#DataName <- gsub(extensionMS1, "", filenameGcDataConverterMsTIC[2])
 
 DataName <- gsub(".*/", "", DataName)
 
 #####################################################################
 #####  re-organise converted data from  Proteo Wizard MsConvert #####
 #####################################################################
-# for testing code on a single file (first on list) in filenameGcDataConverterMs
-# GcDataConverter <- read.csv2(filenameGcDataConverterMs[2], sep = "\t", header = FALSE)
+# for testing code on a single file (first on list) in filenameGcDataConverterMsTIC
+# GcDataConverter <- read.csv2(filenameGcDataConverterMsTIC[2], sep = "\t", header = FALSE)
 
 GcDataConverter <- read.csv2(file, sep = "\t", header = FALSE)
 
@@ -101,8 +104,20 @@ DataHeatMap <- mutate_all(DataHeatMap, function(x) as.numeric(as.character(x)))
 # convert the retention time to sec
 DataHeatMap$RetentionTime <- DataHeatMap$RetentionTime *60
 
-# write the files in the converted folder
-write.csv(DataHeatMap, file=paste0(GcDataConvertedRcode.dir,DataName,".csv"), row.names = F)
+#Strip out TIC data
+DataHeatMapTIC <- DataHeatMap %>%
+  select(RetentionTime,TIC) %>%
+  unique()
+
+# write the TIC files in the converted folder
+write.csv(DataHeatMapTIC, file=paste0(GcDataConvertedRcodeTIC.dir,DataName,".csv"), row.names = F)
+
+#Strip out the SIM data
+DataHeatMapSIM <- DataHeatMap %>%
+  select(RetentionTime,Mass,Intensity)
+
+# write the SIM files in the converted folder
+write.csv(DataHeatMapSIM, file=paste0(GcDataConvertedRcodeSIM.dir,DataName,".csv"), row.names = F)
 
 print(paste0(file," complete",now()))
 }
