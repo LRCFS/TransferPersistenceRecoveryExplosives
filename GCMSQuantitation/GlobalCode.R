@@ -69,7 +69,7 @@ extensionXLSX <- ".xlsx"
 extensionMS1 <- ".ms1"
 
 #Specify the parent folder of the GC Data
-DataFolder <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/Troubleshooting/MT Test"
+DataFolder <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/Troubleshooting/PETN in EtOH"
 ParentFolder <- sub(".*/", "", DataFolder)
 
 # This is where the .D files from the instrument will be placed  
@@ -99,9 +99,6 @@ GcData.dir <- paste0(DataFolder,"/GcData/")
 dir.create(file.path(GcData.dir),recursive = TRUE) # will create folder if not already there.
  
 # This is for the code for processing the data
-Metadata.dir <- paste0(DataFolder,"/Metadata/")
-dir.create(file.path(Metadata.dir),recursive = TRUE) # will create folder if not already there.
-
 MetadataOutput.dir <- paste0(DataFolder,"/Results/FiguresOutput/")
 dir.create(file.path(MetadataOutput.dir),recursive = TRUE) # will create folder if not already there.
 
