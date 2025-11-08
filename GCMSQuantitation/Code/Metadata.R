@@ -414,4 +414,66 @@ if ("QC" %in% CombinedResults$Type){
   #   write.csv(QCResults, file = QC_file, row.names = FALSE)
   #}
 }
+
+#For analysis of repeated standards, filter out samples
+StandardResults <- CombinedResults[!is.na(CombinedResults$I.S.PA), ]
+
+StandardResults <- StandardResults[StandardResults$I.S.PA >= 1000, ]
+
+#Plot peak area results
+p <- ggplot(StandardResults, aes(x = Row, y = I.S.PA)) +
+  geom_point() +
+  labs(
+    title = "IS in Swab Extract in EtOH",
+    x = "Injection Number",
+    y = "Peak Area"
+  ) +
+  theme(text = element_text(size = 12))
+
+print(p)
+
+ggsave(
+  filename = "IS in Swab Extract PA.png",
+  plot = p,
+  path = Results.dir,
+  width = 8,
+  height = 6,
+  dpi = 300)
+
+#Plot scaled PA results
+p_scaled <- ggplot(StandardResults, aes(x = Row, y = I.S.PA)) +
+  geom_point() +
+  labs(
+    title = "IS in Swab Extract in EtOH PA",
+    x = "Injection Number",
+    y = "Peak Area",
+  ) +
+  ylim(0,100000) +
+  theme(text = element_text(size = 12))
+
+print(p_scaled)
+
+ggsave(
+  filename = "IS in Swab in Extract PA_Scaled.png",
+  plot = p_scaled,
+  path = Results.dir,
+  width = 8,
+  height = 6,
+  dpi = 300)
+
+#Determine summary statistics
+
+AveragePA <- mean(StandardResults$I.S.PA)
+StdDevPA <- sd(StandardResults$I.S.PA)
+RSDPA <- StdDevPA/AveragePA*100
+
+#Create a summary dataframe
+SummaryStats <- data.frame(
+  Statistic = c("Mean", "StdDev", "RSD"),
+  Value = c(AveragePA, StdDevPA, RSDPA)
+)
+
+# Save to CSV
+write.csv(SummaryStats, file = paste0(Results.dir, "MTSummaryStats.csv"), row.names = FALSE)
+
 print("Results saved and updated successfully.")
