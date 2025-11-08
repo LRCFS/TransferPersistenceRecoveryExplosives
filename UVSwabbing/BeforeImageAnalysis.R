@@ -1,4 +1,4 @@
-###### For analysis of before images (those with UV powder) ########
+###### For analysis of befores ########
 # List all CSV files in the BeforeThresholdResults folder
 BeforeThresholdResults_files <- list.files(path = BeforeThresholdResults.dir, pattern = "\\.csv$", full.names = TRUE)
 
@@ -23,6 +23,12 @@ for (file in BeforeThresholdResults_files) {
 # Merge all data frames by "threshold"
 BeforeThresholdResults <- Reduce(function(x, y) merge(x, y, by = "Threshold", all = TRUE), BeforeThresholdResults_list)
 
+
+# Extract numeric order from column names (excluding "Threshold")
+file_names <- names(BeforeThresholdResults)[-1]
+file_nums <- as.numeric(gsub("[^0-9]", "", file_names))
+sorted_files <- file_names[order(file_nums)]
+
 # Convert to long format
 BeforeResultsPlot <- pivot_longer(BeforeThresholdResults, 
                                  cols = -Threshold, 
@@ -30,7 +36,7 @@ BeforeResultsPlot <- pivot_longer(BeforeThresholdResults,
                                  values_to = "value")
 
 # Create the plot
-p <- ggplot(BeforeResultsPlot, aes(x = Threshold, y = value, color = source)) +
+p <- ggplot(BeforeResultsPlot, aes(x = Threshold, y = value, color = factor(source, levels = sorted_files))) +
   geom_line() +
   labs(title = "Uncorrected Threshold vs Area for Each Before",
        x = "Threshold",
@@ -49,30 +55,63 @@ ggsave(
   dpi = 300
 )
 
-#Correct by adjusting data so the curves overlap by aligning the values closest to 50#
-#Find threshold for value closest to 50 of first blank
-#This will be the threshold to which all other blanks are aligned
+# Correct by adjusting data so the curves overlap by aligning the values closest to 50#
+# Find threshold for value closest to 50 of first before
+# This will be the threshold to which all other befores are aligned
 Target_Threshold <- which.min(abs(BeforeThresholdResults[,2] - 50))
 
-#Find value closest to 50 for all blanks
-#Move column values up or down to align this value to the target threshold
+# Find value closest to 50 for all befores
+# Move column values up or down to align this value to the target threshold
 BeforeThresholdResultsCorrected <- BeforeThresholdResults
+CorrectedMidValues <- c()
 
-for (i in 3:ncol(BeforeThresholdResults)) {
-  tempMidValue <- which.min(abs(BeforeThresholdResults[, i] - 50))
-  Offset <- as.numeric(Target_Threshold - tempMidValue)
+for (i in 2:ncol(BeforeThresholdResults)) {
+  tempMidIndex <- which.min(abs(BeforeThresholdResults[, i] - 50))
+  Offset <- as.numeric(Target_Threshold - tempMidIndex)
+  tempMidValue <- BeforeThresholdResultsCorrected[[i]][tempMidIndex]
   
+  # Apply offset correction
   if (Offset > 0) {
-    # Move down and fill top with 100
     BeforeThresholdResultsCorrected[[i]] <- c(rep(100, Offset),
                                              head(BeforeThresholdResultsCorrected[[i]], -Offset))
-  } else if (Offset <0 ) {
-    # Move up and fill bottom with 0
+  } else if (Offset < 0) {
     BeforeThresholdResultsCorrected[[i]] <- c(tail(BeforeThresholdResultsCorrected[[i]], -abs(Offset)),
                                              rep(0, abs(Offset)))
-  } else {
   }
+  
+  # Store corrected mid value
+  CorrectedMidValues[names(BeforeThresholdResultsCorrected)[i]] <- BeforeThresholdResultsCorrected[[i]][Target_Threshold]
 }
+
+# Convert to data frame for plotting
+CorrectedMidValues_df <- data.frame(File = names(CorrectedMidValues), AreaValue = as.numeric(CorrectedMidValues))
+
+CorrectedMidValues_df$Row <-"AreaValue"
+
+# Plot heatmap
+p <- ggplot(CorrectedMidValues_df, aes(x = factor(File, levels = sorted_files), y = Row, fill = AreaValue)) +
+  geom_tile() +
+  geom_text(aes(label = round(AreaValue, 2)), color = "black", size = 3) +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(title = "Area Values at ~50 for Each Before",
+       x = "File",
+       y = "",
+       fill = "Area Value") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
+
+show(p)
+
+ggsave(
+  filename = "BeforeMidValueHeatmap.png",
+  plot = p,
+  path = file.path(BeforeThresholdResults.dir),
+  width = 7.5,
+  height = 2.5,
+  dpi = 300
+)
 
 #Plot Corrected Data
 BeforeResultsCorrectedPlot <- pivot_longer(BeforeThresholdResultsCorrected, 
@@ -81,7 +120,7 @@ BeforeResultsCorrectedPlot <- pivot_longer(BeforeThresholdResultsCorrected,
                                           values_to = "value")
 
 # Create the plot
-p <- ggplot(BeforeResultsCorrectedPlot, aes(x = Threshold, y = value, color = source)) +
+p <- ggplot(BeforeResultsCorrectedPlot, aes(x = Threshold, y = value, color = factor(source, levels = sorted_files))) +
   geom_line() +
   labs(title = "Corrected Threshold vs Area for Each Before",
        x = "Threshold",
@@ -100,17 +139,17 @@ ggsave(
   dpi = 300
 )
 
-# 2. Select measurement columns (skip Threshold)
+# Select measurement columns (skip Threshold)
 threshold_cols <- names(BeforeThresholdResultsCorrected)[-1]
 
-# 3. Subset rows 20 to 100
+# Subset rows 30 to 100
 BeforeDiff <- BeforeThresholdResultsCorrected[30:100, threshold_cols]
 
-# 4. Create a matrix for average differences
+# Create a matrix for average differences
 avg_matrix <- matrix(0, nrow = length(threshold_cols), ncol = length(threshold_cols),
                      dimnames = list(threshold_cols, threshold_cols))
 
-# 5. Compute average differences for each pair
+# Compute average differences for each pair
 for (i in 1:length(threshold_cols)) {
   for (j in 1:length(threshold_cols)) {
     if (i != j) {
@@ -128,19 +167,19 @@ avg_long <- reshape2::melt(avg_matrix)
 avg_long$Var1_num <- as.numeric(gsub("[^0-9]", "", avg_long$Var1))
 avg_long$Var2_num <- as.numeric(gsub("[^0-9]", "", avg_long$Var2))
 
-# Sort by numeric order
-avg_long <- avg_long[order(avg_long$Var1_num, avg_long$Var2_num), ]
+# Keep only upper triangle (Var1 > Var2)
+avg_long <- avg_long[avg_long$Var1_num > avg_long$Var2_num, ]
 
 # Plot heatmap with ordered axes
-p <- ggplot(avg_long, aes(x = factor(Var2, levels = unique(Var2[order(Var2_num)])),
-                          y = factor(Var1, levels = unique(Var1[order(Var1_num)])),
+p <- ggplot(avg_long, aes(x = factor(Var2, levels = sorted_files),
+                          y = factor(Var1, levels = sorted_files),
                           fill = value)) +
   geom_tile() +
   geom_text(aes(label = ifelse(is.na(value), "", round(value, 2))),
             color = "black", size = 3) +
-  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0, na.value = "black") +
+  scale_fill_gradient2(low = "white", high = "red", na.value = "black") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  labs(title = "Average Differences (Rows 20-100)",
+  labs(title = "Average Differences (Threshold 30-100)",
        x = "File 1",
        y = "File 2",
        fill = "Avg Difference")
@@ -155,4 +194,3 @@ ggsave(
   height = 5.0,
   dpi = 300
 )
-

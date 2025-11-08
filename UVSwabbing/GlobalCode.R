@@ -1,10 +1,12 @@
 ###Run this to prepare files for image analysis####
+rm(list = ls())
 # Load necessary libraries
 
 library(dplyr)
 library(ggplot2)
 library(tidyverse)
 library(reshape2)
+library(stringr)
 
 #Specify the directory of the threshold data
 DataFolder.dir <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/FEL Swabbing Study/"
@@ -21,6 +23,8 @@ dir.create(file.path(BeforeThresholdResults.dir),recursive = TRUE) # will create
 ####Read results from directory####
 filenameFolders <- list.dirs(path = DataFolder.dir, full.names = TRUE, recursive = FALSE)
 filenameThresholdResults <- filenameFolders[grepl("Participant", basename(filenameFolders))]
+
+##Extract Blank and Before Results from summary files
 for (i in filenameThresholdResults) {
   participant <- sub(".* ", "", i)
   tempfile <- list.files(i, pattern = "Summary.csv", recursive = TRUE)

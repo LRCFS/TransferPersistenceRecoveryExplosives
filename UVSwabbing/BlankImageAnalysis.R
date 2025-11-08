@@ -23,6 +23,12 @@ for (file in BlankThresholdResults_files) {
 # Merge all data frames by "threshold"
 BlankThresholdResults <- Reduce(function(x, y) merge(x, y, by = "Threshold", all = TRUE), BlankThresholdResults_list)
 
+
+# Extract numeric order from column names (excluding "Threshold")
+file_names <- names(BlankThresholdResults)[-1]
+file_nums <- as.numeric(gsub("[^0-9]", "", file_names))
+sorted_files <- file_names[order(file_nums)]
+
 # Convert to long format
 BlankResultsPlot <- pivot_longer(BlankThresholdResults, 
                                  cols = -Threshold, 
@@ -30,7 +36,7 @@ BlankResultsPlot <- pivot_longer(BlankThresholdResults,
                                  values_to = "value")
 
 # Create the plot
-p <- ggplot(BlankResultsPlot, aes(x = Threshold, y = value, color = source)) +
+p <- ggplot(BlankResultsPlot, aes(x = Threshold, y = value, color = factor(source, levels = sorted_files))) +
   geom_line() +
   labs(title = "Uncorrected Threshold vs Area for Each Blank",
        x = "Threshold",
@@ -49,28 +55,21 @@ ggsave(
   dpi = 300
 )
 
-#Correct by adjusting data so the curves overlap by aligning the values closest to 50#
-#Find threshold for value closest to 50 of first blank
-#This will be the threshold to which all other blanks are aligned
+# Correct by adjusting data so the curves overlap by aligning the values closest to 50#
+# Find threshold for value closest to 50 of first blank
+# This will be the threshold to which all other blanks are aligned
 Target_Threshold <- which.min(abs(BlankThresholdResults[,2] - 50))
 
-#Find value closest to 50 for all blanks
-#Move column values up or down to align this value to the target threshold
+# Find value closest to 50 for all blanks
+# Move column values up or down to align this value to the target threshold
 BlankThresholdResultsCorrected <- BlankThresholdResults
 CorrectedMidValues <- c()
 
-for (i in 3:ncol(BlankThresholdResults)) {
+for (i in 2:ncol(BlankThresholdResults)) {
   tempMidIndex <- which.min(abs(BlankThresholdResults[, i] - 50))
   Offset <- as.numeric(Target_Threshold - tempMidIndex)
   tempMidValue <- BlankThresholdResultsCorrected[[i]][tempMidIndex]
-  
-  # Adjust offset based on value range
-  if (tempMidValue > 55){
-    Offset <- Offset + 1
-  } else if (tempMidValue < 45) {
-    Offset <- Offset + 1
-  }
-  
+
   # Apply offset correction
   if (Offset > 0) {
     BlankThresholdResultsCorrected[[i]] <- c(rep(100, Offset),
@@ -87,8 +86,10 @@ for (i in 3:ncol(BlankThresholdResults)) {
 # Convert to data frame for plotting
 CorrectedMidValues_df <- data.frame(File = names(CorrectedMidValues), AreaValue = as.numeric(CorrectedMidValues))
 
+CorrectedMidValues_df$Row <-"AreaValue"
+
 # Plot heatmap
-p <- ggplot(CorrectedMidValues_df, aes(x = File, y = "AreaValue", fill = AreaValue)) +
+p <- ggplot(CorrectedMidValues_df, aes(x = factor(File, levels = sorted_files), y = Row, fill = AreaValue)) +
   geom_tile() +
   geom_text(aes(label = round(AreaValue, 2)), color = "black", size = 3) +
   scale_fill_gradient(low = "white", high = "red") +
@@ -104,7 +105,7 @@ p <- ggplot(CorrectedMidValues_df, aes(x = File, y = "AreaValue", fill = AreaVal
 show(p)
 
 ggsave(
-  filename = "MidValueHeatmap.png",
+  filename = "BlankMidValueHeatmap.png",
   plot = p,
   path = file.path(BlankThresholdResults.dir),
   width = 7.5,
@@ -112,14 +113,14 @@ ggsave(
   dpi = 300
 )
 
-#Plot Corrected Data
+# Plot Corrected Data
 BlankResultsCorrectedPlot <- pivot_longer(BlankThresholdResultsCorrected, 
                                           cols = -Threshold, 
                                           names_to = "source", 
                                           values_to = "value")
 
 # Create the plot
-p <- ggplot(BlankResultsCorrectedPlot, aes(x = Threshold, y = value, color = source)) +
+p <- ggplot(BlankResultsCorrectedPlot, aes(x = Threshold, y = value, color = factor(source, levels = sorted_files))) +
   geom_line() +
   labs(title = "Corrected Threshold vs Area for Each Blank",
        x = "Threshold",
@@ -138,17 +139,17 @@ ggsave(
   dpi = 300
 )
 
-# 2. Select measurement columns (skip Threshold)
+# Select measurement columns (skip Threshold)
 threshold_cols <- names(BlankThresholdResultsCorrected)[-1]
 
-# 3. Subset rows 20 to 100
+# Subset rows 30 to 100
 BlankDiff <- BlankThresholdResultsCorrected[30:100, threshold_cols]
 
-# 4. Create a matrix for average differences
+# Create a matrix for average differences
 avg_matrix <- matrix(0, nrow = length(threshold_cols), ncol = length(threshold_cols),
                      dimnames = list(threshold_cols, threshold_cols))
 
-# 5. Compute average differences for each pair
+# Compute average differences for each pair
 for (i in 1:length(threshold_cols)) {
   for (j in 1:length(threshold_cols)) {
     if (i != j) {
@@ -166,22 +167,24 @@ avg_long <- reshape2::melt(avg_matrix)
 avg_long$Var1_num <- as.numeric(gsub("[^0-9]", "", avg_long$Var1))
 avg_long$Var2_num <- as.numeric(gsub("[^0-9]", "", avg_long$Var2))
 
-# Sort by numeric order
-avg_long <- avg_long[order(avg_long$Var1_num, avg_long$Var2_num), ]
+# Keep only upper triangle (Var1 > Var2)
+avg_long <- avg_long[avg_long$Var1_num > avg_long$Var2_num, ]
 
 # Plot heatmap with ordered axes
-p <- ggplot(avg_long, aes(x = factor(Var2, levels = unique(Var2[order(Var2_num)])),
-                          y = factor(Var1, levels = unique(Var1[order(Var1_num)])),
+p <- ggplot(avg_long, aes(x = factor(Var2, levels = sorted_files),
+                          y = factor(Var1, levels = sorted_files),
                           fill = value)) +
   geom_tile() +
   geom_text(aes(label = ifelse(is.na(value), "", round(value, 2))),
             color = "black", size = 3) +
-  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0, na.value = "black") +
+  scale_fill_gradient2(low = "white", high = "red", na.value = "black") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  labs(title = "Average Differences (Rows 20-100)",
+  labs(title = "Average Differences (Threshold 30-100)",
        x = "File 1",
        y = "File 2",
        fill = "Avg Difference")
+
+show(p)
 
 ggsave(
   paste0("CorrectedBlanksAvgDiff.png"),
