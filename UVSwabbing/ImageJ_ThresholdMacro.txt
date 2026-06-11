@@ -1,0 +1,30 @@
+setOption("BlackBackground", true);
+id = getImageID();
+title = getTitle();
+dotIndex = indexOf(title, ".");
+basename = substring(title, 0, dotIndex);
+path = getDirectory("image");
+makeRectangle(2580, 198, 4840, 4824);
+run("Crop");
+run("Set Scale...", "distance=0 known=0 unit=pixel");
+run("8-bit");
+for (k = 1; k < 101; k++){
+  m=k;
+  selectImage(id);
+  resultsname = basename + "[" + m + "].csv";
+  tileTitle = basename + "[" + m + "].tif";
+  run("Duplicate...", "title=&tileTitle");
+  selectWindow(tileTitle);
+  setAutoThreshold("Default");
+  setThreshold(m, 255);
+  setOption("BlackBackground", false);
+  run("Convert to Mask");
+  run("Analyze Particles...", "size=0-inf circularity=0.00-1.00 show=Outlines display clear summarize");
+  // Close the Results table (individual particles)
+  selectWindow("Results");
+  run("Close");
+  // Select and save the Summary table
+  selectWindow("Summary");
+  Table.save(path + resultsname);
+  run("Close");
+}
