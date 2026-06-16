@@ -1,0 +1,21 @@
+solution,parent,type,name,label,volume_or_concentration,tolerance_or_error,coverage
+Stock Solution A,,equipment,pipette,PETN pipette,1000,,
+Stock Solution A,,equipment,pipette,RDX pipette,1000,,
+Stock Solution A,,equipment,volumetric flask,volumetric flask,20000,,
+Stock Solution A,,standard,PETN,PETN,1000,47.1008,2
+Stock Solution A,,standard,RDX,RDX,1000,47.356,2
+Cal Solution 1,Stock Solution A,equipment,pipette,pipette,40,,
+Cal Solution 1,Stock Solution A,equipment,volumetric flask,flask,10000,,
+Working Solution 1,Cal Solution 1,equipment,pipette,solvent pipette,95,,
+Working Solution 1,Cal Solution 1,equipment,pipette,sample pipette,5,,
+Working Solution 2,Cal Solution 1,equipment,pipette,solvent pipette,76,,
+Working Solution 2,Cal Solution 1,equipment,pipette,IS pipette,19,,
+Working Solution 2,Cal Solution 1,equipment,pipette,sample pipette,5,,
+Working Solution 3,Working Solution 1,equipment,pipette,solvent pipette,95,,
+Working Solution 3,Working Solution 1,equipment,pipette,sample pipette,5,,
+Working Solution 4,Working Solution 1,equipment,pipette,solvent pipette,95,,
+Working Solution 4,Working Solution 1,equipment,pipette,sample pipette,5,,
+Working Solution 5,Working Solution 1,equipment,pipette,solvent pipette,95,,
+Working Solution 5,Working Solution 1,equipment,pipette,sample pipette,5,,
+Working Solution 6,Working Solution 1,equipment,pipette,solvent pipette,95,,
+Working Solution 6,Working Solution 1,equipment,pipette,sample pipette,5,,
