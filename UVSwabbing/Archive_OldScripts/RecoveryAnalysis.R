@@ -44,6 +44,7 @@ UncorrectedResultsPlot <- UncorrectedResultsPlot[order(UncorrectedResultsPlot$Th
 # Create the plot
 p <- ggplot(UncorrectedResultsPlot, aes(x = Threshold, y = Value, color = Source, group = Source)) +
   geom_line() +
+  scale_colour_manual(values = ColourPalette2) +
   labs(title = "Uncorrected Threshold vs Area",
        x = "Threshold",
        y = "Value",
@@ -70,7 +71,7 @@ Blank90Value <- UncorrectedThresholdResults[[2]][Index90]
 CorrectedThresholdResults <- UncorrectedThresholdResults
 CorrectedMidValues <- c()
 
-CorrectedMidValues[names(CorrectedThresholdResults)[2]] <- Blank90Value
+CorrectedMidValues$Blank90 <- Blank90Value
 
 # Adjust threshold of AfterArea results at the values closest to 90
 After90Index <- which.min(abs(CorrectedThresholdResults[, 3] - 90))
@@ -96,7 +97,7 @@ if (Offset > 0) {
 Index50 <- which.min(abs(CorrectedThresholdResults[,2] - 50))
 Blank50Value <- CorrectedThresholdResults[[2]][Index50]
 
-CorrectedMidValues[names(CorrectedThresholdResults)[2]] <- Blank50Value
+CorrectedMidValues$Blank50 <- Blank50Value
 
 # Adjust threshold of AfterArea results for values closest to 50
 After50Value <- CorrectedThresholdResults[[3]][Index50]
@@ -116,14 +117,12 @@ if (Offset > 0) {
                                       rep(0, abs(Offset)))
 }
 
-#After90Index<- which(CorrectedThresholdResults[,3] == After90Value)
-#After50Index<- which(CorrectedThresholdResults[,3] == After50Value)
-
 After90Value <- CorrectedThresholdResults[[3]][[Index90]]
 After50Value <- CorrectedThresholdResults[[3]][[Index50]]
 
 # Store corrected mid value
-CorrectedMidValues[names(CorrectedThresholdResults)[3]] <- After50Value
+CorrectedMidValues$After90 <- After90Value
+CorrectedMidValues$After50 <- After50Value
 
 #  Adjust threshold of BeforeArea results  by aligning the values closest to 90
 Before90Index <- which.min(abs(CorrectedThresholdResults[, 4] - After90Value))
@@ -163,27 +162,27 @@ if (Offset > 0) {
                                       rep(0, abs(Offset)))
 }
 
-#After90Index<- which(CorrectedThresholdResults[,3] == After90Value)
-#After50Index<- which(CorrectedThresholdResults[,3] == After50Value)
-
 Before90Value <- CorrectedThresholdResults[[4]][[Index90]]
 Before50Value <- CorrectedThresholdResults[[4]][[Index50]]
 
 # Store corrected mid value
-CorrectedMidValues[names(CorrectedThresholdResults)[3]] <- Before50Value
+CorrectedMidValues$Before90 <- Before90Value
+CorrectedMidValues$Before50 <- Before50Value
 
 # Convert to data frame for plotting
 CorrectedMidValues_df <- data.frame(File = names(CorrectedMidValues), AreaValue = as.numeric(CorrectedMidValues))
 
-CorrectedMidValues_df$Row <-"AreaValue"
+CorrectedMidValues_df$Row <- as.numeric(gsub("[^0-9]", "", CorrectedMidValues_df$File))
+CorrectedMidValues_df <- CorrectedMidValues_df[order(CorrectedMidValues_df$Row), ]
+CorrectedMidValues_df$File <- factor(CorrectedMidValues_df$File, levels = CorrectedMidValues_df$File)
 
 # Plot heatmap
 p <- ggplot(CorrectedMidValues_df, aes(x = factor(File), y = Row, fill = AreaValue)) +
   geom_tile() +
   geom_text(aes(label = round(AreaValue, 2)), color = "black", size = 3) +
   scale_fill_gradient(low = "pink", high = "red") +
-  labs(title = "Area Values at ~89 for Each Image",
-       x = "File",
+  labs(title = "Area Values at ~50 and ~90 for Each Image",
+       x = "File and Threshold",
        y = "",
        fill = "Area Value") +
   theme_minimal() +
@@ -217,6 +216,7 @@ CorrectedResultsPlot <- CorrectedResultsPlot[order(CorrectedResultsPlot$Threshol
 # Create the plot
 p <- ggplot(CorrectedResultsPlot, aes(x = Threshold, y = Value, color = Source, group = Source)) +
   geom_line() +
+  scale_colour_manual(values = ColourPalette2) +
   labs(title = "Corrected Threshold vs Area for Each Image",
        x = "Threshold",
        y = "Value",
@@ -254,7 +254,7 @@ p <- ggplot(CorrectedThresholdResults, aes(x = Threshold, y = Recovery)) +
   geom_line() +
   labs(title = "Corrected Threshold vs Recovery",
        x = "Threshold",
-       y = "Recovery") +
+       y = "Recovery (%)") +
   ylim(0, 110) +
   theme_minimal()
 
@@ -284,3 +284,37 @@ print(paste0(results_name, " has been processed"))
 AverageRecovery <- bind_rows(AverageRecoveryValues)
 
 write.csv(AverageRecovery, file = paste0(DataFolder.dir,"AverageRecovery.csv"), row.names = FALSE)
+
+
+AverageRecovery_filtered <- AverageRecovery %>%
+  filter(RSD >= 0 & RSD <= 10)
+
+# Sort Numerically
+AverageRecovery_filtered$Num <- as.numeric(gsub("[^0-9]", "", AverageRecovery_filtered$File))
+AverageRecovery_filtered$File <- factor(AverageRecovery_filtered$File, levels = AverageRecovery_filtered$File[order(AverageRecovery_filtered$Num)])
+AverageRecovery_filtered$Num <- as.factor(AverageRecovery_filtered$Num)
+
+AverageRecovery_removed <- AverageRecovery %>%
+  filter(RSD > 10)
+
+# Create the plot
+p <- ggplot(AverageRecovery_filtered, aes(x = File, y = mean, fill = Num)) +
+  geom_bar(stat = "identity") +
+  geom_errorbar(aes(ymin= mean - StdDev, ymax = mean + StdDev), width = 0.2) +
+  scale_fill_manual(values = ColourPalette) +
+  labs(title = "Average Recovery per Participant",
+       y = "Average Recovery",
+       x = "")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size = 8))
+
+show(p)
+
+ggsave(
+  paste0("AverageRecoveryResults.png"),
+  plot = p,
+  path = file.path(Result.Dir),
+  width = 8,
+  height = 5.0,
+  dpi = 300)
+

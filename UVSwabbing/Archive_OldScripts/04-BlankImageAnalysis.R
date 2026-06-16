@@ -1,4 +1,10 @@
 ###### For analysis of blanks ########
+# This script analyzes the blank threshold curves
+#
+# PREREQUISITE:
+#   1. Run 00-GlobalCode.R first
+#   2. Run 03-SplitThresholdData.R to create Blank files
+
 # List all CSV files in the BlankThresholdResults folder
 BlankThresholdResults_files <- list.files(path = BlankThresholdResults.dir, pattern = "\\.csv$", full.names = TRUE)
 
@@ -40,7 +46,7 @@ p <- ggplot(BlankResultsPlot, aes(x = Threshold, y = value, color = factor(sourc
   geom_line() +
   labs(title = "Uncorrected Threshold vs Area for Each Blank",
        x = "Threshold",
-       y = "Value",
+       y = "% Area",
        color = "Source") +
   theme_minimal()
 
@@ -124,7 +130,7 @@ p <- ggplot(BlankResultsCorrectedPlot, aes(x = Threshold, y = value, color = fac
   geom_line() +
   labs(title = "Corrected Threshold vs Area for Each Blank",
        x = "Threshold",
-       y = "Value",
+       y = "% Area",
        color = "Source") +
   theme_minimal()
 
@@ -142,8 +148,8 @@ ggsave(
 # Select measurement columns (skip Threshold)
 threshold_cols <- names(BlankThresholdResultsCorrected)[-1]
 
-# Subset rows 30 to 100
-BlankDiff <- BlankThresholdResultsCorrected[30:100, threshold_cols]
+# Subset rows 35 to 65
+BlankDiff <- BlankThresholdResultsCorrected[35:65, threshold_cols]
 
 # Create a matrix for average differences
 avg_matrix <- matrix(0, nrow = length(threshold_cols), ncol = length(threshold_cols),
@@ -168,7 +174,9 @@ avg_long$Var1_num <- as.numeric(gsub("[^0-9]", "", avg_long$Var1))
 avg_long$Var2_num <- as.numeric(gsub("[^0-9]", "", avg_long$Var2))
 
 # Keep only upper triangle (Var1 > Var2)
-avg_long <- avg_long[avg_long$Var1_num > avg_long$Var2_num, ]
+avg_long <- avg_long[avg_long$Var1_num >=  avg_long$Var2_num, ]
+avg_long <- na.omit(avg_long)
+avg_long <- avg_long[!duplicated(avg_long$value), ]
 
 # Plot heatmap with ordered axes
 p <- ggplot(avg_long, aes(x = factor(Var2, levels = sorted_files),
@@ -179,7 +187,7 @@ p <- ggplot(avg_long, aes(x = factor(Var2, levels = sorted_files),
             color = "black", size = 3) +
   scale_fill_gradient2(low = "white", high = "red", na.value = "black") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  labs(title = "Average Differences (Threshold 30-100)",
+  labs(title = "Average Differences Between Blanks (Threshold 35-65)",
        x = "File 1",
        y = "File 2",
        fill = "Avg Difference")
@@ -194,3 +202,41 @@ ggsave(
   height = 5.0,
   dpi = 300
 )
+
+AverageDiff <- mean(avg_long$value)
+StdDev <- sd(avg_long$value)
+
+avg_long_reduced <- avg_long
+
+# Plot heatmap with ordered axes
+p <- ggplot(avg_long_reduced, aes(x = factor(Var2, levels = sorted_files),
+                          y = factor(Var1, levels = sorted_files),
+                          fill = value)) +
+  geom_tile() +
+  geom_text(aes(label = ifelse(is.na(value), "", round(value, 2))),
+            color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", high = "red", na.value = "black") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(title = "Average Differences Between Blanks (Threshold 35-65)",
+       x = "File 1",
+       y = "File 2",
+       fill = "Avg Difference")
+
+show(p)
+
+ggsave(
+  paste0("CorrectedBlanksAvgDiffFiltered.png"),
+  plot = p,
+  path = file.path(BlankThresholdResults.dir),
+  width = 7.5,
+  height = 5.0,
+  dpi = 300
+)
+
+AverageDiffFiltered <- mean(avg_long_reduced$value)
+StdDevFiltered <- sd(avg_long_reduced$value)
+
+cat("\n=== COMPLETE ===\n")
+cat(sprintf("Blank analysis complete.\n"))
+cat(sprintf("Average Difference: %.2f\n", AverageDiff))
+cat(sprintf("Standard Deviation: %.2f\n", StdDev))
