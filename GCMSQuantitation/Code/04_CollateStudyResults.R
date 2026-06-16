@@ -683,10 +683,10 @@ compute_nc_status <- function(df) {
     
     # Classify PETN status (priority order: first match wins)
     petn_status <- "clean"
-    if (!is.na(petn_snr_flag) && petn_snr_flag == "Quantifiable") {
-      petn_status <- "contaminated"  # SNR criteria → FAIL
-    } else if (!is.na(petn_conc) && petn_conc == 0) {
-      petn_status <- "trace"  # Concentration == 0 → WARN
+    if (!is.na(petn_conc) && petn_conc == 0) {
+      petn_status <- "trace"  # Concentration == 0 → WARN (peak below calibration range)
+    } else if (!is.na(petn_snr_flag) && petn_snr_flag == "Quantifiable") {
+      petn_status <- "contaminated"  # SNR criteria → FAIL (quantifiable contamination)
     } else if (!is.na(petn_ph) && petn_ph > 0 && petn_ph < 200) {
       petn_status <- "trace"  # Below PH threshold → WARN
     } else if (!is.na(petn_snr_flag) && petn_snr_flag == "Below_LOQ") {
@@ -695,14 +695,14 @@ compute_nc_status <- function(df) {
     
     # Classify RDX status (same logic with RDX PH threshold = 50)
     rdx_status <- "clean"
-    if (!is.na(rdx_snr_flag) && rdx_snr_flag == "Quantifiable") {
-      rdx_status <- "contaminated"
-    } else if (!is.na(rdx_conc) && rdx_conc == 0) {
-      rdx_status <- "trace"
+    if (!is.na(rdx_conc) && rdx_conc == 0) {
+      rdx_status <- "trace"  # Concentration == 0 → WARN (peak below calibration range)
+    } else if (!is.na(rdx_snr_flag) && rdx_snr_flag == "Quantifiable") {
+      rdx_status <- "contaminated"  # SNR criteria → FAIL (quantifiable contamination)
     } else if (!is.na(rdx_ph) && rdx_ph > 0 && rdx_ph < 50) {
-      rdx_status <- "trace"
+      rdx_status <- "trace"  # Below PH threshold → WARN
     } else if (!is.na(rdx_snr_flag) && rdx_snr_flag == "Below_LOQ") {
-      rdx_status <- "trace"
+      rdx_status <- "trace"  # SNR Below_LOQ → WARN
     }
     
     # Determine combined status
@@ -746,50 +746,58 @@ if (nrow(nc_rows) > 0) {
 # =========================================================
 # --- Sample columns (excludes NCs) ---
 desired_cols <- c(
-  # Study identifiers
+  # Study identifiers (A-E)
   "Lab", "Participant", "Surface", "SurfaceName", "Repeat",
-  # SNR flags
-  "petn_snr_flag", "rdx_snr_flag",
-  # Range flags
-  "petn_range_flag", "rdx_range_flag",
-  # Concentrations
-  "petn_concentration_dc", "rdx_concentration",
-  # Recovery
-  "petn_recovery_dc", "rdx_recovery",
-  # QC bracket flags
-  "petn_qc_6ng_pre", "petn_qc_6ng_post",
-  "rdx_qc_6ng_pre", "rdx_qc_6ng_post",
-  "petn_qc_02ng_pre", "petn_qc_02ng_post",
-  "rdx_qc_02ng_pre", "rdx_qc_02ng_post",
-  # QC bracket inherited flags
-  "petn_qc_6ng_pre_inherited", "petn_qc_6ng_post_inherited",
-  "rdx_qc_6ng_pre_inherited", "rdx_qc_6ng_post_inherited",
-  "petn_qc_02ng_pre_inherited", "petn_qc_02ng_post_inherited",
-  "rdx_qc_02ng_pre_inherited", "rdx_qc_02ng_post_inherited",
-  # Overall acceptance
+  
+  # Overall acceptance (F-G) -- moved forward for quick reference
   "analysis_accepted",
   "Outcome",
-  # Source tracing
+  
+  # === ALL PETN COLUMNS (H-T: 13 cols) ===
+  # PETN flags
+  "petn_snr_flag", "petn_range_flag",
+  # PETN concentration & recovery
+  "petn_concentration_dc", "petn_recovery_dc",
+  # PETN QC brackets: 6ng first, then 0.2ng
+  "petn_qc_6ng_pre", "petn_qc_6ng_post",
+  "petn_qc_02ng_pre", "petn_qc_02ng_post",
+  # PETN QC inherited flags: 6ng first, then 0.2ng
+  "petn_qc_6ng_pre_inherited", "petn_qc_6ng_post_inherited",
+  "petn_qc_02ng_pre_inherited", "petn_qc_02ng_post_inherited",
+  
+  # === ALL RDX COLUMNS (U-AG: 13 cols) ===
+  # RDX flags
+  "rdx_snr_flag", "rdx_range_flag",
+  # RDX concentration & recovery
+  "rdx_concentration", "rdx_recovery",
+  # RDX QC brackets: 6ng first, then 0.2ng
+  "rdx_qc_6ng_pre", "rdx_qc_6ng_post",
+  "rdx_qc_02ng_pre", "rdx_qc_02ng_post",
+  # RDX QC inherited flags: 6ng first, then 0.2ng
+  "rdx_qc_6ng_pre_inherited", "rdx_qc_6ng_post_inherited",
+  "rdx_qc_02ng_pre_inherited", "rdx_qc_02ng_post_inherited",
+  
+  # Source tracing (AH-AK)
   "Date", "SampleName", "DataFile", "SourceFile"
 )
 
 # --- NC columns (separate sheet, no QC brackets) ---
 desired_cols_nc <- c(
-  # Study identifiers
+  # Study identifiers (A-D)
   "Lab", "Participant", "Surface", "SurfaceName",
-  # SNR flags (key diagnostic for NCs)
-  "petn_snr_flag", "rdx_snr_flag",
-  # Peak heights (diagnostic for trace contamination)
-  "petn_ph", "rdx_ph",
-  # Range flags
-  "petn_range_flag", "rdx_range_flag",
-  # Concentrations (shows what level if detected)
-  "petn_concentration_dc", "rdx_concentration",
-  # Recovery
-  "petn_recovery_dc", "rdx_recovery",
-  # NC-specific status
+  
+  # NC status (E) -- moved forward for quick reference
   "nc_status",
-  # Source tracing
+  
+  # === ALL PETN COLUMNS (F-J: 5 cols) ===
+  "petn_snr_flag", "petn_ph", "petn_range_flag",
+  "petn_concentration_dc", "petn_recovery_dc",
+  
+  # === ALL RDX COLUMNS (K-O: 5 cols) ===
+  "rdx_snr_flag", "rdx_ph", "rdx_range_flag",
+  "rdx_concentration", "rdx_recovery",
+  
+  # Source tracing (P-S)
   "Date", "SampleName", "DataFile", "SourceFile"
 )
 

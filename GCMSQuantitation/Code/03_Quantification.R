@@ -1851,42 +1851,85 @@ xlsx_outfile <- file.path(
 
 # Tailored column sets per sheet type
 cal_cols <- c("Date", "Line", "SampleName", "DataFile", "Vial", "CalLevel", "CalibrationSet",
+              # Internal Standard (15N-RDX)
               "rdx_is_rt", "rdx_is_pa", "rdx_is_snr", "rdx_is_snr_flag",
+              # === ALL PETN COLUMNS ===
+              # PETN raw measurements
               "petn_rt", "petn_pa", "petn_ph", "petn_snr", "petn_snr_flag", "petn_ratio",
-              "rdx_rt", "rdx_pa", "rdx_ph", "rdx_snr", "rdx_snr_flag", "rdx_ratio",
+              # PETN quantitation
               "petn_concentration", "petn_range_flag", "petn_quant_method",
+              # PETN accuracy
+              "petn_percent_bias",
+              # === ALL RDX COLUMNS ===
+              # RDX raw measurements
+              "rdx_rt", "rdx_pa", "rdx_ph", "rdx_snr", "rdx_snr_flag", "rdx_ratio",
+              # RDX quantitation
               "rdx_concentration", "rdx_range_flag", "rdx_quant_method",
-              "TrueCalConcAdj", "petn_percent_bias", "rdx_percent_bias")
+              # RDX accuracy
+              "rdx_percent_bias",
+              # True concentration (for both analytes)
+              "TrueCalConcAdj")
 
 qc_cols <- c("Date", "Line", "SampleName", "DataFile", "Vial", "CalLevel", "CalibrationSet",
+             # Internal Standard (15N-RDX)
              "rdx_is_rt", "rdx_is_pa", "rdx_is_snr", "rdx_is_snr_flag",
+             # === ALL PETN COLUMNS ===
+             # PETN raw measurements
              "petn_rt", "petn_pa", "petn_ph", "petn_snr", "petn_snr_flag", "petn_ratio",
-             "rdx_rt", "rdx_pa", "rdx_ph", "rdx_snr", "rdx_snr_flag", "rdx_ratio",
-             "petn_concentration", "petn_range_flag", "rdx_concentration", "rdx_range_flag",
+             # PETN quantitation (uncorrected)
+             "petn_concentration", "petn_range_flag",
+             # PETN drift correction
              "petn_drift_correction_factor", "petn_concentration_dc",
-             "rdx_drift_correction_factor", "rdx_concentration_dc",
-             "TrueCalConcAdj", "petn_percent_bias", "rdx_percent_bias",
-             "petn_qc_type", "petn_qc_flag", "rdx_qc_type", "rdx_qc_flag",
+             # PETN accuracy (uncorrected)
+             "petn_percent_bias",
+             # PETN QC evaluation
+             "petn_qc_type", "petn_qc_flag",
+             # PETN accuracy (drift-corrected)
              "petn_percent_bias_dc", "petn_qc_flag_dc",
-             "rdx_percent_bias_dc", "rdx_qc_flag_dc")
+             # === ALL RDX COLUMNS ===
+             # RDX raw measurements
+             "rdx_rt", "rdx_pa", "rdx_ph", "rdx_snr", "rdx_snr_flag", "rdx_ratio",
+             # RDX quantitation (uncorrected)
+             "rdx_concentration", "rdx_range_flag",
+             # RDX drift correction
+             "rdx_drift_correction_factor", "rdx_concentration_dc",
+             # RDX accuracy (uncorrected)
+             "rdx_percent_bias",
+             # RDX QC evaluation
+             "rdx_qc_type", "rdx_qc_flag",
+             # RDX accuracy (drift-corrected)
+             "rdx_percent_bias_dc", "rdx_qc_flag_dc",
+             # True concentration (for both analytes)
+             "TrueCalConcAdj")
 
 smp_cols <- c("Date", "Line", "SampleName", "DataFile", "Vial",
+              # Internal Standard (15N-RDX)
               "rdx_is_rt", "rdx_is_pa", "rdx_is_snr", "rdx_is_snr_flag",
+              # === ALL PETN COLUMNS ===
+              # PETN raw measurements
               "petn_rt", "petn_pa", "petn_ph", "petn_snr", "petn_snr_flag", "petn_ratio",
-              "rdx_rt", "rdx_pa", "rdx_ph", "rdx_snr", "rdx_snr_flag", "rdx_ratio",
+              # PETN quantitation (uncorrected)
               "petn_concentration", "petn_range_flag", "petn_quant_method",
-              "rdx_concentration", "rdx_range_flag", "rdx_quant_method",
+              # PETN drift correction
               "petn_drift_correction_factor", "petn_concentration_dc",
+              # === ALL RDX COLUMNS ===
+              # RDX raw measurements
+              "rdx_rt", "rdx_pa", "rdx_ph", "rdx_snr", "rdx_snr_flag", "rdx_ratio",
+              # RDX quantitation (uncorrected)
+              "rdx_concentration", "rdx_range_flag", "rdx_quant_method",
+              # RDX drift correction
               "rdx_drift_correction_factor", "rdx_concentration_dc")
 
 blk_cols <- c("Date", "Line", "SampleName", "DataFile", "Vial",
+              # === ALL PETN COLUMNS ===
               "petn_rt", "petn_pa", "petn_ph", "petn_snr", "petn_snr_flag",
+              # === ALL RDX COLUMNS ===
               "rdx_rt", "rdx_pa", "rdx_ph", "rdx_snr", "rdx_snr_flag")
 
 # Build sheet list (using any_of to handle missing columns gracefully)
 sheet_list <- list(
   "Calibration" = Combined %>% filter(Type == "Cal")    %>% select(any_of(cal_cols)),
-  "QC"          = Combined %>% filter(Type == "QC")     %>% select(any_of(qc_cols)),
+  "QC"          = Combined %>% filter(Type == "QC")     %>% arrange(CalLevel, Line) %>% select(any_of(qc_cols)),
   "Samples"     = Combined %>% filter(Type == "Sample") %>% select(any_of(smp_cols)),
   "Blanks"      = Combined %>% filter(Type == "Blank")  %>% select(any_of(blk_cols))
 )
