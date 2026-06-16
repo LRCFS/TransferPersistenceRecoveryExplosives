@@ -200,7 +200,16 @@ assign_qc_brackets <- function(all_data, petn_bias_col, rdx_bias_col,
   qc_rows <- all_data %>%
     filter(Type == "QC") %>%
     select(SourceFile, Line, CalLevel,
-           any_of(c(bias_cols_to_select, snr_cols_to_select)))
+           any_of(c(bias_cols_to_select, snr_cols_to_select, "rdx_is_snr_flag")))
+  
+  # Determine which QCs actually injected (RDX IS detected)
+  if ("rdx_is_snr_flag" %in% names(qc_rows)) {
+    qc_rows$injected <- !is.na(qc_rows$rdx_is_snr_flag) & 
+                        qc_rows$rdx_is_snr_flag != "Not_Detected"
+  } else {
+    # If rdx_is_snr_flag not available, assume all QCs injected
+    qc_rows$injected <- TRUE
+  }
   
   if (nrow(qc_rows) == 0) {
     warning("No QC rows found. QC brackets cannot be assigned.")
@@ -273,6 +282,48 @@ assign_qc_brackets <- function(all_data, petn_bias_col, rdx_bias_col,
     return("FAIL")
   }
   
+  # Helper: find last QC that actually injected (pre-sample)
+  # Returns list(row = data_row or NULL, inherited = TRUE/FALSE)
+  find_injected_qc_pre <- function(qc_df, sample_line) {
+    pre_qcs <- qc_df %>% filter(Line < sample_line) %>% arrange(desc(Line))
+    if (nrow(pre_qcs) == 0) return(list(row = NULL, inherited = FALSE))
+    
+    # Try closest first
+    if (pre_qcs$injected[1]) {
+      return(list(row = pre_qcs[1, , drop = FALSE], inherited = FALSE))
+    }
+    
+    # Closest didn't inject — find last one that did
+    for (k in seq_len(nrow(pre_qcs))) {
+      if (pre_qcs$injected[k]) {
+        return(list(row = pre_qcs[k, , drop = FALSE], inherited = TRUE))
+      }
+    }
+    
+    # No preceding QC injected
+    return(list(row = NULL, inherited = FALSE))
+  }
+  
+  find_injected_qc_post <- function(qc_df, sample_line) {
+    post_qcs <- qc_df %>% filter(Line > sample_line) %>% arrange(Line)
+    if (nrow(post_qcs) == 0) return(list(row = NULL, inherited = FALSE))
+    
+    # Try closest first
+    if (post_qcs$injected[1]) {
+      return(list(row = post_qcs[1, , drop = FALSE], inherited = FALSE))
+    }
+    
+    # Closest didn't inject — find next one that did
+    for (k in seq_len(nrow(post_qcs))) {
+      if (post_qcs$injected[k]) {
+        return(list(row = post_qcs[k, , drop = FALSE], inherited = TRUE))
+      }
+    }
+    
+    # No subsequent QC injected
+    return(list(row = NULL, inherited = FALSE))
+  }
+  
   # Initialize QC bracket columns
   all_data$petn_qc_6ng_pre  <- NA_character_
   all_data$petn_qc_6ng_post <- NA_character_
@@ -282,6 +333,16 @@ assign_qc_brackets <- function(all_data, petn_bias_col, rdx_bias_col,
   all_data$petn_qc_02ng_post <- NA_character_
   all_data$rdx_qc_02ng_pre   <- NA_character_
   all_data$rdx_qc_02ng_post  <- NA_character_
+  
+  # Inherited flags (TRUE if bracket result came from a non-adjacent QC due to failed injection)
+  all_data$petn_qc_6ng_pre_inherited  <- FALSE
+  all_data$petn_qc_6ng_post_inherited <- FALSE
+  all_data$rdx_qc_6ng_pre_inherited   <- FALSE
+  all_data$rdx_qc_6ng_post_inherited  <- FALSE
+  all_data$petn_qc_02ng_pre_inherited  <- FALSE
+  all_data$petn_qc_02ng_post_inherited <- FALSE
+  all_data$rdx_qc_02ng_pre_inherited   <- FALSE
+  all_data$rdx_qc_02ng_post_inherited  <- FALSE
   
   # Process each source file independently
   source_files <- unique(all_data$SourceFile[all_data$Type == "Sample"])
@@ -311,39 +372,43 @@ assign_qc_brackets <- function(all_data, petn_bias_col, rdx_bias_col,
       
       # --- 6ng QC brackets (bias-based) ---
       if (nrow(qc_6ng) > 0) {
-        # Preceding: largest QC Line < sample Line
-        pre_6ng <- qc_6ng %>% filter(Line < sample_line)
-        if (nrow(pre_6ng) > 0) {
-          pre_6ng_row <- pre_6ng[nrow(pre_6ng), ]
-          all_data$petn_qc_6ng_pre[i] <- evaluate_qc_bias(pre_6ng_row$petn_bias, qc_6ng_limit)
-          all_data$rdx_qc_6ng_pre[i]  <- evaluate_qc_bias(pre_6ng_row$rdx_bias, qc_6ng_limit)
+        # Preceding
+        pre_result <- find_injected_qc_pre(qc_6ng, sample_line)
+        if (!is.null(pre_result$row)) {
+          all_data$petn_qc_6ng_pre[i] <- evaluate_qc_bias(pre_result$row$petn_bias, qc_6ng_limit)
+          all_data$rdx_qc_6ng_pre[i]  <- evaluate_qc_bias(pre_result$row$rdx_bias, qc_6ng_limit)
+          all_data$petn_qc_6ng_pre_inherited[i] <- pre_result$inherited
+          all_data$rdx_qc_6ng_pre_inherited[i]  <- pre_result$inherited
         }
         
-        # Following: smallest QC Line > sample Line
-        post_6ng <- qc_6ng %>% filter(Line > sample_line)
-        if (nrow(post_6ng) > 0) {
-          post_6ng_row <- post_6ng[1, ]
-          all_data$petn_qc_6ng_post[i] <- evaluate_qc_bias(post_6ng_row$petn_bias, qc_6ng_limit)
-          all_data$rdx_qc_6ng_post[i]  <- evaluate_qc_bias(post_6ng_row$rdx_bias, qc_6ng_limit)
+        # Following
+        post_result <- find_injected_qc_post(qc_6ng, sample_line)
+        if (!is.null(post_result$row)) {
+          all_data$petn_qc_6ng_post[i] <- evaluate_qc_bias(post_result$row$petn_bias, qc_6ng_limit)
+          all_data$rdx_qc_6ng_post[i]  <- evaluate_qc_bias(post_result$row$rdx_bias, qc_6ng_limit)
+          all_data$petn_qc_6ng_post_inherited[i] <- post_result$inherited
+          all_data$rdx_qc_6ng_post_inherited[i]  <- post_result$inherited
         }
       }
       
       # --- 0.2ng QC brackets (SNR-based) ---
       if (nrow(qc_02ng) > 0) {
         # Preceding
-        pre_02ng <- qc_02ng %>% filter(Line < sample_line)
-        if (nrow(pre_02ng) > 0) {
-          pre_02ng_row <- pre_02ng[nrow(pre_02ng), ]
-          all_data$petn_qc_02ng_pre[i] <- evaluate_qc_snr(pre_02ng_row$petn_snr, snr_pass, snr_warn)
-          all_data$rdx_qc_02ng_pre[i]  <- evaluate_qc_snr(pre_02ng_row$rdx_snr, snr_pass, snr_warn)
+        pre_result <- find_injected_qc_pre(qc_02ng, sample_line)
+        if (!is.null(pre_result$row)) {
+          all_data$petn_qc_02ng_pre[i] <- evaluate_qc_snr(pre_result$row$petn_snr, snr_pass, snr_warn)
+          all_data$rdx_qc_02ng_pre[i]  <- evaluate_qc_snr(pre_result$row$rdx_snr, snr_pass, snr_warn)
+          all_data$petn_qc_02ng_pre_inherited[i] <- pre_result$inherited
+          all_data$rdx_qc_02ng_pre_inherited[i]  <- pre_result$inherited
         }
         
         # Following
-        post_02ng <- qc_02ng %>% filter(Line > sample_line)
-        if (nrow(post_02ng) > 0) {
-          post_02ng_row <- post_02ng[1, ]
-          all_data$petn_qc_02ng_post[i] <- evaluate_qc_snr(post_02ng_row$petn_snr, snr_pass, snr_warn)
-          all_data$rdx_qc_02ng_post[i]  <- evaluate_qc_snr(post_02ng_row$rdx_snr, snr_pass, snr_warn)
+        post_result <- find_injected_qc_post(qc_02ng, sample_line)
+        if (!is.null(post_result$row)) {
+          all_data$petn_qc_02ng_post[i] <- evaluate_qc_snr(post_result$row$petn_snr, snr_pass, snr_warn)
+          all_data$rdx_qc_02ng_post[i]  <- evaluate_qc_snr(post_result$row$rdx_snr, snr_pass, snr_warn)
+          all_data$petn_qc_02ng_post_inherited[i] <- post_result$inherited
+          all_data$rdx_qc_02ng_post_inherited[i]  <- post_result$inherited
         }
       }
     }
@@ -375,7 +440,7 @@ if (nrow(samples) == 0) {
 # =========================================================
 samples$SampleName_trimmed <- str_trim(samples$SampleName)
 
-sample_pattern <- "^Lab(\\d+)\\s+P(\\d+)\\s+(ABS-S|ABS-T|S|G)\\s*(NC|\\d+)$"
+sample_pattern <- "^Lab(\\d+)\\s*P(\\d+)\\s*(ABS-S|ABS-T|S|G)\\s*(NC|\\d+)$"
 
 parsed <- str_match(samples$SampleName_trimmed, sample_pattern)
 
@@ -472,11 +537,25 @@ compute_analysis_accepted <- function(df) {
     petn_range <- if ("petn_range_flag" %in% names(df)) df$petn_range_flag[i] else NA_character_
     rdx_range  <- if ("rdx_range_flag" %in% names(df)) df$rdx_range_flag[i] else NA_character_
     
-    if (!is.na(petn_range) && petn_range != "Within_range") {
-      failures <- c(failures, paste0("PETN ", petn_range))
+    # Range flag logic:
+    #   "Below_range" → FAIL (concentration too low for reliable quantification)
+    #   "Warning" → PASS* (0.1-0.2 ng/µL, near LOQ)
+    #   "Within_range" → no flag (acceptable)
+    #   NA → no flag (not detected)
+    if (!is.na(petn_range)) {
+      if (petn_range == "Below_range") {
+        failures <- c(failures, "PETN Below_range")
+      } else if (petn_range == "WARN") {
+        warnings_na <- c(warnings_na, "PETN near LOQ")
+      }
     }
-    if (!is.na(rdx_range) && rdx_range != "Within_range") {
-      failures <- c(failures, paste0("RDX ", rdx_range))
+    
+    if (!is.na(rdx_range)) {
+      if (rdx_range == "Below_range") {
+        failures <- c(failures, "RDX Below_range")
+      } else if (rdx_range == "WARN") {
+        warnings_na <- c(warnings_na, "RDX near LOQ")
+      }
     }
     
     # --- QC bracket checks ---
@@ -535,6 +614,23 @@ compute_analysis_accepted <- function(df) {
 
 samples$analysis_accepted <- compute_analysis_accepted(samples)
 
+# Compute Outcome column
+samples$Outcome <- sapply(samples$analysis_accepted, function(val) {
+  if (is.na(val)) return(NA_character_)
+  if (val == "NC") return(NA_character_)
+  if (val %in% c("PASS", "PASS*")) return("Complete")
+  
+  # It's a FAIL — determine reason by priority
+  has_below <- grepl("Below_range|Below_LOD|Below_LOQ", val)
+  has_above <- grepl("Above_range", val)
+  
+  if (has_below) return("Reanalyse for lower conc.")
+  if (has_above) return("Reanalyse for higher conc.")
+  
+  # QC failures only
+  return("Reanalyse")
+})
+
 # Print summary of acceptance (excludes NCs from counts)
 n_pass <- sum(samples$analysis_accepted == "PASS", na.rm = TRUE)
 n_pass_star <- sum(samples$analysis_accepted == "PASS*", na.rm = TRUE)
@@ -546,26 +642,68 @@ print(paste0("Analysis acceptance: PASS=", n_pass, " PASS*=", n_pass_star,
 # =========================================================
 # 7b. Compute NC status (separate evaluation for negative controls)
 # =========================================================
-# NC criteria:
-#   PASS: Both PETN and RDX SNR flags = "Below_LOD" (no analyte detected)
-#   WARN: Either/both = "Below_LOQ" (trace detected, not quantifiable)
-#   FAIL: Either/both = "Quantifiable" (contamination present)
+# NC criteria (three-tier evaluation - any can trigger WARN/FAIL):
+#   1. SNR flag criteria:
+#      - FAIL: SNR = "Quantifiable" (analyte clearly present)
+#      - WARN: SNR = "Below_LOQ" (trace detected but not quantifiable)
+#      - PASS: SNR = "Below_LOD" or NA (no analyte detected)
+#   2. Peak height criteria:
+#      - WARN: 0 < PH < threshold (PETN: 200, RDX: 50)
+#      - Catches trace contamination/carryover below SNR threshold
+#   3. Concentration criteria:
+#      - WARN: Concentration (drift-corrected) == 0
+#      - Indicates peak detected but negative extrapolation floored at zero
 compute_nc_status <- function(df) {
   
   nc_status <- character(nrow(df))
   
   for (i in seq_len(nrow(df))) {
-    petn_flag <- if ("petn_snr_flag" %in% names(df)) df$petn_snr_flag[i] else NA_character_
-    rdx_flag  <- if ("rdx_snr_flag" %in% names(df)) df$rdx_snr_flag[i] else NA_character_
+    # Extract SNR flags
+    petn_snr_flag <- if ("petn_snr_flag" %in% names(df)) df$petn_snr_flag[i] else NA_character_
+    rdx_snr_flag  <- if ("rdx_snr_flag" %in% names(df)) df$rdx_snr_flag[i] else NA_character_
     
-    # Classify each analyte
-    petn_status <- if (is.na(petn_flag)) "clean" else
-                   if (petn_flag == "Below_LOD") "clean" else
-                   if (petn_flag == "Below_LOQ") "trace" else "contaminated"
+    # Extract peak heights
+    petn_ph <- if ("petn_ph" %in% names(df)) df$petn_ph[i] else NA_real_
+    rdx_ph  <- if ("rdx_ph" %in% names(df)) df$rdx_ph[i] else NA_real_
     
-    rdx_status <- if (is.na(rdx_flag)) "clean" else
-                  if (rdx_flag == "Below_LOD") "clean" else
-                  if (rdx_flag == "Below_LOQ") "trace" else "contaminated"
+    # Extract drift-corrected concentrations (use DC values where available)
+    petn_conc <- if ("petn_concentration_dc" %in% names(df)) {
+      df$petn_concentration_dc[i]
+    } else if ("petn_concentration" %in% names(df)) {
+      df$petn_concentration[i]  # Fallback if DC not available
+    } else {
+      NA_real_
+    }
+    
+    rdx_conc <- if ("rdx_concentration" %in% names(df)) {
+      df$rdx_concentration[i]  # RDX typically doesn't have DC
+    } else {
+      NA_real_
+    }
+    
+    # Classify PETN status (priority order: first match wins)
+    petn_status <- "clean"
+    if (!is.na(petn_snr_flag) && petn_snr_flag == "Quantifiable") {
+      petn_status <- "contaminated"  # SNR criteria → FAIL
+    } else if (!is.na(petn_conc) && petn_conc == 0) {
+      petn_status <- "trace"  # Concentration == 0 → WARN
+    } else if (!is.na(petn_ph) && petn_ph > 0 && petn_ph < 200) {
+      petn_status <- "trace"  # Below PH threshold → WARN
+    } else if (!is.na(petn_snr_flag) && petn_snr_flag == "Below_LOQ") {
+      petn_status <- "trace"  # SNR Below_LOQ → WARN
+    }
+    
+    # Classify RDX status (same logic with RDX PH threshold = 50)
+    rdx_status <- "clean"
+    if (!is.na(rdx_snr_flag) && rdx_snr_flag == "Quantifiable") {
+      rdx_status <- "contaminated"
+    } else if (!is.na(rdx_conc) && rdx_conc == 0) {
+      rdx_status <- "trace"
+    } else if (!is.na(rdx_ph) && rdx_ph > 0 && rdx_ph < 50) {
+      rdx_status <- "trace"
+    } else if (!is.na(rdx_snr_flag) && rdx_snr_flag == "Below_LOQ") {
+      rdx_status <- "trace"
+    }
     
     # Determine combined status
     if (petn_status == "contaminated" && rdx_status == "contaminated") {
@@ -623,8 +761,14 @@ desired_cols <- c(
   "rdx_qc_6ng_pre", "rdx_qc_6ng_post",
   "petn_qc_02ng_pre", "petn_qc_02ng_post",
   "rdx_qc_02ng_pre", "rdx_qc_02ng_post",
+  # QC bracket inherited flags
+  "petn_qc_6ng_pre_inherited", "petn_qc_6ng_post_inherited",
+  "rdx_qc_6ng_pre_inherited", "rdx_qc_6ng_post_inherited",
+  "petn_qc_02ng_pre_inherited", "petn_qc_02ng_post_inherited",
+  "rdx_qc_02ng_pre_inherited", "rdx_qc_02ng_post_inherited",
   # Overall acceptance
   "analysis_accepted",
+  "Outcome",
   # Source tracing
   "Date", "SampleName", "DataFile", "SourceFile"
 )
@@ -635,6 +779,8 @@ desired_cols_nc <- c(
   "Lab", "Participant", "Surface", "SurfaceName",
   # SNR flags (key diagnostic for NCs)
   "petn_snr_flag", "rdx_snr_flag",
+  # Peak heights (diagnostic for trace contamination)
+  "petn_ph", "rdx_ph",
   # Range flags
   "petn_range_flag", "rdx_range_flag",
   # Concentrations (shows what level if detected)
@@ -807,6 +953,7 @@ style_amber  <- createStyle(bgFill = "#FFEB9C", fontColour = "#9C5700")
 style_red    <- createStyle(bgFill = "#FFC7CE", fontColour = "#9C0006")
 style_grey   <- createStyle(fgFill = "#D9D9D9", fontColour = "#000000")
 style_blue   <- createStyle(bgFill = "#BDD7EE", fontColour = "#1F4E79")
+style_yellow <- createStyle(bgFill = "#FFFF00", fontColour = "#000000")
 style_header <- createStyle(textDecoration = "Bold", border = "Bottom",
                             borderColour = "#000000", fgFill = "#4472C4",
                             fontColour = "#FFFFFF", halign = "center")
@@ -832,16 +979,16 @@ apply_formatting <- function(wb, sheet_name, df) {
                           type = "contains", rule = "Below_LOD", style = style_red)
   }
   
-  # --- Range flag columns: Within_range=green, Below_range=amber, Above_range=blue ---
+  # --- Range flag columns: Within_range=green, Warning=amber, Below_range=red ---
   range_cols <- intersect(c("petn_range_flag", "rdx_range_flag"), col_names)
   for (col in range_cols) {
     col_idx <- which(col_names == col)
     conditionalFormatting(wb, sheet_name, cols = col_idx, rows = data_rows,
                           type = "contains", rule = "Within_range", style = style_green)
     conditionalFormatting(wb, sheet_name, cols = col_idx, rows = data_rows,
-                          type = "contains", rule = "Below_range", style = style_amber)
+                          type = "contains", rule = "Warning", style = style_amber)
     conditionalFormatting(wb, sheet_name, cols = col_idx, rows = data_rows,
-                          type = "contains", rule = "Above_range", style = style_blue)
+                          type = "contains", rule = "Below_range", style = style_red)
   }
   
   # --- QC bracket columns: PASS=green, WARN=amber, FAIL=red ---
@@ -896,6 +1043,33 @@ apply_formatting <- function(wb, sheet_name, df) {
       addStyle(wb, sheet_name, style = style_grey, rows = na_rows, cols = col_idx,
                gridExpand = TRUE, stack = TRUE)
     }
+  }
+  
+  # --- Inherited flag columns: TRUE = amber ---
+  inherited_cols <- intersect(c("petn_qc_6ng_pre_inherited", "petn_qc_6ng_post_inherited",
+                                "rdx_qc_6ng_pre_inherited", "rdx_qc_6ng_post_inherited",
+                                "petn_qc_02ng_pre_inherited", "petn_qc_02ng_post_inherited",
+                                "rdx_qc_02ng_pre_inherited", "rdx_qc_02ng_post_inherited"), col_names)
+  for (col in inherited_cols) {
+    col_idx <- which(col_names == col)
+    conditionalFormatting(wb, sheet_name, cols = col_idx, rows = data_rows,
+                          type = "contains", rule = "TRUE", style = style_amber)
+  }
+  
+  # --- Outcome column: Complete=green, Reanalyse=red, lower conc=amber, higher conc=yellow ---
+  if ("Outcome" %in% col_names) {
+    col_idx <- which(col_names == "Outcome")
+    conditionalFormatting(wb, sheet_name, cols = col_idx, rows = data_rows,
+                          type = "contains", rule = "Complete", style = style_green)
+    conditionalFormatting(wb, sheet_name, cols = col_idx, rows = data_rows,
+                          type = "contains", rule = "lower conc", style = style_amber)
+    conditionalFormatting(wb, sheet_name, cols = col_idx, rows = data_rows,
+                          type = "contains", rule = "higher conc", style = style_yellow)
+    # "Reanalyse" without qualifier (QC failure only) — must come last as it's less specific
+    conditionalFormatting(wb, sheet_name, cols = col_idx, rows = data_rows,
+                          type = "expression",
+                          rule = paste0('EXACT(', int2col(col_idx), '2,"Reanalyse")'),
+                          style = style_red)
   }
 }
 

@@ -245,10 +245,9 @@ process_sim_channel <- function(raw_data, mz, rt_windows,
 
   # Filter to this m/z using a +/- 0.5 Da window to capture
   # centroid drift (e.g. m/z 46 vs 46.1 from different scan groups)
-  channel_data <- raw_data %>%
-    dplyr::filter(abs(Mass - mz) < 0.5) %>%
-    dplyr::select(RetentionTime, Intensity) %>%
-    dplyr::filter(RetentionTime < rt_upper_limit)
+  channel_data <- raw_data[abs(raw_data$Mass - mz) < 0.5, , drop = FALSE]
+  channel_data <- channel_data[, c("RetentionTime", "Intensity"), drop = FALSE]
+  channel_data <- channel_data[channel_data$RetentionTime < rt_upper_limit, , drop = FALSE]
 
   # Guard: no data for this m/z channel
   if (nrow(channel_data) == 0) {
@@ -363,11 +362,11 @@ calculate_snr <- function(baseline_corrected, peak_height,
   }
 
   # Extract noise region from baseline-corrected signal
-  noise_data <- baseline_corrected %>%
-    dplyr::filter(
-      RetentionTime >= noise_window[1] &
-      RetentionTime <= noise_window[2]
-    )
+  noise_data <- baseline_corrected[
+    baseline_corrected$RetentionTime >= noise_window[1] &
+    baseline_corrected$RetentionTime <= noise_window[2],
+    , drop = FALSE
+  ]
 
   if (nrow(noise_data) < min_noise_points) {
     warning("Noise window [", noise_window[1], ", ", noise_window[2],
@@ -456,8 +455,11 @@ extract_peak_area <- function(peaks, signal, expected_rt, step_size,
   }
 
   # Filter peaks to expected RT window
-  candidate <- peaks %>%
-    dplyr::filter(x < (expected_rt + rt_tolerance) & x > (expected_rt - rt_tolerance))
+  candidate <- peaks[
+    peaks$x < (expected_rt + rt_tolerance) & 
+    peaks$x > (expected_rt - rt_tolerance),
+    , drop = FALSE
+  ]
 
   if (nrow(candidate) == 0) {
     return(na_result)
@@ -477,8 +479,10 @@ extract_peak_area <- function(peaks, signal, expected_rt, step_size,
   lmin <- peak_rt - (boundary_steps * step_size)
   lmax <- peak_rt + (boundary_steps * step_size)
 
-  peak_data <- signal %>%
-    dplyr::filter(dplyr::between(RTime, lmin, lmax))
+  peak_data <- signal[
+    signal$RTime >= lmin & signal$RTime <= lmax,
+    , drop = FALSE
+  ]
 
   if (nrow(peak_data) < 2) {
     return(list(rt = peak_rt, pa = NA_real_,
@@ -563,14 +567,19 @@ plot_integration <- function(baseline_corrected, signal, peak_result,
   }
 
   # Filter baseline-corrected data to plot range (context trace)
-  context_data <- baseline_corrected %>%
-    dplyr::filter(RetentionTime >= plot_min & RetentionTime <= plot_max)
+  context_data <- baseline_corrected[
+    baseline_corrected$RetentionTime >= plot_min & 
+    baseline_corrected$RetentionTime <= plot_max,
+    , drop = FALSE
+  ]
 
   if (nrow(context_data) == 0) return(invisible(NULL))
 
   # Filter signal data to integration window (shaded area)
-  integration_data <- signal %>%
-    dplyr::filter(dplyr::between(RTime, lmin, lmax))
+  integration_data <- signal[
+    signal$RTime >= lmin & signal$RTime <= lmax,
+    , drop = FALSE
+  ]
 
   # Build annotation text
   ann_parts <- paste0(compound_name)

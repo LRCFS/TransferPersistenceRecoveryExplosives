@@ -181,6 +181,13 @@ for (mz_val in all_mz) {
   rt_windows_by_mz[[as.character(mz_val)]] <- windows
 }
 
+# Build per-m/z minimum peak height from compound definitions
+mz_min_peak_height <- list()
+mz_min_peak_height[[as.character(rdx_is_config$mz)]] <- rdx_is_config$min_peak_height
+for (a in analytes) {
+  mz_min_peak_height[[as.character(a$mz)]] <- a$min_peak_height
+}
+
 # --- Integration plot queue for shared y-axis scaling ---
 # Instead of generating integration plots inside the SIM loop (where
 # Integration plots are generated inline during SIM processing (auto-scaled per plot)
@@ -219,7 +226,7 @@ for (file in filenameGcData) {
       GcDataCodeOrdered, mz_val,
       rt_windows_by_mz[[as.character(mz_val)]],
       rolling_avg = rolling.average,
-      min_peak_height = SignalMaxThresholdSIM
+      min_peak_height = mz_min_peak_height[[as.character(mz_val)]]
     )
   }
 
