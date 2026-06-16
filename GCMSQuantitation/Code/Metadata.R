@@ -415,16 +415,16 @@ if ("QC" %in% CombinedResults$Type){
   #}
 }
 
-#For analysis of repeated standards, filter out samples
-StandardResults <- CombinedResults[!is.na(CombinedResults$I.S.PA), ]
-
-StandardResults <- StandardResults[StandardResults$I.S.PA >= 1000, ]
+#Look at PETN PA
+PETNResults <- CombinedResults %>%
+  filter(SampleName == "2ng PETN+1ng MT (Ac...ned)") %>%
+  filter(Vial != "28")
 
 #Plot peak area results
-p <- ggplot(StandardResults, aes(x = Row, y = I.S.PA)) +
+p <- ggplot(PETNResults, aes(x = Row, y = PETN.PA)) +
   geom_point() +
   labs(
-    title = "IS in Swab Extract in EtOH",
+    title = "PETN in Acetone-Cleaned Swab Extract",
     x = "Injection Number",
     y = "Peak Area"
   ) +
@@ -433,7 +433,7 @@ p <- ggplot(StandardResults, aes(x = Row, y = I.S.PA)) +
 print(p)
 
 ggsave(
-  filename = "IS in Swab Extract PA.png",
+  filename = "PETN in ACetoneCleaned Swab Extract PA.png",
   plot = p,
   path = Results.dir,
   width = 8,
@@ -441,20 +441,20 @@ ggsave(
   dpi = 300)
 
 #Plot scaled PA results
-p_scaled <- ggplot(StandardResults, aes(x = Row, y = I.S.PA)) +
+p_scaled <- ggplot(PETNResults, aes(x = Row, y = PETN.PA)) +
   geom_point() +
   labs(
-    title = "IS in Swab Extract in EtOH PA",
+    title = "PETN in Acetone-Cleaned Swab Extract",
     x = "Injection Number",
     y = "Peak Area",
   ) +
-  ylim(0,100000) +
+  ylim(0,15000) +
   theme(text = element_text(size = 12))
 
 print(p_scaled)
 
 ggsave(
-  filename = "IS in Swab in Extract PA_Scaled.png",
+  filename = "PETN in Acetone-Cleaned Swab Extract PA_Scaled.png",
   plot = p_scaled,
   path = Results.dir,
   width = 8,
@@ -463,8 +463,8 @@ ggsave(
 
 #Determine summary statistics
 
-AveragePA <- mean(StandardResults$I.S.PA)
-StdDevPA <- sd(StandardResults$I.S.PA)
+AveragePA <- mean(PETNResults$PETN.PA)
+StdDevPA <- sd(PETNResults$PETN.PA)
 RSDPA <- StdDevPA/AveragePA*100
 
 #Create a summary dataframe
@@ -474,6 +474,200 @@ SummaryStats <- data.frame(
 )
 
 # Save to CSV
-write.csv(SummaryStats, file = paste0(Results.dir, "MTSummaryStats.csv"), row.names = FALSE)
+write.csv(SummaryStats, file = paste0(Results.dir, "PETNinAcetoneCleanedSwabExtractSummaryStats.csv"), row.names = FALSE)
+
+#Produce Box Plot to investigate spread of data
+p <- ggplot(PETNResults, aes(x = SampleName, y = PETN.PA)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 23, size = 3, color = "black", fill = "black") +
+  labs(title = "Box Plot of PETN PA in Acetone-Cleaned Swab Extract",
+       x = "",
+       y = "Peak Area") +
+  theme_minimal()
+
+print(p)
+
+ggsave(
+  filename = "Box Plot of PETN PA in Acetone-Cleaned Swab Extract.png",
+  plot = p,
+  path = Results.dir,
+  width = 8,
+  height = 6,
+  dpi = 300)
+
+#Produce histogram Plot to investigate spread of data
+p <- ggplot(PETNResults, aes(x = PETN.PA)) +
+  geom_histogram(binwidth = 400, fill = "steelblue", color = "black") +
+  labs(title = "Histogram of PETN PA  in Acetone-Cleaned Swab Extract",
+       x = "Peak Area",
+       y = "Count") +
+  theme_minimal()
+
+print(p)
+
+ggsave(
+  filename = "Histogram Plot of PETN PA in Acetone-Cleaned Swab Extract.png",
+  plot = p,
+  path = Results.dir,
+  width = 8,
+  height = 6,
+  dpi = 300)
+
+#Look at IS PA
+# ISResults <- CombinedResults %>%
+#   filter(SampleName == "2ng PETN+1ng MT in ...ract")
+
+ISResults <- PETNResults
+
+#Plot peak area results
+p <- ggplot(ISResults, aes(x = Row, y = I.S.PA)) +
+  geom_point() +
+  labs(
+    title = "IS PA in Acetone-Cleaned Swab Extract",
+    x = "Injection Number",
+    y = "Peak Area"
+  ) +
+  theme(text = element_text(size = 12))
+
+print(p)
+
+ggsave(
+  filename = "IS PA in Acetone-Cleaned Swab Extract.png",
+  plot = p,
+  path = Results.dir,
+  width = 8,
+  height = 6,
+  dpi = 300)
+
+#Plot scaled PA results
+p_scaled <- ggplot(ISResults, aes(x = Row, y = I.S.PA)) +
+  geom_point() +
+  labs(
+    title = "IS PA in Acetone-Cleaned Swab Extract",
+    x = "Injection Number",
+    y = "Peak Area",
+  ) +
+  ylim(0,100000) +
+  theme(text = element_text(size = 12))
+
+print(p_scaled)
+
+ggsave(
+  filename = "IS PA in Acetone-Cleaned Swab Extract_Scaled.png",
+  plot = p_scaled,
+  path = Results.dir,
+  width = 8,
+  height = 6,
+  dpi = 300)
+
+#Determine summary statistics
+
+AveragePA <- mean(ISResults$I.S.PA)
+StdDevPA <- sd(ISResults$I.S.PA)
+RSDPA <- StdDevPA/AveragePA*100
+
+#Create a summary dataframe
+SummaryStats <- data.frame(
+  Statistic = c("Mean", "StdDev", "RSD"),
+  Value = c(AveragePA, StdDevPA, RSDPA)
+)
+
+# Save to CSV
+write.csv(SummaryStats, file = paste0(Results.dir, "ISinAcetone-CleanedSwabSummaryStats.csv"), row.names = FALSE)
+
+#Produce Box Plot to investigate spread of data
+p <- ggplot(ISResults, aes(x = SampleName, y = I.S.PA)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 23, size = 3, color = "black", fill = "black") +
+  labs(title = "Box Plot of IS PA in Acetone-Cleaned Swab Extract)",
+       x = "",
+       y = "Peak Area") +
+  theme_minimal()
+
+print(p)
+
+ggsave(
+  filename = "Box Plot of IS PA in Acetone-Cleaned Swab Extract.png",
+  plot = p,
+  path = Results.dir,
+  width = 8,
+  height = 6,
+  dpi = 300)
+
+#Produce histogram Plot to investigate spread of data
+p <- ggplot(ISResults, aes(x = I.S.PA)) +
+  geom_histogram(binwidth = 2000, fill = "steelblue", color = "black") +
+  labs(title = "Histogram of Acetone-Cleaned PA in FEL Swab Extract",
+       x = "Peak Area",
+       y = "Count") +
+  theme_minimal()
+
+print(p)
+
+ggsave(
+  filename = "Histogram Plot of IS PA in Acetone-Cleaned Swab Extract.png",
+  plot = p,
+  path = Results.dir,
+  width = 8,
+  height = 6,
+  dpi = 300)
+
+#Plot IS/PETN Ratio
+p <- ggplot(ISResults, aes(x = Row, y = ratio)) +
+  geom_point() +
+  labs(
+    title = "PETN/IS Ratio in  Acetone-Cleaned Swab",
+    x = "Injection Number",
+    y = "Peak Area",
+  ) +
+  ylim(0,1) +
+  theme(text = element_text(size = 12))
+
+print(p)
+
+ggsave(
+  filename = "PETN_Is Ratio in  Acetone-Cleaned Swab.png",
+  plot = p,
+  path = Results.dir,
+  width = 8,
+  height = 6,
+  dpi = 300)
+
+#Produce Box Plot to investigate spread of data
+p <- ggplot(ISResults, aes(x = SampleName, y = ratio)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 23, size = 3, color = "black", fill = "black") +
+  labs(title = "Box Plot of PETN_IS Ratio in  Acetone-Cleaned Swab",
+       x = "",
+       y = "Peak Area") +
+  theme_minimal()
+
+print(p)
+
+ggsave(
+  filename = "Box Plot of PETN_IS PA in  Acetone-Cleaned Swab.png",
+  plot = p,
+  path = Results.dir,
+  width = 8,
+  height = 6,
+  dpi = 300)
+
+#Produce histogram Plot to investigate spread of data
+p <- ggplot(ISResults, aes(x = ratio)) +
+  geom_histogram(binwidth = 0.008, fill = "steelblue", color = "black") +
+  labs(title = "Histogram of PETN_IS Ratio in  Acetone-Cleaned Swab)",
+       x = "Ratio",
+       y = "Count") +
+  theme_minimal()
+
+print(p)
+
+ggsave(
+  filename = "Histogram Plot of PETN_IS in  Acetone-Cleaned Swab.png",
+  plot = p,
+  path = Results.dir,
+  width = 8,
+  height = 6,
+  dpi = 300)
 
 print("Results saved and updated successfully.")

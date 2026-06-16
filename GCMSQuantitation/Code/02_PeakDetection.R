@@ -6,21 +6,29 @@
 # Prior running, GC-MS data must be converted using Proteo Wizard/ MsConvert
 # The MS1 files needs to be converted using the MsFilesReoganiser.R code
 
+# *********************************************************************
+# CONSOLIDATED VERSION: Uses only 15N-RDX as internal standard (no NG)
+# This version extracts:
+#   - RDX IS (15N-RDX) peak area from m/z 122 channel
+#   - Analyte peaks (PETN m/z 46, RDX m/z 120)
+# *********************************************************************
+
 #####################################################################
 # Set to TRUE to reprocess all files from scratch;
 # set to FALSE to skip files whose Summary output already exists
-reprocess_all <- FALSE
+reprocess_tic <- FALSE
+reprocess_sim <- FALSE
 #####################################################################
 
 # Load Metadata files
 filenameGcData <- list.files(GcDataConvertedRcodeTIC.dir, extensionCSV, full.names=TRUE)
 
 # Report how many TIC files will be processed vs skipped
-if (!reprocess_all) {
+if (!reprocess_tic) {
   n_tic_total <- length(filenameGcData)
   n_tic_skip <- sum(sapply(filenameGcData, function(f) {
     name <- gsub(".*/", "", gsub(extensionCSV, "", f))
-    file.exists(paste0(GcData.dir, name, "Summary.csv"))
+    file.exists(paste0(GcData.dir, name, "TIC.csv"))
   }))
   print(paste0("TIC processing: ", n_tic_total, " files found, ",
                n_tic_skip, " already processed, ", n_tic_total - n_tic_skip, " to process"))
@@ -35,8 +43,8 @@ for (file in filenameGcData) {
   GcDataName <- gsub(".*/", "", GcDataName)
   File <- GcDataName
   
-  # Skip if already processed (Summary file exists) and not reprocessing all
-  if (!reprocess_all && file.exists(paste0(GcData.dir, GcDataName, "Summary.csv"))) {
+  # Skip if already processed (TIC file exists) and not reprocessing TIC
+  if (!reprocess_tic && file.exists(paste0(GcData.dir, GcDataName, "TIC.csv"))) {
     print(paste0("Skipping ", GcDataName, " TIC -- already processed"))
     next
   }
@@ -62,7 +70,7 @@ for (file in filenameGcData) {
     select(RetentionTime, TIC=srate_ma02)
   
   DataTIC <- DataTIC %>%
-    filter(RetentionTime > 180)
+    filter(RetentionTime > 120)  # lowered from 180
   
   DataTIC <- na.omit(DataTIC)
   
@@ -86,7 +94,7 @@ for (file in filenameGcData) {
     sprintf("%s_TICBaseline.tiff",GcDataName),
     plot = p,
     device = NULL,
-    path = file.path(GCSampleTrace.dir),
+    path = file.path(GCSampleTrace.dir, "TIC"),
     scale = 1,
     width = 7.5,
     height = 5.0,
@@ -148,8 +156,13 @@ for (file in filenameGcData) {
 #######      Calculate PA for SIM                 #######
 #########################################################
 
-# Collect all unique m/z values needed across IS and analytes
-all_mz <- unique(c(is_config$mz, sapply(analytes, function(a) a$mz)))
+# Collect all unique m/z values needed for IS and analytes
+all_mz <- unique(c(rdx_is_config$mz, sapply(analytes, function(a) a$mz)))
+
+# Create SIM subfolders for each m/z channel
+for (mz_val in all_mz) {
+  dir.create(file.path(GCSampleTrace.dir, sprintf("SIM_mz%s", mz_val)), recursive = TRUE)
+}
 
 # Build RT windows for each m/z channel
 # Each window is c(centre, half_width) -- determines which RT regions
@@ -157,8 +170,8 @@ all_mz <- unique(c(is_config$mz, sapply(analytes, function(a) a$mz)))
 rt_windows_by_mz <- list()
 for (mz_val in all_mz) {
   windows <- list()
-  if (is_config$mz == mz_val && !is.na(is_config$rt)) {
-    windows <- c(windows, list(c(is_config$rt, 5)))
+  if (rdx_is_config$mz == mz_val && !is.na(rdx_is_config$rt)) {
+    windows <- c(windows, list(c(rdx_is_config$rt, 5)))
   }
   for (a in analytes) {
     if (a$mz == mz_val && !is.na(a$rt)) {
@@ -168,14 +181,18 @@ for (mz_val in all_mz) {
   rt_windows_by_mz[[as.character(mz_val)]] <- windows
 }
 
+# --- Integration plot queue for shared y-axis scaling ---
+# Instead of generating integration plots inside the SIM loop (where
+# Integration plots are generated inline during SIM processing (auto-scaled per plot)
+
 filenameGcData <- list.files(GcDataConvertedRcodeSIM.dir, extensionCSV, full.names = TRUE)
 
 # Report how many SIM files will be processed vs skipped
-if (!reprocess_all) {
+if (!reprocess_sim) {
   n_sim_total <- length(filenameGcData)
   n_sim_skip <- sum(sapply(filenameGcData, function(f) {
     name <- gsub(".*/", "", gsub(extensionCSV, "", f))
-    file.exists(paste0(GcData.dir, name, "Summary.csv"))
+    file.exists(paste0(GcData.dir, name, "SIM.csv"))
   }))
   print(paste0("SIM processing: ", n_sim_total, " files found, ",
                n_sim_skip, " already processed, ", n_sim_total - n_sim_skip, " to process"))
@@ -186,8 +203,8 @@ for (file in filenameGcData) {
   GcDataName <- gsub(".*/", "", GcDataName)
   File <- GcDataName
 
-  # Skip if already processed (Summary file exists) and not reprocessing all
-  if (!reprocess_all && file.exists(paste0(GcData.dir, GcDataName, "Summary.csv"))) {
+  # Skip if already processed (SIM file exists) and not reprocessing SIM
+  if (!reprocess_sim && file.exists(paste0(GcData.dir, GcDataName, "SIM.csv"))) {
     print(paste0("Skipping ", GcDataName, " SIM -- already processed"))
     next
   }
@@ -222,7 +239,7 @@ for (file in filenameGcData) {
       sprintf("%s_SIM_mz%s.tiff", GcDataName, mz_val),
       plot = p,
       device = NULL,
-      path = file.path(GCSampleTrace.dir),
+      path = file.path(GCSampleTrace.dir, sprintf("SIM_mz%s", mz_val)),
       scale = 1,
       width = 7.5,
       height = 5.0,
@@ -232,25 +249,30 @@ for (file in filenameGcData) {
     )
   }
 
-  # Extract IS peak area from IS m/z channel
-  is_ch <- channel_results[[as.character(is_config$mz)]]
-  is_result <- extract_peak_area(is_ch$peaks, is_ch$signal,
-                                  is_config$rt, is_ch$step_size,
-                                  baseline_corrected = is_ch$baseline_corrected,
-                                  noise_window = is_config$noise_window,
-                                  snr_lod = snr_detect,
-                                  snr_loq = snr_quant)
+  # Extract RDX IS (15N-RDX) peak area from m/z 122 channel
+  rdx_is_ch <- channel_results[[as.character(rdx_is_config$mz)]]
+  rdx_is_result <- extract_peak_area(rdx_is_ch$peaks, rdx_is_ch$signal,
+                                      rdx_is_config$rt, rdx_is_ch$step_size,
+                                      baseline_corrected = rdx_is_ch$baseline_corrected,
+                                      noise_window = rdx_is_config$noise_window,
+                                      snr_lod = snr_detect,
+                                      snr_loq = snr_quant)
 
-  # Plot IS peak if detected
-  if (!is.na(is_result$rt)) {
-    lmin <- is_result$rt - (15 * is_ch$step_size)
-    lmax <- is_result$rt + (15 * is_ch$step_size)
-    peak_plot_data <- is_ch$signal %>% filter(between(RTime, lmin, lmax))
-    if (nrow(peak_plot_data) > 0) {
-      p <- ggplot(peak_plot_data, aes(RTime, Intensity)) + geom_line()
-      show(p)
-    }
-  }
+  # Generate RDX IS integration plot (auto-scaled)
+  print(paste0("  RDX IS noise_window: ", 
+               ifelse(is.null(rdx_is_config$noise_window), "NULL",
+                      paste(rdx_is_config$noise_window, collapse = "-"))))
+  plot_integration(
+    baseline_corrected = rdx_is_ch$baseline_corrected,
+    signal             = rdx_is_ch$signal,
+    peak_result        = rdx_is_result,
+    expected_rt        = rdx_is_config$rt,
+    step_size          = rdx_is_ch$step_size,
+    compound_name      = "RDX IS (15N-RDX, m/z 122)",
+    save_path          = file.path(GCSampleTrace.dir, "Integration"),
+    filename           = sprintf("%s_Integration_RDX_IS.tiff", GcDataName),
+    noise_window       = rdx_is_config$noise_window
+  )
 
   # Extract each analyte's peak area from its own m/z channel
   analyte_results <- list()
@@ -264,16 +286,32 @@ for (file in filenameGcData) {
       snr_lod = snr_detect,
       snr_loq = snr_quant
     )
+
+    # Generate analyte integration plot (auto-scaled)
+    print(paste0("  ", name, " noise_window: ", 
+                 ifelse(is.null(a$noise_window), "NULL",
+                        paste(a$noise_window, collapse = "-"))))
+    plot_integration(
+      baseline_corrected = a_ch$baseline_corrected,
+      signal             = a_ch$signal,
+      peak_result        = analyte_results[[name]],
+      expected_rt        = a$rt,
+      step_size          = a_ch$step_size,
+      compound_name      = paste0(name, " (m/z ", a$mz, ")"),
+      save_path          = file.path(GCSampleTrace.dir, "Integration"),
+      filename           = sprintf("%s_Integration_%s.tiff", GcDataName, name),
+      noise_window       = a$noise_window
+    )
   }
 
   # Build Results data frame dynamically
   Results <- data.frame(
     File = File,
-    is_rt       = is_result$rt,
-    is_pa       = is_result$pa,
-    is_ph       = is_result$ph,
-    is_snr      = is_result$snr,
-    is_snr_flag = is_result$snr_flag
+    rdx_is_rt       = rdx_is_result$rt,
+    rdx_is_pa       = rdx_is_result$pa,
+    rdx_is_ph       = rdx_is_result$ph,
+    rdx_is_snr      = rdx_is_result$snr,
+    rdx_is_snr_flag = rdx_is_result$snr_flag
   )
   for (name in names(analytes)) {
     prefix <- tolower(name)
@@ -288,6 +326,9 @@ for (file in filenameGcData) {
   print(paste0(file, " SIM processed"))
 }
 
+# Integration plots generated inline during SIM processing (auto-scaled per plot)
+
+
 TICFile <- list.files(path = GcData.dir, pattern = "\\TIC.csv$")
 SIMFile <- list.files(path = GcData.dir, pattern = "\\SIM.csv$")
 NumInj <- length(TICFile)
@@ -297,7 +338,9 @@ tic_prefixes <- sub("TIC\\.csv$", "", TICFile)
 sim_prefixes <- sub("SIM\\.csv$", "", SIMFile)
 
 # Report how many Summary files will be merged vs skipped
-if (!reprocess_all) {
+# Summary is regenerated if either TIC or SIM was reprocessed
+reprocess_summary <- reprocess_tic || reprocess_sim
+if (!reprocess_summary) {
   n_sum_skip <- sum(sapply(tic_prefixes, function(p) {
     file.exists(paste0(GcData.dir, p, "Summary.csv"))
   }))
@@ -308,8 +351,8 @@ if (!reprocess_all) {
 for (i in seq_len(NumInj)) {
   sample_prefix <- tic_prefixes[i]
   
-  # Skip if already processed and not reprocessing all
-  if (!reprocess_all && file.exists(paste0(GcData.dir, sample_prefix, "Summary.csv"))) {
+  # Skip if already processed and not reprocessing
+  if (!reprocess_summary && file.exists(paste0(GcData.dir, sample_prefix, "Summary.csv"))) {
     print(paste0("Skipping ", sample_prefix, " Summary -- already processed"))
     next
   }
@@ -340,3 +383,4 @@ for (i in seq_len(NumInj)) {
   write.table(SummaryData, file = paste0(GcData.dir, sample_prefix, "Summary.csv"), sep = ",", row.names = FALSE)
   print(paste0(sample_prefix, " Summary processed"))
 }
+
