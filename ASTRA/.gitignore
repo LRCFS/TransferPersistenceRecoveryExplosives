@@ -1,0 +1,15 @@
+# R session/history artifacts
+.RData
+.Rhistory
+.Rproj.user/
+
+# Generated plots/output (reproducible from script + raw data)
+outputs/
+test_outputs/
+Rplots.pdf
+
+# Captured console logs from ad-hoc runs
+adaptive_run_output.txt
+
+# Windows stray artifact (accidental > nul redirects)
+nul

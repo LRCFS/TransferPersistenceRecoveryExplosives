@@ -1,0 +1,434 @@
+# MAIN STUDY - BATCH PROTOCOL
+
+## Overview
+
+**Study:** Explosives Recovery Optimization - Main Study (Multi-Level Pressure Dose-Response)
+**Design:** Surface_type (steel/abs) x Pressure_g (5 levels: 10/50/100/200/300g), Solvent fixed = present (wet swab only, 100uL EtOH throughout -- dry swabs deliberately excluded per the pilot's own recommendation)
+**Total new samples:** 44 (+ 10 negative controls = 54 total runs), organized into 5 batches
+**Physical surfaces:** 8 REUSED from the pilot (Steel_01-04, ABS_01-04 -- already carry 50g/200g wet data, re-cleaned before reuse) + 4 NEW (Steel_05-06, ABS_05-06)
+**Pooling note:** the pilot's own existing 50g/200g wet-only samples (16 rows: 4 steel + 4 ABS at each level) are pooled in at analysis time (`main_study_analysis.R`, `Study` covariate) -- they are NOT re-collected here. This is why the reused surfaces are only tested at the 3 NEW levels (10/100/300g) in this study, while the 4 brand-new surfaces are tested at all 5 levels.
+**Design source:** `doe_nested_design.R` (generator) -> `main_study_design_nested.csv` (master lab-notes file, live working document) / `main_study_batch_checklist.csv` (this document's own source data)
+**Status as of this draft:** Batches 1-2 COMPLETE (12-13 Aug 2026, recorded below as a historical record); Batch 3 collected but not yet swabbed/dated in the design file; Batches 4-5 not yet started.
+**Operator:** _______________
+
+---
+
+## Materials Checklist
+
+### Surfaces
+- [ ] 4 REUSED steel surfaces: Steel_01, Steel_02, Steel_03, Steel_04 (from pilot -- inspect for damage before reuse, re-clean per standard protocol)
+- [ ] 4 REUSED ABS surfaces: ABS_01, ABS_02, ABS_03, ABS_04 (from pilot -- same check)
+- [ ] 2 NEW steel surfaces: Steel_05, Steel_06
+- [ ] 2 NEW ABS surfaces: ABS_05, ABS_06
+
+### Reagents
+- [ ] PETN+RDX combined standard (200 ng/uL in ethanol) -- same contamination protocol as the pilot: 50uL x 200 ng/uL = 10,000 ng per surface
+- [ ] 100% Ethanol (100uL applied to swab tip before every test -- Solvent is fixed "present" for this entire study, no dry-swab condition)
+- [ ] Bleach solution (for cleaning)
+- [ ] Deionized water (for rinsing)
+
+### Equipment
+- [ ] ASTRA swabbing device
+- [ ] Cotton Q-tips (54 minimum: 44 samples + 10 NCs)
+- [ ] Balance (for pressure measurement -- NOTE: 5 target weights this time, not 2)
+- [ ] Pipettes (50uL, 100uL)
+- [ ] 54 labeled sample vials
+- [ ] Timer, Thermometer, Hygrometer
+
+### Documentation
+- [ ] `main_study_design_nested.csv` (primary lab-notes file -- live working document, real execution order, fill in Test_DateTime/Operator/Temp_C/Humidity_pct/Time Cleaned/Time Spiked/Time Swabbed/Date Extracted directly into this file)
+- [ ] `main_study_batch_checklist.csv` (printable/tablet quick-reference subset, same row order)
+- [ ] This protocol document
+
+---
+
+## Pre-Experiment Setup (15 minutes)
+
+### Pressure Calibration -- 5 LEVELS this time (vs. 2 in the pilot)
+
+Practice applying and holding each of the following on the balance before starting. Contact area is unchanged from the pilot (same Q-tip / ASTRA fixture), so pressure (kPa) scales linearly with mass:
+
+| Target mass | Force (N) | Approx. pressure (kPa) | Literature context |
+|---|---|---|---|
+| 10g +/- 2g  | ~0.10 N | ~1.3 kPa  | VeryLow -- well below the pilot's own "sub-optimal" 50g level; tests the bottom of the dose-response curve |
+| 50g +/- 5g  | ~0.49 N | ~6.7 kPa  | Low -- the pilot's own original "low" level (reused-surface pooling point) |
+| 100g +/- 10g | ~0.98 N | ~13.4 kPa | Medium -- new intermediate level, midway between the pilot's two original levels |
+| 200g +/- 10g | ~1.96 N | ~26.8 kPa | High -- the pilot's own original "high" level (reused-surface pooling point) |
+| 300g +/- 15g | ~2.94 N | ~40.2 kPa | VeryHigh -- extends beyond the pilot's own range, tests whether recovery continues to rise, plateaus, or falls |
+
+- [ ] Practice all 5 weights until consistent; mark/memorize swab angle and hand position for each
+- [ ] Confirm balance is levelled and zeroed
+
+### ASTRA Device Setup
+- [ ] Install fresh Q-tip
+- [ ] Test swabbing pattern on a clean/spare surface
+- [ ] Ensure consistent motion (same pattern as the pilot)
+
+### Prepare Standards
+- [ ] Confirm PETN+RDX standard concentration: 200 ng/uL
+- [ ] Calculate: 50uL x 200 ng/uL = 10,000 ng per surface (unchanged from the pilot)
+- [ ] Verify standard is well-mixed, fresh aliquot per batch
+
+### Environmental Conditions
+- [ ] Record room temperature: _____ degC
+- [ ] Record relative humidity: _____ %
+- [ ] Verify stable conditions (no drafts, consistent temp)
+
+### Surface Preparation
+- [ ] **Reused surfaces** (Steel_01-04, ABS_01-04): inspect for wear/damage from pilot use before reuse (per the study's own reuse-trend check, no degradation trend found up to 6 uses -- these surfaces are now heading toward 7-8 total uses including NCs, still within the range this study explicitly re-validated). Clean per standard protocol: bleach -> rinse -> ethanol -> dry.
+- [ ] **New surfaces** (Steel_05-06, ABS_05-06): clean per standard protocol before first use.
+- [ ] Arrange in order: Steel_01-06, then ABS_01-06
+
+---
+
+## Batch Workflow Overview
+
+**IMPORTANT:** `main_study_design_nested.csv` is already sorted in the REAL execution order (negative control FIRST within each batch's surface-type group, then samples in randomized `TestSequence` order) -- unlike the pilot, NC rows are already built into this file, no manual insertion needed. Always check this file (or the printable `main_study_batch_checklist.csv`) for the current batch.
+
+**Batches 1-3** (all 12 physical surfaces active -- 6 steel: 4 reused + 2 new; 6 ABS: 4 reused + 2 new):
+1. Swab the NC host surface FIRST (while still clean from the previous cleaning cycle, before any spiking for this batch's steel group)
+2. Spike all 6 steel surfaces (2 min)
+3. Dry 5 minutes
+4. Test all 6 steel surfaces **in the order shown in the CSV** (TestSequence)
+5. Swab the ABS NC host surface
+6. Spike all 6 ABS surfaces (2 min)
+7. Dry 5 minutes
+8. Test all 6 ABS surfaces **in the order shown in the CSV**
+9. Clean all 12 surfaces (15-20 min)
+
+**Batches 4-5** (only the 4 NEW surfaces active -- 2 steel: Steel_05/06; 2 ABS: ABS_05/06; testing their own 50g/200g levels, since the reused surfaces already have this data from the pilot):
+Same sequence as above, scaled down to 2 surfaces per type.
+
+**Tip:** Keep `main_study_design_nested.csv` (or the checklist) open on a tablet/laptop during execution.
+
+---
+
+## BATCH 1 PROTOCOL -- COMPLETE (12 Aug 2026)
+
+**Recorded start (Steel group):** 14:40 | **Recorded start (ABS group):** 10:55 (13 Aug)
+**TestOrder:** 1 (each active surface's first new-study condition)
+
+### Steel Group (host surface for NC: Steel_03)
+
+| Order | RunID | SurfaceID | Pressure | Swabbed | Temp/RH |
+|---|---|---|---|---|---|
+| NC  | MAIN_SteelBatch1_NC | Steel_03 | -- | 14:50 | 21.5C / 51% |
+| 1 | MAIN_012 | Steel_06 | 300g | 15:19 | 21.6C / 50% |
+| 2 | MAIN_009 | Steel_03 | 100g | 15:34 | 21.6C / 50% |
+| 3 | MAIN_011 | Steel_05 | 100g | 15:43 | 21.6C / 50% |
+| 4 | MAIN_008 | Steel_02 | 10g  | 15:51 | 21.6C / 50% |
+| 5 | MAIN_010 | Steel_04 | 10g  | 15:59 | 21.7C / 50% |
+| 6 | MAIN_007 | Steel_01 | 10g  | 16:06 | 21.7C / 50% |
+
+- [x] Spiked all 6 steel surfaces (14:40)
+- [x] Dried 5 min, tested in order above
+- [x] Cleaned all 6 steel surfaces
+
+### ABS Group (host surface for NC: ABS_03)
+
+| Order | RunID | SurfaceID | Pressure | Swabbed | Temp/RH |
+|---|---|---|---|---|---|
+| NC  | MAIN_ABSBatch1_NC | ABS_03 | -- | 11:01 | 21.3C / 48% |
+| 1 | MAIN_002 | ABS_02 | 300g | 11:19 | 21.4C / 48% |
+| 2 | MAIN_003 | ABS_03 | 300g | 11:37 | 21.2C / 46% |
+| 3 | MAIN_005 | ABS_05 | 10g  | 11:51 | 21.2C / 46% |
+| 4 | MAIN_001 | ABS_01 | 10g  | 11:56 | 21.2C / 46% |
+| 5 | MAIN_004 | ABS_04 | 300g | 12:01 | 21.2C / 46% |
+| 6 | MAIN_006 | ABS_06 | 300g | (not recorded) | 21.2C / -- |
+
+- [x] Spiked all 6 ABS surfaces (10:55)
+- [x] Dried 5 min, tested in order above
+- [x] Cleaned all 6 ABS surfaces
+
+**Batch 1 complete.** All samples extracted 14-Aug. Date Extracted recorded in `main_study_design_nested.csv`.
+
+---
+
+## BATCH 2 PROTOCOL -- COMPLETE (13 Aug 2026)
+
+**Recorded start (Steel group):** 13:36 | **Recorded start (ABS group):** 15:06
+**TestOrder:** 2
+
+### Steel Group (host surface for NC: Steel_05)
+
+| Order | RunID | SurfaceID | Pressure | Swabbed | Temp/RH |
+|---|---|---|---|---|---|
+| NC  | MAIN_SteelBatch2_NC | Steel_05 | -- | 13:41 | 21.3C / 49% |
+| 1 | MAIN_019 | Steel_01 | 300g | 14:01 | 21.3C / 49% |
+| 2 | MAIN_023 | Steel_05 | 10g  | 14:16 | (see note) / 51% |
+| 3 | MAIN_021 | Steel_03 | 300g | 14:22 | 21.3C / 52% |
+| 4 | MAIN_024 | Steel_06 | 100g | 14:39 | 21.3C / 51% |
+| 5 | MAIN_022 | Steel_04 | 300g | 14:50 | 21.3C / 50% |
+| 6 | MAIN_020 | Steel_02 | 300g | 15:04 | 21.3C / 49% |
+
+*Note: MAIN_023's Temp_C field contains a time-like value ("07:12") in the live data file -- likely a data-entry error (temperature transposed with a time column). Flagged for correction before final analysis; does not affect recovery calculation, only the environmental-conditions record for that one row.*
+
+- [x] Swabbed NC, spiked all 6 steel surfaces (13:36), dried 5 min, tested in order above, cleaned
+
+### ABS Group (host surface for NC: ABS_05)
+
+| Order | RunID | SurfaceID | Pressure | Swabbed | Temp/RH |
+|---|---|---|---|---|---|
+| NC  | MAIN_ABSBatch2_NC | ABS_05 | -- | 15:19 | 21.3C / 48% |
+| 1 | MAIN_013 | ABS_01 | 300g | 15:38 | 21.3C / 48% |
+| 2 | MAIN_014 | ABS_02 | 100g | 15:52 | 21.3C / 47% |
+| 3 | MAIN_016 | ABS_04 | 100g | 16:00 | 21.3C / 47% |
+| 4 | MAIN_018 | ABS_06 | 100g | 16:09 | 21.3C / 47% |
+| 5 | MAIN_017 | ABS_05 | 300g | (not recorded) | -- |
+| 6 | MAIN_015 | ABS_03 | 10g  | (not recorded) | -- |
+
+- [x] Swabbed NC, spiked all 6 ABS surfaces (15:06), dried 5 min, tested in order above, cleaned
+
+**Batch 2 complete.** All samples extracted 14-Aug.
+
+---
+
+## BATCH 3 PROTOCOL -- PENDING
+
+**Start time:** _______________
+**TestOrder:** 3 (each active surface's third and FINAL new-study condition -- reused surfaces complete their full 5-level profile after this batch)
+
+### Steel Group (host surface for NC: Steel_02)
+
+| Order | RunID | SurfaceID | Pressure | Swabbed | Temp/RH |
+|---|---|---|---|---|---|
+| NC  | MAIN_SteelBatch3_NC | Steel_02 | -- | _____ | ___C / ___% |
+| 1 | MAIN_035 | Steel_05 | 300g | _____ | ___C / ___% |
+| 2 | MAIN_034 | Steel_04 | 100g | _____ | ___C / ___% |
+| 3 | MAIN_032 | Steel_02 | 100g | _____ | ___C / ___% |
+| 4 | MAIN_031 | Steel_01 | 100g | _____ | ___C / ___% |
+| 5 | MAIN_033 | Steel_03 | 10g  | _____ | ___C / ___% |
+| 6 | MAIN_036 | Steel_06 | 10g  | _____ | ___C / ___% |
+
+- [ ] Swab NC on Steel_02
+- [ ] Spike all 6 steel surfaces -- start time: _____
+- [ ] Dry 5 min
+- [ ] Test in order above
+- [ ] Clean all 6 steel surfaces
+
+### ABS Group (host surface for NC: ABS_06)
+
+| Order | RunID | SurfaceID | Pressure | Swabbed | Temp/RH |
+|---|---|---|---|---|---|
+| NC  | MAIN_ABSBatch3_NC | ABS_06 | -- | _____ | ___C / ___% |
+| 1 | MAIN_028 | ABS_04 | 10g  | _____ | ___C / ___% |
+| 2 | MAIN_030 | ABS_06 | 10g  | _____ | ___C / ___% |
+| 3 | MAIN_026 | ABS_02 | 10g  | _____ | ___C / ___% |
+| 4 | MAIN_029 | ABS_05 | 100g | _____ | ___C / ___% |
+| 5 | MAIN_027 | ABS_03 | 100g | _____ | ___C / ___% |
+| 6 | MAIN_025 | ABS_01 | 100g | _____ | ___C / ___% |
+
+- [ ] Swab NC on ABS_06
+- [ ] Spike all 6 ABS surfaces -- start time: _____
+- [ ] Dry 5 min
+- [ ] Test in order above
+- [ ] Clean all 6 ABS surfaces
+
+**Batch 3 complete:** _____
+**Reminder:** after this batch, the 4 reused surfaces (Steel_01-04, ABS_01-04) have completed their full role in this study (5-level profile via pilot pooling + this study's 3 new levels) and are NOT tested again in Batches 4-5.
+
+---
+
+## BATCH 4 PROTOCOL -- PENDING (New surfaces only)
+
+**Start time:** _______________
+**TestOrder:** 4 -- ONLY the 2 new surfaces per type are active (Steel_05/06, ABS_05/06), testing the 2 "new-only" pressure levels (50g/200g) that the reused surfaces already covered via pilot pooling.
+
+### Steel Group (host surface for NC: Steel_05)
+
+| Order | RunID | SurfaceID | Pressure | Swabbed | Temp/RH |
+|---|---|---|---|---|---|
+| NC  | MAIN_SteelBatch4_NC | Steel_05 | -- | _____ | ___C / ___% |
+| 1 | MAIN_039 | Steel_05 | 200g | _____ | ___C / ___% |
+| 2 | MAIN_040 | Steel_06 | 50g  | _____ | ___C / ___% |
+
+- [ ] Swab NC on Steel_05
+- [ ] Spike both steel surfaces -- start time: _____
+- [ ] Dry 5 min
+- [ ] Test in order above
+- [ ] Clean both steel surfaces
+
+### ABS Group (host surface for NC: ABS_05)
+
+| Order | RunID | SurfaceID | Pressure | Swabbed | Temp/RH |
+|---|---|---|---|---|---|
+| NC  | MAIN_ABSBatch4_NC | ABS_05 | -- | _____ | ___C / ___% |
+| 1 | MAIN_038 | ABS_06 | 50g  | _____ | ___C / ___% |
+| 2 | MAIN_037 | ABS_05 | 50g  | _____ | ___C / ___% |
+
+- [ ] Swab NC on ABS_05
+- [ ] Spike both ABS surfaces -- start time: _____
+- [ ] Dry 5 min
+- [ ] Test in order above
+- [ ] Clean both ABS surfaces
+
+**Batch 4 complete:** _____
+
+---
+
+## BATCH 5 PROTOCOL -- PENDING (New surfaces only)
+
+**Start time:** _______________
+**TestOrder:** 5 -- final batch. Same 4 surfaces as Batch 4, completing their 5-level profile (50g/200g here, having already done 10/100/300g in Batches 1-3).
+
+### Steel Group (host surface for NC: Steel_06)
+
+| Order | RunID | SurfaceID | Pressure | Swabbed | Temp/RH |
+|---|---|---|---|---|---|
+| NC  | MAIN_SteelBatch5_NC | Steel_06 | -- | _____ | ___C / ___% |
+| 1 | MAIN_043 | Steel_05 | 50g  | _____ | ___C / ___% |
+| 2 | MAIN_044 | Steel_06 | 200g | _____ | ___C / ___% |
+
+- [ ] Swab NC on Steel_06
+- [ ] Spike both steel surfaces -- start time: _____
+- [ ] Dry 5 min
+- [ ] Test in order above
+- [ ] Clean both steel surfaces
+
+### ABS Group (host surface for NC: ABS_06)
+
+| Order | RunID | SurfaceID | Pressure | Swabbed | Temp/RH |
+|---|---|---|---|---|---|
+| NC  | MAIN_ABSBatch5_NC | ABS_06 | -- | _____ | ___C / ___% |
+| 1 | MAIN_041 | ABS_05 | 200g | _____ | ___C / ___% |
+| 2 | MAIN_042 | ABS_06 | 200g | _____ | ___C / ___% |
+
+- [ ] Swab NC on ABS_06
+- [ ] Spike both ABS surfaces -- start time: _____
+- [ ] Dry 5 min
+- [ ] Test in order above
+- [ ] Clean both ABS surfaces
+
+### Final Cleanup (after Batch 5)
+- [ ] Clean and store all 12 physical surfaces
+- [ ] Clean and store ASTRA device
+- [ ] Organize all 44 sample vials + 10 NC vials in RunID order
+- [ ] Verify `main_study_design_nested.csv` has no missing Test_DateTime/Temp_C/Humidity_pct entries for completed rows
+
+**Batch 5 complete:** _____
+**Main study sample collection complete:** _____
+
+---
+
+## Post-Experiment Tasks
+
+### Sample Handling
+- [ ] Verify all 54 samples (44 + 10 NC) are labeled correctly
+- [ ] Store samples properly for GC-MS analysis
+- [ ] Arrange for GC-MS run in a new `Analysis{N}` folder under `.../Main Study/GC Data/`
+
+### GC-MS Processing and Analysis
+- [ ] Run GCMSQuantitation's `Code/01_MsFilesReorganiser.R` -> `02_PeakDetection.R` -> `03_Quantification.R` for the new Analysis folder
+- [ ] Run `main_study_analysis.R` (auto-discovers all `Analysis*/Results/*_GCMSResults.csv` under `gc_data_dir`, incremental -- safe to rerun any time; updates `main_study_data_nested.csv`/`.xlsx`, `main_study_results.xlsx`, preliminary plots, and -- once enough data exists -- the combined pilot+main mixed-effects model and power analysis)
+- [ ] Once all 5 batches are collected, revisit the power-analysis question (`main_study_analysis_summary.txt`): compare the actual observed Pressure/interaction effects + their 95% CIs against the Minimum Detectable Effect Size (MDES), NOT a retrospective power percentage (see CONTEXT.md's own discussion of why retrospective power is circular)
+
+### Equipment Maintenance
+- [ ] Clean ASTRA device thoroughly
+- [ ] Clean all 12 surfaces and store (note: the 4 reused surfaces have now reached ~7-8 total physical uses including NCs -- one step beyond the pilot's own previously-validated 6-use range, already re-checked and found trend-free; do not exceed this without re-validating)
+- [ ] Dispose of used Q-tips properly
+- [ ] Return reagents to proper storage
+
+---
+
+## Quality Control Checks
+
+### During Experiment
+- [ ] Pressure readings consistent at each of the 5 target weights (+/- the tolerance shown in the calibration table above)?
+- [ ] Drying time adequate (no visible solvent remaining)?
+- [ ] Swabbing pattern consistent across all samples?
+- [ ] Environmental conditions stable throughout?
+- [ ] NC swabbed BEFORE spiking begins for that surface-type group, on the correct host surface shown in the CSV?
+
+### After Experiment
+- [ ] All 54 vials labeled and filled?
+- [ ] `main_study_design_nested.csv` complete with no missing values for completed rows?
+- [ ] Any anomalies or deviations documented (e.g. the MAIN_023 Temp_C data-entry issue noted under Batch 2)?
+- [ ] Surfaces show no visible damage, especially the reused pilot surfaces?
+
+---
+
+## Troubleshooting
+
+**Problem: Standard doesn't dry in 5 minutes**
+- Solution: Extend drying time to 7-10 minutes; note in data sheet for all affected samples
+
+**Problem: Pressure difficult to maintain at the new VeryLow (10g) or VeryHigh (300g) extremes**
+- Solution: 10g is extremely light (barely more than the swab's own weight) -- practice extensively before Batch 1; 300g is firm but should still be comfortably held with a normal grip. Re-practice on the balance and adjust hand position/angle as needed.
+
+**Problem: Can't remember which surface to test next, or which surfaces are active this batch**
+- Solution: Keep `main_study_design_nested.csv` open on a tablet/laptop; remember Batches 1-3 use all 12 surfaces, Batches 4-5 use only the 4 new surfaces (Steel_05/06, ABS_05/06)
+
+**Problem: Surface contamination between tests**
+- Solution: Extend cleaning time, add extra rinse step; verify dryness before re-spiking
+
+**Problem: EtOH evaporates from swab during test**
+- Solution: Apply EtOH immediately before swabbing; work more quickly (but still consistently) -- Solvent is "present" for every single sample in this study, there is no dry-swab fallback condition
+
+**Problem: A reused surface (Steel_01-04/ABS_01-04) shows visible wear from pilot use**
+- Solution: Document the condition before use; the study's own reuse-trend check (`Diagnostics/reuse_trend_check_corrected.R`) found no significant degradation trend up to 6 physical uses, and this study extends that to ~7-8 uses -- proceed unless damage is severe enough to plausibly change swabbing contact area/quality, in which case flag and consider substituting.
+
+---
+
+## Expected Timeline
+
+**Per full batch (Batches 1-3, 12 surfaces):**
+
+| Phase | Duration |
+|---|---|
+| NC + Spike steel group | ~5 min |
+| Dry steel | 5 min |
+| Test 6 steel surfaces | ~6 min |
+| NC + Spike ABS group | ~5 min |
+| Dry ABS | 5 min |
+| Test 6 ABS surfaces | ~6 min |
+| Clean all 12 surfaces | 15-20 min |
+| **Total per batch** | **~50-55 min** |
+
+**Per reduced batch (Batches 4-5, 4 surfaces):** ~20-25 min each (same structure, 2 surfaces/type instead of 6)
+
+**Overall estimate:** 3 full batches (~2.5-3 hours) + 2 reduced batches (~45 min) = **~3.5-4 hours total**, consistent with the pilot's own per-batch timing once scaled for 12 vs. 8 surfaces in the larger batches.
+
+---
+
+## Safety Notes
+
+- [ ] Wear appropriate PPE (gloves, lab coat)
+- [ ] Work in a well-ventilated area
+- [ ] Handle explosives standards per SOP
+- [ ] Bleach solution is corrosive - handle carefully
+- [ ] EtOH is flammable - keep away from ignition sources
+- [ ] Dispose of contaminated materials per regulations
+
+---
+
+## Completion Sign-off
+
+| Batch | Operator | Date | Signature | Samples collected | Deviations? |
+|---|---|---|---|---|---|
+| 1 (steel) | | 12-Aug | | ___/6 + NC | |
+| 1 (ABS) | | 13-Aug | | ___/6 + NC | |
+| 2 (steel) | | 13-Aug | | ___/6 + NC | |
+| 2 (ABS) | | 13-Aug | | ___/6 + NC | |
+| 3 (steel) | | | | ___/6 + NC | |
+| 3 (ABS) | | | | ___/6 + NC | |
+| 4 (steel) | | | | ___/2 + NC | |
+| 4 (ABS) | | | | ___/2 + NC | |
+| 5 (steel) | | | | ___/2 + NC | |
+| 5 (ABS) | | | | ___/2 + NC | |
+
+**Supervisor review:** _______________  **Date:** _______________
+
+**Total samples collected:** _____/54
+
+**Ready for GC-MS:** Yes [ ] No [ ]
+
+**Data entry complete in `main_study_design_nested.csv`:** Yes [ ] No [ ]
+
+**Any protocol deviations:** Yes [ ] No [ ]
+If yes, describe: _________________________________________________
+
+---
+
+**END OF PROTOCOL**
+
+*For analysis instructions, see `main_study_analysis.R` and `CONTEXT.md`. For the design generation logic, see `doe_nested_design.R`.*

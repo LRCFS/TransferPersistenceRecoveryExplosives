@@ -2,7 +2,7 @@
 # DESIGN OF EXPERIMENTS: TRACE EXPLOSIVES RECOVERY
 # 
 # Full factorial 2^3 design examining effects of:
-#   - Surface (smooth vs. textured)
+#   - Surface (steel vs. abs)
 #   - Pressure (low vs. high)
 #   - Solvent presence (absent vs. present)
 #
@@ -21,7 +21,7 @@
 #===============================================================================
 
 # Design type selection
-use_blocking <- TRUE           # Set to TRUE for blocked design, FALSE for standard
+use_blocking <- FALSE           # Set to TRUE for blocked design, FALSE for standard
 
 # Blocked design parameters (used if use_blocking = TRUE)
 n_surfaces <- 12              # Number of physical surface samples (blocks)
@@ -39,7 +39,7 @@ effect_sizes <- c(0.10, 0.25, 0.40)  # Small, medium, large
 effect_labels <- c("Small (f = 0.10)", "Medium (f = 0.25)", "Large (f = 0.40)")
 
 # Output directory (change if needed)
-output_dir <- "C:/Users/A Bruce - User/Documents/ClaudeSpace/Design of Experiments"
+output_dir <- "C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/doe"
 
 #===============================================================================
 # PACKAGE INSTALLATION AND LOADING
@@ -69,7 +69,7 @@ if (use_blocking) {
   
   # Create full factorial conditions (8)
   conditions <- expand.grid(
-    Surface_type = c("smooth", "textured"),
+    Surface_type = c("steel", "abs"),
     Pressure = c("low", "high"),
     Solvent = c("absent", "present")
   )

@@ -1,0 +1,33 @@
+"BatchNumber","BatchName","SpikeGroup","TestSequence","SurfaceOrder","ProtocolPhase","EstimatedTime","TimeInBatch","CumulativeTime_min","Action","SurfaceID","Surface_type","OriginalTestOrder","Pressure_level","Pressure_g","Solvent_level","Solvent_detail","RunID","SampleID","SurfaceProcessingOrder","PETN_Recovery_pct","RDX_Recovery_pct","Test_DateTime","Operator","Temp_C","Humidity_pct","Notes"
+1,"Batch_1_TestOrder1","Steel",1,1,"Steel_Group","0:07","0:07",7,"First steel test after spiking all 4 steel","Steel_04","steel",1,"high",200,"absent","dry","PILOT_001","P_Steel_04_T1",1,NA,NA,NA,NA,NA,NA,NA
+1,"Batch_1_TestOrder1","Steel",2,2,"Steel_Group","0:09","0:09",9,"Test 2 in Steel_Group","Steel_02","steel",1,"low",50,"present","100uL_EtOH","PILOT_005","P_Steel_02_T1",2,NA,NA,NA,NA,NA,NA,NA
+1,"Batch_1_TestOrder1","Steel",3,3,"Steel_Group","0:11","0:11",11,"Test 3 in Steel_Group","Steel_01","steel",1,"high",200,"absent","dry","PILOT_029","P_Steel_01_T1",8,NA,NA,NA,NA,NA,NA,NA
+1,"Batch_1_TestOrder1","Steel",4,4,"Steel_Group","0:13","0:13",13,"Test 4 in Steel_Group","Steel_03","steel",1,"high",200,"present","100uL_EtOH","PILOT_009","P_Steel_03_T1",3,NA,NA,NA,NA,NA,NA,NA
+1,"Batch_1_TestOrder1","ABS",5,1,"ABS_Group","0:22","0:22",22,"First ABS test after spiking all 4 ABS","ABS_04","abs",1,"low",50,"absent","dry","PILOT_021","P_ABS_04_T1",6,NA,NA,NA,NA,NA,NA,NA
+1,"Batch_1_TestOrder1","ABS",6,2,"ABS_Group","0:24","0:24",24,"Test 2 in ABS_Group","ABS_02","abs",1,"high",200,"absent","dry","PILOT_017","P_ABS_02_T1",5,NA,NA,NA,NA,NA,NA,NA
+1,"Batch_1_TestOrder1","ABS",7,3,"ABS_Group","0:26","0:26",26,"Test 3 in ABS_Group","ABS_01","abs",1,"low",50,"present","100uL_EtOH","PILOT_025","P_ABS_01_T1",7,NA,NA,NA,NA,NA,NA,NA
+1,"Batch_1_TestOrder1","ABS",8,4,"ABS_Group","0:28","0:28",28,"Test 4 in ABS_Group","ABS_03","abs",1,"high",200,"absent","dry","PILOT_013","P_ABS_03_T1",4,NA,NA,NA,NA,NA,NA,NA
+2,"Batch_2_TestOrder2","Steel",1,1,"Steel_Group","0:50","0:07",50,"First steel test after spiking all 4 steel","Steel_04","steel",2,"high",200,"present","100uL_EtOH","PILOT_002","P_Steel_04_T2",1,NA,NA,NA,NA,NA,NA,NA
+2,"Batch_2_TestOrder2","Steel",2,2,"Steel_Group","0:52","0:09",52,"Test 2 in Steel_Group","Steel_03","steel",2,"high",200,"absent","dry","PILOT_010","P_Steel_03_T2",3,NA,NA,NA,NA,NA,NA,NA
+2,"Batch_2_TestOrder2","Steel",3,3,"Steel_Group","0:54","0:11",54,"Test 3 in Steel_Group","Steel_02","steel",2,"high",200,"present","100uL_EtOH","PILOT_006","P_Steel_02_T2",2,NA,NA,NA,NA,NA,NA,NA
+2,"Batch_2_TestOrder2","Steel",4,4,"Steel_Group","0:56","0:13",56,"Test 4 in Steel_Group","Steel_01","steel",2,"low",50,"present","100uL_EtOH","PILOT_030","P_Steel_01_T2",8,NA,NA,NA,NA,NA,NA,NA
+2,"Batch_2_TestOrder2","ABS",5,1,"ABS_Group","1:05","0:22",65,"First ABS test after spiking all 4 ABS","ABS_03","abs",2,"low",50,"present","100uL_EtOH","PILOT_014","P_ABS_03_T2",4,NA,NA,NA,NA,NA,NA,NA
+2,"Batch_2_TestOrder2","ABS",6,2,"ABS_Group","1:07","0:24",67,"Test 2 in ABS_Group","ABS_01","abs",2,"high",200,"present","100uL_EtOH","PILOT_026","P_ABS_01_T2",7,NA,NA,NA,NA,NA,NA,NA
+2,"Batch_2_TestOrder2","ABS",7,3,"ABS_Group","1:09","0:26",69,"Test 3 in ABS_Group","ABS_04","abs",2,"low",50,"present","100uL_EtOH","PILOT_022","P_ABS_04_T2",6,NA,NA,NA,NA,NA,NA,NA
+2,"Batch_2_TestOrder2","ABS",8,4,"ABS_Group","1:11","0:28",71,"Test 4 in ABS_Group","ABS_02","abs",2,"low",50,"absent","dry","PILOT_018","P_ABS_02_T2",5,NA,NA,NA,NA,NA,NA,NA
+3,"Batch_3_TestOrder3","Steel",1,1,"Steel_Group","1:33","0:07",93,"First steel test after spiking all 4 steel","Steel_03","steel",3,"low",50,"absent","dry","PILOT_011","P_Steel_03_T3",3,NA,NA,NA,NA,NA,NA,NA
+3,"Batch_3_TestOrder3","Steel",2,2,"Steel_Group","1:35","0:09",95,"Test 2 in Steel_Group","Steel_02","steel",3,"high",200,"absent","dry","PILOT_007","P_Steel_02_T3",2,NA,NA,NA,NA,NA,NA,NA
+3,"Batch_3_TestOrder3","Steel",3,3,"Steel_Group","1:37","0:11",97,"Test 3 in Steel_Group","Steel_04","steel",3,"low",50,"present","100uL_EtOH","PILOT_003","P_Steel_04_T3",1,NA,NA,NA,NA,NA,NA,NA
+3,"Batch_3_TestOrder3","Steel",4,4,"Steel_Group","1:39","0:13",99,"Test 4 in Steel_Group","Steel_01","steel",3,"high",200,"present","100uL_EtOH","PILOT_031","P_Steel_01_T3",8,NA,NA,NA,NA,NA,NA,NA
+3,"Batch_3_TestOrder3","ABS",5,1,"ABS_Group","1:48","0:22",108,"First ABS test after spiking all 4 ABS","ABS_02","abs",3,"low",50,"present","100uL_EtOH","PILOT_019","P_ABS_02_T3",5,NA,NA,NA,NA,NA,NA,NA
+3,"Batch_3_TestOrder3","ABS",6,2,"ABS_Group","1:50","0:24",110,"Test 2 in ABS_Group","ABS_03","abs",3,"high",200,"present","100uL_EtOH","PILOT_015","P_ABS_03_T3",4,NA,NA,NA,NA,NA,NA,NA
+3,"Batch_3_TestOrder3","ABS",7,3,"ABS_Group","1:52","0:26",112,"Test 3 in ABS_Group","ABS_04","abs",3,"high",200,"present","100uL_EtOH","PILOT_023","P_ABS_04_T3",6,NA,NA,NA,NA,NA,NA,NA
+3,"Batch_3_TestOrder3","ABS",8,4,"ABS_Group","1:54","0:28",114,"Test 4 in ABS_Group","ABS_01","abs",3,"high",200,"absent","dry","PILOT_027","P_ABS_01_T3",7,NA,NA,NA,NA,NA,NA,NA
+4,"Batch_4_TestOrder4","Steel",1,1,"Steel_Group","2:16","0:07",136,"First steel test after spiking all 4 steel","Steel_01","steel",4,"low",50,"absent","dry","PILOT_032","P_Steel_01_T4",8,NA,NA,NA,NA,NA,NA,NA
+4,"Batch_4_TestOrder4","Steel",2,2,"Steel_Group","2:18","0:09",138,"Test 2 in Steel_Group","Steel_04","steel",4,"low",50,"absent","dry","PILOT_004","P_Steel_04_T4",1,NA,NA,NA,NA,NA,NA,NA
+4,"Batch_4_TestOrder4","Steel",3,3,"Steel_Group","2:20","0:11",140,"Test 3 in Steel_Group","Steel_03","steel",4,"low",50,"present","100uL_EtOH","PILOT_012","P_Steel_03_T4",3,NA,NA,NA,NA,NA,NA,NA
+4,"Batch_4_TestOrder4","Steel",4,4,"Steel_Group","2:22","0:13",142,"Test 4 in Steel_Group","Steel_02","steel",4,"low",50,"absent","dry","PILOT_008","P_Steel_02_T4",2,NA,NA,NA,NA,NA,NA,NA
+4,"Batch_4_TestOrder4","ABS",5,1,"ABS_Group","2:31","0:22",151,"First ABS test after spiking all 4 ABS","ABS_03","abs",4,"low",50,"absent","dry","PILOT_016","P_ABS_03_T4",4,NA,NA,NA,NA,NA,NA,NA
+4,"Batch_4_TestOrder4","ABS",6,2,"ABS_Group","2:33","0:24",153,"Test 2 in ABS_Group","ABS_01","abs",4,"low",50,"absent","dry","PILOT_028","P_ABS_01_T4",7,NA,NA,NA,NA,NA,NA,NA
+4,"Batch_4_TestOrder4","ABS",7,3,"ABS_Group","2:35","0:26",155,"Test 3 in ABS_Group","ABS_02","abs",4,"high",200,"present","100uL_EtOH","PILOT_020","P_ABS_02_T4",5,NA,NA,NA,NA,NA,NA,NA
+4,"Batch_4_TestOrder4","ABS",8,4,"ABS_Group","2:37","0:28",157,"Test 4 in ABS_Group","ABS_04","abs",4,"high",200,"absent","dry","PILOT_024","P_ABS_04_T4",6,NA,NA,NA,NA,NA,NA,NA
