@@ -507,7 +507,25 @@ drift_correction_min_qc <- if (study_type == "ASTRA") 2 else 3
 # result exactly like any other QC -- this only controls which points the
 # curve itself is fit through. Default empty (no exclusions, identical to
 # previous behaviour). Set e.g. c(67) or c(31, 67) to exclude those Lines.
-drift_correction_exclude_qc_lines <- c(0)
+#
+# Per-dataset lookup (added for item 19/21 red-team review): keyed by
+# ParentFolder (the current dataset's own folder name) so each dataset's
+# exclusions are recorded permanently and auditably, rather than being a
+# single flat value that has to be remembered and hand-edited per run.
+# Add entries here as further silent QC-injection failures are identified.
+drift_correction_exclude_qc_lines_by_dataset <- list(
+  "Steel 4" = c(33)  # 2nd 6ng PETN QC: petn_pa drops from 96584 to 8757
+                      # then recovers to 28321 on the very next QC --
+                      # classic failed-injection pattern, not real drift.
+                      # Confirmed (Aug 2026) as the only dataset with this
+                      # pattern across all 17 FINEX datasets processed to
+                      # date -- checked exhaustively, not just assumed.
+)
+drift_correction_exclude_qc_lines <- if (ParentFolder %in% names(drift_correction_exclude_qc_lines_by_dataset)) {
+  drift_correction_exclude_qc_lines_by_dataset[[ParentFolder]]
+} else {
+  c(0)
+}
 
 # Path to the long-term QC monitoring master file
 

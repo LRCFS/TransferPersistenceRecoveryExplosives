@@ -417,6 +417,19 @@ if ("petn_mass_dc" %in% names(samples)) {
                                (petn_extraction_efficiency * petn_filtration_efficiency) * 100
 }
 
+# Drift-correction uncertainty, propagated one final (linear) step from
+# concentration to recovery (item 19). recovery_dc is a pure linear
+# rescaling of concentration_dc (recovery_dc = concentration_dc * K for a
+# constant K), so SE(recovery_dc) = SE(concentration_dc) * K -- the same
+# scaling formula, applied to the SE column instead of the point estimate.
+# Backward-compatible: NA/absent for any dataset processed before this
+# column existed in 03_Quantification.R's output (old *_GCMSResults.xlsx
+# files won't have it until reprocessed).
+if ("petn_concentration_dc_se" %in% names(samples)) {
+  samples$petn_recovery_dc_se <- (samples$petn_concentration_dc_se * SampleVol / DepositMass) /
+                                   (petn_extraction_efficiency * petn_filtration_efficiency) * 100
+}
+
 # RDX uses uncorrected concentration only (no drift correction applied)
 # Fallback to rdx_concentration_dc for backward compatibility with old datasets
 rdx_conc_col <- if ("rdx_concentration" %in% names(samples)) {
@@ -605,7 +618,7 @@ desired_cols <- c(
   # confirmatory ion not detected" failure in analysis_accepted.
   "petn_qual76_snr_flag",
   # PETN recovery
-  "petn_recovery_dc",
+  "petn_recovery_dc", "petn_recovery_dc_se",
   # PETN QC brackets: 6ng first, then 0.2ng
   "petn_qc_6ng_pre", "petn_qc_6ng_post",
   "petn_qc_02ng_pre", "petn_qc_02ng_post",
@@ -665,7 +678,7 @@ desired_cols_nc <- c(
   
   # === ALL PETN COLUMNS (raw evidence behind nc_result) ===
   "petn_snr_flag", "petn_ph",
-  "petn_recovery_dc",
+  "petn_recovery_dc", "petn_recovery_dc_se",
   # PETN confirmatory (qualifier) ion evidence (added Aug 2026)
   "petn_qual76_snr_flag",
   

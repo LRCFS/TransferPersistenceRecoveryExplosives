@@ -763,6 +763,21 @@ Combined$petn_drift_model             <- NA_character_
 Combined$petn_concentration_dc        <- Combined$petn_concentration
 Combined$petn_extrapolated_dc         <- Combined$petn_extrapolated
 
+# Uncertainty propagated from the drift-correction step itself (item 19 --
+# previously the correction factor was applied as if exact). Deliberately
+# scoped to ONLY the drift-correction step's own contribution (via the
+# delta method through the fitted drift curve, then through the local
+# slope of the quadratic calibration curve) -- NOT a full measurement
+# uncertainty budget (peak-area/integration uncertainty itself is a
+# separate, unaddressed problem, out of scope here). NA when no drift
+# correction is applied at all, or when the fit is an exact/degenerate
+# interpolation with zero residual degrees of freedom (uncertainty is
+# mathematically not estimable from such a fit, so NA rather than a
+# fabricated number -- see the "zero residual df" messages below).
+Combined$petn_dc_cf_se                <- 0
+Combined$petn_concentration_dc_se     <- NA_real_
+
+
 if (apply_petn_drift_correction && has_calibration && length(stored_petn_models) > 0) {
 
   if (use_15nrdx_for_petn) {
@@ -843,12 +858,18 @@ if (apply_petn_drift_correction && has_calibration && length(stored_petn_models)
       # is already made by min_qc_required above.
       if (drift_correction_method == "power_law" && n_qc >= 2) {
         
-        message("  Fitting power law: Response ~ a * Row^b")
+        message("  Fitting power law: Response ~ a * Row^b (weighted 1/Response^2,")
+        message("  consistent with the 1/x-weighted calibration curve elsewhere in ",
+                "this script -- see item 19 notes: an unweighted fit here would ",
+                "under-report the drift-correction uncertainty added below if QC ",
+                "peak-area noise is proportional/relative, as calibration weighting ",
+                "elsewhere in this script already assumes it is).")
         
         power_model <- tryCatch({
           nls(Response ~ a * Row^b,
               data = qc_drift_data,
               start = list(a = max(qc_drift_data$Response), b = -1.0),
+              weights = 1 / qc_drift_data$Response^2,
               control = nls.control(maxiter = 200, warnOnly = TRUE))
         }, error = function(e) {
           warning("  Power law fit failed: ", e$message, ". Falling back to polynomial.")
@@ -880,6 +901,32 @@ if (apply_petn_drift_correction && has_calibration && length(stored_petn_models)
           predicted_cf <- reference_response / predicted_response
           predicted_cf[Combined$Row <= first_qc_row] <- 1.0
           
+          # Delta-method SE of the correction factor (item 19). The "a"
+          # parameter cancels out of the ratio entirely --
+          # cf(Row) = (first_qc_row/Row)^b -- so cf depends only on b,
+          # which makes the delta method exact and simple:
+          # d(cf)/db = cf * ln(first_qc_row/Row), so
+          # SE(cf) = |cf * ln(first_qc_row/Row)| * SE(b).
+          # Only defined when the fit has residual df > 0 -- an
+          # exact/degenerate fit (e.g. n_qc == 2) has no estimable
+          # residual variance, so SE(b) is not meaningful there.
+          df_resid_power <- n_qc - length(coefs)
+          if (df_resid_power > 0) {
+            var_b <- tryCatch(vcov(power_model)["b", "b"], error = function(e) NA_real_)
+            if (!is.na(var_b) && is.finite(var_b) && var_b >= 0) {
+              log_ratio <- log(first_qc_row / Combined$Row)
+              cf_se <- abs(predicted_cf * log_ratio) * sqrt(var_b)
+              cf_se[Combined$Row <= first_qc_row] <- 0
+            } else {
+              cf_se <- rep(NA_real_, nrow(Combined))
+            }
+          } else {
+            message("  Note: PowerLaw fit has zero residual degrees of freedom ",
+                     "(n_qc = ", n_qc, ") -- drift-correction uncertainty is not ",
+                     "estimable from this fit (petn_dc_cf_se will be NA for this dataset).")
+            cf_se <- rep(NA_real_, nrow(Combined))
+          }
+          
           drift_model <- power_model
           drift_method <- "PowerLaw"
           
@@ -906,29 +953,49 @@ if (apply_petn_drift_correction && has_calibration && length(stored_petn_models)
           if (nrow(qc_drift) >= 2) {
             
             if (nrow(qc_drift) >= 4) {
-              drift_model <- lm(CorrFactor ~ Row + I(Row^2), data = qc_drift)
+              drift_model <- lm(CorrFactor ~ Row + I(Row^2), data = qc_drift, weights = 1 / qc_drift$CorrFactor^2)
               drift_method <- "Quadratic"
               
               r2 <- summary(drift_model)$r.squared
               if (is.na(r2) || r2 < 0.5) {
                 message("  Quadratic R\u00B2 = ", round(r2, 3), " (poor); falling back to linear.")
-                drift_model <- lm(CorrFactor ~ Row, data = qc_drift)
+                drift_model <- lm(CorrFactor ~ Row, data = qc_drift, weights = 1 / qc_drift$CorrFactor^2)
                 drift_method <- "Linear"
               }
               
             } else if (nrow(qc_drift) == 3) {
-              drift_model <- lm(CorrFactor ~ Row + I(Row^2), data = qc_drift)
+              drift_model <- lm(CorrFactor ~ Row + I(Row^2), data = qc_drift, weights = 1 / qc_drift$CorrFactor^2)
               drift_method <- "Quadratic"
               
             } else if (nrow(qc_drift) == 2) {
-              drift_model <- lm(CorrFactor ~ Row, data = qc_drift)
+              drift_model <- lm(CorrFactor ~ Row, data = qc_drift, weights = 1 / qc_drift$CorrFactor^2)
               drift_method <- "Linear"
             }
             
             if (!is.null(drift_model)) {
-              predicted_cf <- predict(drift_model, newdata = data.frame(Row = Combined$Row))
+              pred_result <- predict(drift_model, newdata = data.frame(Row = Combined$Row), se.fit = TRUE)
+              predicted_cf <- pred_result$fit
               first_qc_row <- qc_drift$Row[1]
               predicted_cf[Combined$Row <= first_qc_row] <- 1.0
+              
+              # SE of the fitted correction factor (item 19) -- predict.lm()
+              # gives this natively here since CorrFactor (the correction
+              # factor itself) is the response variable in this branch, no
+              # delta method needed. Only defined when residual df > 0 --
+              # an exact/degenerate fit (e.g. Linear through 2 points, or
+              # Quadratic through exactly 3) has no estimable residual
+              # variance.
+              df_resid_poly <- drift_model$df.residual
+              if (df_resid_poly > 0) {
+                cf_se <- pred_result$se.fit
+                cf_se[Combined$Row <= first_qc_row] <- 0
+              } else {
+                message("  Note: ", drift_method, " fit has zero residual degrees ",
+                        "of freedom (n_qc = ", nrow(qc_drift), ") -- drift-correction ",
+                        "uncertainty is not estimable from this fit (petn_dc_cf_se ",
+                        "will be NA for this dataset).")
+                cf_se <- rep(NA_real_, nrow(Combined))
+              }
               
               r2_val <- summary(drift_model)$r.squared
             }
@@ -941,6 +1008,7 @@ if (apply_petn_drift_correction && has_calibration && length(stored_petn_models)
         
         if (any(predicted_cf < 0, na.rm = TRUE)) {
           warning("  Some correction factors negative -- clamping to 1.0.")
+          cf_se[predicted_cf < 0] <- NA_real_
           predicted_cf[predicted_cf < 0] <- 1.0
         }
         if (any(predicted_cf > 10.0, na.rm = TRUE)) {
@@ -949,8 +1017,15 @@ if (apply_petn_drift_correction && has_calibration && length(stored_petn_models)
         
         Combined$petn_drift_correction_factor <- predicted_cf
         Combined$petn_drift_model             <- drift_method
+        Combined$petn_dc_cf_se                <- cf_se
         
         corrected_resp <- Combined[[resp_col_for_drift]] * predicted_cf
+        
+        # SE of the drift-corrected response, propagated from the
+        # correction factor's own SE only (item 19) -- the raw response
+        # itself is treated as fixed/known here; its own measurement
+        # uncertainty is a separate, unaddressed problem, out of scope.
+        corrected_resp_se <- abs(Combined[[resp_col_for_drift]]) * cf_se
         
         if (use_15nrdx_for_petn) {
           Combined$petn_ratio_dc <- corrected_resp
@@ -982,6 +1057,27 @@ if (apply_petn_drift_correction && has_calibration && length(stored_petn_models)
             
             Combined$petn_concentration_dc[j] <- res$value / Dilution
             Combined$petn_extrapolated_dc[j]  <- res$extrapolated
+            
+            # Propagate the drift-correction uncertainty one step further,
+            # through the local slope of the (quadratic) calibration curve
+            # at this solved concentration, via the delta method: since
+            # y = a*x^2 + b*x + c, dy/dx = 2*a*x + b at the solution
+            # x = concentration, so Var(concentration) ~=
+            # [1/(2*a*x+b)]^2 * Var(corrected_response).
+            if (!is.na(res$value) && !is.na(corrected_resp_se[j]) &&
+                res$method == "Quadratic") {
+              qcoefs <- coef(m$quad_model)
+              qa <- qcoefs["I(CalLevelAdj^2)"]
+              qb <- qcoefs["CalLevelAdj"]
+              local_slope <- 2 * qa * res$value + qb
+              if (is.finite(local_slope) && abs(local_slope) > .Machine$double.eps) {
+                Combined$petn_concentration_dc_se[j] <- abs(corrected_resp_se[j] / local_slope) / Dilution
+              } else {
+                Combined$petn_concentration_dc_se[j] <- NA_real_
+              }
+            } else {
+              Combined$petn_concentration_dc_se[j] <- NA_real_
+            }
           }
         }
         
@@ -999,6 +1095,9 @@ if (apply_petn_drift_correction && has_calibration && length(stored_petn_models)
         message("    Correction factor range: ",
                 round(min(predicted_cf, na.rm = TRUE), 4), " - ",
                 round(max(predicted_cf, na.rm = TRUE), 4))
+        message("    Correction factor SE range (item 19): ",
+                if (all(is.na(cf_se))) "N/A (zero residual df -- see note above)" else
+                  paste0(round(min(cf_se, na.rm = TRUE), 4), " - ", round(max(cf_se, na.rm = TRUE), 4)))
         
         # Generate diagnostic plot
         first_qc_row <- qc_drift_data$Row[1]
@@ -1674,7 +1773,8 @@ qc_cols <- c("Date", "Line", "SampleName", "DataFile", "Vial", "CalLevel", "Cali
              # PETN quantitation (uncorrected)
              "petn_concentration", "petn_extrapolated",
              # PETN drift correction
-             "petn_drift_correction_factor", "petn_concentration_dc", "petn_extrapolated_dc",
+             "petn_drift_correction_factor", "petn_dc_cf_se",
+             "petn_concentration_dc", "petn_concentration_dc_se", "petn_extrapolated_dc",
              # PETN QC evaluation (drift-corrected only)
              "petn_percent_bias_dc", "petn_qc_flag_dc",
              # === ALL RDX COLUMNS ===
@@ -1704,7 +1804,8 @@ smp_cols <- c("Date", "Line", "SampleName", "DataFile", "Vial",
               # PETN quantitation (uncorrected)
               "petn_concentration", "petn_quant_method", "petn_extrapolated",
               # PETN drift correction
-              "petn_drift_correction_factor", "petn_concentration_dc", "petn_extrapolated_dc",
+              "petn_drift_correction_factor", "petn_dc_cf_se",
+              "petn_concentration_dc", "petn_concentration_dc_se", "petn_extrapolated_dc",
               # === ALL RDX COLUMNS ===
               # RDX raw measurements
               "rdx_rt", "rdx_pa", "rdx_ph", "rdx_snr", "rdx_snr_flag", "rdx_ratio",
@@ -1801,7 +1902,8 @@ if ("QC" %in% Combined$Type && has_calibration) {
     "rdx_is_rt", "rdx_is_pa", "rdx_is_pa_flag",
     # PETN - drift-corrected columns only
     "petn_rt", "petn_pa", "petn_ph", "petn_snr", "petn_snr_flag", "petn_ratio",
-    "petn_drift_correction_factor", "petn_concentration_dc",
+    "petn_drift_correction_factor", "petn_dc_cf_se",
+    "petn_concentration_dc", "petn_concentration_dc_se",
     "petn_percent_bias_dc", "petn_qc_flag_dc",
     # RDX (no drift correction columns)
     "rdx_rt", "rdx_pa", "rdx_ph", "rdx_snr", "rdx_snr_flag", "rdx_ratio",
