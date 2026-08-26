@@ -19,7 +19,8 @@
 #   - Pairwise_Comparisons sheet (Tukey post-hoc tests)
 #   - Diagnostic plots in Plots/Statistical_Diagnostics/
 #
-# Handles single-lab and multi-lab datasets gracefully.
+# Requires a multi-lab dataset (FINEX is always multi-lab by design);
+# stops with an error if fewer than 2 labs are detected.
 #
 # Author: Statistical analysis module
 # License: GNU AGPL v3
@@ -96,12 +97,17 @@ print(paste0("Lab-Participant combinations: ", n_participants))
 print(paste0("Surfaces: ", n_surfaces))
 
 # Determine analysis mode
-if (n_labs == 1) {
-  analysis_mode <- "single_lab"
-  print("ANALYSIS MODE: Single Lab (limited statistical analysis)")
-  print("  - Cannot estimate between-lab variance")
-  print("  - Will use fixed effects for Participant instead of random effects")
-  print("  - Surface comparisons will use one-way ANOVA")
+# NOTE: This script is hardcoded to FINEX_StudyResults.csv/.xlsx (see
+# input_csv/input_xlsx above) -- the FINEX interlaboratory study, which by
+# design always involves multiple labs. Single-lab mode (n_labs == 1) is not
+# a supported analysis path here (it was removed -- see git history/session
+# notes if a single-lab combined-model fallback is ever needed for a
+# different, single-lab dataset); treat it as a data problem, not a mode
+# to silently degrade into.
+if (n_labs < 2) {
+  stop("Only ", n_labs, " lab(s) detected in FINEX_StudyResults.csv -- ",
+       "this script requires a multi-lab dataset. Single-lab analysis is ",
+       "not supported.")
 } else if (n_labs < 5) {
   analysis_mode <- "few_labs"
   print("ANALYSIS MODE: Few Labs (< 5)")
@@ -353,14 +359,8 @@ if (n_labs > 1) {
 }
 
 
-model_combined <- NULL
 model_petn <- NULL
 model_rdx <- NULL
-fixed_effects_combined <- NULL
-variance_components <- NULL
-pairs_table <- NULL
-anova_combined <- NULL
-model_fit <- NULL
 
 # =========================================================
 # Fit models based on data structure
@@ -371,269 +371,6 @@ print("=== Fitting Statistical Models ===")
 print("")
 
 # -----------------------------
-# SINGLE LAB MODE
-# -----------------------------
-
-if (analysis_mode == "single_lab") {
-  
-  print("Fitting single-lab models (Participant as fixed effect)...")
-  
-  # Check if we have multiple participants
-  n_participants_in_lab <- n_distinct(long_data$Participant)
-  
-  if (n_participants_in_lab == 1) {
-    
-    print("WARNING: Only 1 participant detected")
-    print("  Cannot assess between-participant variance")
-    print("  Fitting simple one-way ANOVA by Surface")
-    
-    # Simple one-way ANOVA for each analyte
-    # PETN
-    petn_data <- long_data %>% filter(Analyte == "PETN")
-    rdx_data <- long_data %>% filter(Analyte == "RDX")
-    
-    if (nrow(petn_data) > 0) {
-      print("Fitting PETN one-way ANOVA by Surface...")
-      model_petn <- aov(Recovery ~ SurfaceName, data = petn_data)
-      print("PETN ANOVA fitted successfully")
-    } else {
-      print("No PETN data available")
-    }
-    
-    if (nrow(rdx_data) > 0) {
-      print("Fitting RDX one-way ANOVA by Surface...")
-      model_rdx <- aov(Recovery ~ SurfaceName, data = rdx_data)
-      print("RDX ANOVA fitted successfully")
-    } else {
-      print("No RDX data available")
-    }
-    
-    # Combined model with Analyte as factor
-    print("Fitting combined two-way ANOVA (Surface × Analyte)...")
-    model_combined <- aov(Recovery ~ SurfaceName * Analyte, data = long_data)
-    print("Combined ANOVA fitted successfully")
-    
-    # Extract ANOVA table
-    anova_combined <- summary(model_combined)[[1]]
-    anova_combined <- as.data.frame(anova_combined)
-    
-    # Add Term column with row names
-    anova_combined$Term <- rownames(anova_combined)
-    rownames(anova_combined) <- NULL
-    
-    # Effect sizes
-    print("Calculating effect sizes...")
-    partial_eta <- tryCatch({
-      eta_squared(model_combined, partial = TRUE, ci = 0.95)
-    }, error = function(e) {
-      print(paste("Warning: Could not calculate partial eta-squared:", e$message))
-      NULL
-    })
-    
-    # Build fixed effects table from ANOVA
-    fixed_effects_combined <- anova_combined %>%
-      select(Term, Df, `Sum Sq`, `Mean Sq`, `F value`, `Pr(>F)`) %>%
-      rename(df = Df,
-             Sum_Sq = `Sum Sq`,
-             Mean_Sq = `Mean Sq`,
-             F_value = `F value`,
-             p_value = `Pr(>F)`) %>%
-      mutate(
-        Estimate = NA_real_,
-        SE = NA_real_,
-        t_value = NA_real_
-      )
-    
-    # Variance components (single lab, single participant)
-    variance_components <- data.frame(
-      Model = c("Single Lab", "Single Lab", "Single Lab"),
-      Source = c("Between-Lab", "Within-Lab (Between-Participant)", "Within-Participant (Residual)"),
-      Variance = c(NA_real_, NA_real_, 
-                   summary(model_combined)[[1]]["Residuals", "Mean Sq"]),
-      SD = c(NA_real_, NA_real_, 
-             sqrt(summary(model_combined)[[1]]["Residuals", "Mean Sq"])),
-      ICC = c(NA_real_, NA_real_, NA_real_),
-      Percent_Total = c(NA_real_, NA_real_, NA_real_)
-    )
-    
-    # Model fit
-    model_fit <- data.frame(
-      Model = "Combined (Single Lab)",
-      AIC = AIC(model_combined),
-      BIC = BIC(model_combined),
-      N_Obs = nrow(long_data)
-    )
-    
-    # Post-hoc comparisons
-    if (n_surfaces >= 2) {
-      print("Computing post-hoc comparisons...")
-      
-      pairs_result <- tryCatch({
-        emmeans_surface <- emmeans(model_combined, ~ SurfaceName | Analyte)
-        pairs_surface <- pairs(emmeans_surface, adjust = "tukey")
-        
-        result <- as.data.frame(pairs_surface)
-        
-        # Rename columns safely
-        colnames(result)[colnames(result) == "contrast"] <- "Contrast"
-        colnames(result)[colnames(result) == "estimate"] <- "Estimate"
-        colnames(result)[colnames(result) == "t.ratio"] <- "t_ratio"
-        
-        # Handle p.value column (both names are same from pairs())
-        if ("p.value" %in% colnames(result)) {
-          result$p_adjusted <- result[["p.value"]]
-          result$p_value <- result[["p.value"]]
-        }
-        
-        result$Significant <- ifelse(result$p_adjusted < alpha, "Yes", "No")
-        
-        print("Post-hoc comparisons computed successfully")
-        result
-      }, error = function(e) {
-        print(paste("Warning: Could not compute post-hoc comparisons:", e$message))
-        NULL
-      })
-      
-      pairs_table <<- pairs_result
-    } else {
-      print(paste("Warning: Only", n_surfaces, "surface detected - cannot compute pairwise comparisons"))
-      pairs_table <<- NULL
-    }
-    
-  } else {
-    # Multiple participants in single lab
-    print(paste0("Multiple participants detected: ", n_participants_in_lab))
-    print("  Can assess within-lab between-participant variance")
-    print("  Using Participant as fixed effect (cannot estimate random effect with 1 lab)")
-    
-    # Fit with Participant as fixed effect
-    print("Fitting combined model (Surface × Analyte + Participant)...")
-    
-    tryCatch({
-      model_combined <- lm(Recovery ~ SurfaceName * Analyte + Participant, 
-                           data = long_data)
-      print("Combined linear model fitted successfully")
-      
-      # ANOVA
-      anova_combined <- anova(model_combined)
-      anova_combined <- as.data.frame(anova_combined)
-      anova_combined$Term <- rownames(anova_combined)
-      rownames(anova_combined) <- NULL
-      
-      # Build fixed effects table
-      fixed_effects_combined <- anova_combined %>%
-        select(Term, Df, `Sum Sq`, `Mean Sq`, `F value`, `Pr(>F)`) %>%
-        rename(df = Df,
-               Sum_Sq = `Sum Sq`,
-               Mean_Sq = `Mean Sq`,
-               F_value = `F value`,
-               p_value = `Pr(>F)`) %>%
-        mutate(
-          Estimate = NA_real_,
-          SE = NA_real_,
-          t_value = NA_real_
-        )
-      
-      # Effect sizes
-      print("Calculating effect sizes...")
-      partial_eta <- eta_squared(model_combined, partial = TRUE, ci = 0.95)
-      
-      # Variance components (approximate)
-      residual_var <- sum(residuals(model_combined)^2) / df.residual(model_combined)
-      
-      variance_components <- data.frame(
-        Model = c("Single Lab", "Single Lab", "Single Lab"),
-        Source = c("Between-Lab", "Within-Lab (Between-Participant)", "Within-Participant (Residual)"),
-        Variance = c(NA_real_, NA_real_, residual_var),
-        SD = c(NA_real_, NA_real_, sqrt(residual_var)),
-        ICC = c(NA_real_, NA_real_, NA_real_),
-        Percent_Total = c(NA_real_, NA_real_, 100)
-      )
-      
-      # Model fit
-      model_fit <- data.frame(
-        Model = "Combined (Single Lab, Fixed Participant)",
-        AIC = AIC(model_combined),
-        BIC = BIC(model_combined),
-        N_Obs = nrow(long_data)
-      )
-      
-    }, error = function(e) {
-      print(paste("Error fitting combined model:", e$message))
-      print("Falling back to simple ANOVA...")
-      
-      model_combined <- aov(Recovery ~ SurfaceName * Analyte, data = long_data)
-      anova_combined <- summary(model_combined)[[1]]
-    })
-    
-    # Separate models per analyte
-    petn_data <- long_data %>% filter(Analyte == "PETN")
-    rdx_data <- long_data %>% filter(Analyte == "RDX")
-    
-    if (nrow(petn_data) > 0) {
-      print("Fitting PETN model with Participant...")
-      model_petn <- tryCatch({
-        lm(Recovery ~ SurfaceName + Participant, data = petn_data)
-      }, error = function(e) {
-        aov(Recovery ~ SurfaceName, data = petn_data)
-      })
-    }
-    
-    if (nrow(rdx_data) > 0) {
-      print("Fitting RDX model with Participant...")
-      model_rdx <- tryCatch({
-        lm(Recovery ~ SurfaceName + Participant, data = rdx_data)
-      }, error = function(e) {
-        aov(Recovery ~ SurfaceName, data = rdx_data)
-      })
-    }
-  }
-  
-  # Post-hoc comparisons
-  if (!is.null(model_combined) && inherits(model_combined, c("lm", "aov"))) {
-    if (n_surfaces >= 2) {
-      print("Computing post-hoc comparisons...")
-      
-      pairs_result <- tryCatch({
-        emmeans_surface <- emmeans(model_combined, ~ SurfaceName | Analyte)
-        pairs_surface <- pairs(emmeans_surface, adjust = "tukey")
-        
-        result <- as.data.frame(pairs_surface)
-        
-        # Rename columns safely (handle both t.ratio and z.ratio)
-        colnames(result)[colnames(result) == "contrast"] <- "Contrast"
-        colnames(result)[colnames(result) == "estimate"] <- "Estimate"
-        if ("t.ratio" %in% colnames(result)) {
-          colnames(result)[colnames(result) == "t.ratio"] <- "t_ratio"
-        } else if ("z.ratio" %in% colnames(result)) {
-          colnames(result)[colnames(result) == "z.ratio"] <- "t_ratio"
-        }
-        
-        # Handle p.value column (both names are same from pairs())
-        if ("p.value" %in% colnames(result)) {
-          result$p_adjusted <- result[["p.value"]]
-          result$p_value <- result[["p.value"]]
-        }
-        
-        result$Significant <- ifelse(result$p_adjusted < alpha, "Yes", "No")
-        
-        print("Post-hoc comparisons computed successfully")
-        result
-      }, error = function(e) {
-        print(paste("Warning: Could not compute post-hoc comparisons:", e$message))
-        NULL
-      })
-      
-      pairs_table <<- pairs_result
-    } else {
-      print(paste("Warning: Only", n_surfaces, "surface detected - cannot compute pairwise comparisons"))
-      pairs_table <<- NULL
-    }
-  }
-  
-}
-
-# -----------------------------
 # Data Preparation for Multi-Lab Analysis
 # -----------------------------
 
@@ -641,7 +378,12 @@ if (analysis_mode == "single_lab") {
 long_data_petn <- long_data %>% filter(Analyte == "PETN")
 long_data_rdx <- long_data %>% filter(Analyte == "RDX")
 
-# Apply sum-to-zero contrasts for Lab (both datasets)
+# Sum-to-zero contrasts for Lab (both datasets). Lab is now modelled as a
+# RANDOM effect in the primary lmer() models below, so lme4 ignores this
+# contrasts attribute for the (1|Lab) grouping factor -- these contrasts
+# only matter for the lm() fallback path (used if lmer() itself fails),
+# where Lab remains a fixed predictor and this keeps that fallback's
+# coefficients interpretable as deviations from the grand mean.
 if (analysis_mode %in% c("few_labs", "multi_lab")) {
   contrasts(long_data_petn$Lab) <- contr.sum(nlevels(long_data_petn$Lab))
   contrasts(long_data_rdx$Lab) <- contr.sum(nlevels(long_data_rdx$Lab))
@@ -654,6 +396,32 @@ print(paste0("PETN zeros: ", petn_zeros, " (",
              round(100*petn_zeros/nrow(long_data_petn), 1), "%)"))
 print(paste0("RDX zeros: ", rdx_zeros, " (", 
              round(100*rdx_zeros/nrow(long_data_rdx), 1), "%)"))
+
+# -----------------------------
+# Helper: per-lab random-effect ("BLUP") table
+# -----------------------------
+# Lab is now a random effect, so there's no fixed-effect coefficient per
+# lab to report. Instead, extract each lab's conditional mode (BLUP) --
+# its shrinkage-adjusted deviation from the grand mean -- plus its
+# conditional SD, and build an approximate CI from those. A lab's CI
+# excluding zero is flagged "Significant" as a descriptive/visual aid
+# only (not a formal hypothesis test on a random effect).
+build_lab_effects_table <- function(model, alpha) {
+  re <- ranef(model, condVar = TRUE)$Lab
+  se <- sqrt(as.vector(attr(re, "postVar")))
+  z <- qnorm(1 - alpha / 2)
+  data.frame(
+    Lab = rownames(re),
+    Estimate = re[["(Intercept)"]],
+    SE = se
+  ) %>%
+    mutate(
+      CI_lower = Estimate - z * SE,
+      CI_upper = Estimate + z * SE,
+      Significant = ifelse(CI_lower > 0 | CI_upper < 0, "Yes", "No")
+    )
+}
+
 
 # -----------------------------
 # MULTI-LAB MODE (Mixed Effects) - SEPARATE PETN AND RDX MODELS
@@ -670,8 +438,18 @@ if (analysis_mode %in% c("few_labs", "multi_lab")) {
   print("")
   print("--- Fitting PETN Model ---")
   
+  # Lab modelled as a RANDOM effect (nested with Participant), not fixed.
+  # Rationale: this is an interlaboratory reproducibility study with 20+
+  # labs -- enough levels to estimate a stable between-lab variance
+  # component -- and the labs are treated as a sample from a population of
+  # labs we want to generalise reproducibility claims to, not a fixed set
+  # of treatments of individual interest. This follows the standard
+  # ISO 5725-style nested random-effects decomposition (site/lab random,
+  # operator/participant nested within site random, residual = repeatability).
+  # SurfaceName stays fixed -- it's a deliberately chosen, finite set of
+  # surface types we want specific contrasts for, not a random sample.
   model_petn <- tryCatch({
-    lmer(Recovery ~ Lab + SurfaceName + (1|Lab:Participant),
+    lmer(Recovery ~ SurfaceName + (1|Lab) + (1|Lab:Participant),
          data = long_data_petn,
          REML = TRUE)
   }, error = function(e) {
@@ -695,18 +473,20 @@ if (analysis_mode %in% c("few_labs", "multi_lab")) {
     NULL
   })
   
-  # PETN variance components
+  # PETN variance components (Between-Lab / Between-Participant-within-Lab / Residual)
   if (inherits(model_petn, "lmerMod")) {
     vc_petn <- as.data.frame(VarCorr(model_petn))
+    var_lab_petn         <- vc_petn$vcov[vc_petn$grp == "Lab"]
     var_participant_petn <- vc_petn$vcov[vc_petn$grp == "Lab:Participant"]
-    var_residual_petn <- vc_petn$vcov[vc_petn$grp == "Residual"]
-    total_var_petn <- var_participant_petn + var_residual_petn
+    var_residual_petn    <- vc_petn$vcov[vc_petn$grp == "Residual"]
+    total_var_petn <- var_lab_petn + var_participant_petn + var_residual_petn
     
     variance_components_petn <- data.frame(
-      Source = c("Between-Participant (within Lab)", "Residual (within Participant)"),
-      Variance = c(var_participant_petn, var_residual_petn),
-      SD = c(sqrt(var_participant_petn), sqrt(var_residual_petn)),
-      Percent_Total = c(100 * var_participant_petn / total_var_petn,
+      Source = c("Between-Lab", "Between-Participant (within Lab)", "Residual (within Participant)"),
+      Variance = c(var_lab_petn, var_participant_petn, var_residual_petn),
+      SD = c(sqrt(var_lab_petn), sqrt(var_participant_petn), sqrt(var_residual_petn)),
+      Percent_Total = c(100 * var_lab_petn / total_var_petn,
+                        100 * var_participant_petn / total_var_petn,
                         100 * var_residual_petn / total_var_petn)
     )
     
@@ -715,6 +495,20 @@ if (analysis_mode %in% c("few_labs", "multi_lab")) {
   } else {
     variance_components_petn <- NULL
   }
+  
+  # PETN per-lab random-effect (BLUP) table -- for the Lab-effects forest plot
+  lab_effects_table_petn <- if (inherits(model_petn, "lmerMod")) {
+    build_lab_effects_table(model_petn, alpha)
+  } else {
+    NULL
+  }
+  
+  # PETN per-lab x per-surface descriptive means -- for the Lab x Surface
+  # interaction plot (descriptive only; the model has no Lab:SurfaceName
+  # fixed-effect term)
+  lab_surface_means_table_petn <- long_data_petn %>%
+    group_by(Lab, SurfaceName) %>%
+    summarise(Mean = mean(Recovery, na.rm = TRUE), .groups = "drop")
   
   # PETN pairwise comparisons
   if (n_surfaces >= 2) {
@@ -752,8 +546,10 @@ if (analysis_mode %in% c("few_labs", "multi_lab")) {
   print("")
   print("--- Fitting RDX Model ---")
   
+  # Lab modelled as a RANDOM effect here too -- see rationale above the
+  # PETN model fit.
   model_rdx <- tryCatch({
-    lmer(Recovery ~ Lab + SurfaceName + (1|Lab:Participant),
+    lmer(Recovery ~ SurfaceName + (1|Lab) + (1|Lab:Participant),
          data = long_data_rdx,
          REML = TRUE)
   }, error = function(e) {
@@ -777,18 +573,20 @@ if (analysis_mode %in% c("few_labs", "multi_lab")) {
     NULL
   })
   
-  # RDX variance components
+  # RDX variance components (Between-Lab / Between-Participant-within-Lab / Residual)
   if (inherits(model_rdx, "lmerMod")) {
     vc_rdx <- as.data.frame(VarCorr(model_rdx))
+    var_lab_rdx         <- vc_rdx$vcov[vc_rdx$grp == "Lab"]
     var_participant_rdx <- vc_rdx$vcov[vc_rdx$grp == "Lab:Participant"]
-    var_residual_rdx <- vc_rdx$vcov[vc_rdx$grp == "Residual"]
-    total_var_rdx <- var_participant_rdx + var_residual_rdx
+    var_residual_rdx    <- vc_rdx$vcov[vc_rdx$grp == "Residual"]
+    total_var_rdx <- var_lab_rdx + var_participant_rdx + var_residual_rdx
     
     variance_components_rdx <- data.frame(
-      Source = c("Between-Participant (within Lab)", "Residual (within Participant)"),
-      Variance = c(var_participant_rdx, var_residual_rdx),
-      SD = c(sqrt(var_participant_rdx), sqrt(var_residual_rdx)),
-      Percent_Total = c(100 * var_participant_rdx / total_var_rdx,
+      Source = c("Between-Lab", "Between-Participant (within Lab)", "Residual (within Participant)"),
+      Variance = c(var_lab_rdx, var_participant_rdx, var_residual_rdx),
+      SD = c(sqrt(var_lab_rdx), sqrt(var_participant_rdx), sqrt(var_residual_rdx)),
+      Percent_Total = c(100 * var_lab_rdx / total_var_rdx,
+                        100 * var_participant_rdx / total_var_rdx,
                         100 * var_residual_rdx / total_var_rdx)
     )
     
@@ -797,6 +595,20 @@ if (analysis_mode %in% c("few_labs", "multi_lab")) {
   } else {
     variance_components_rdx <- NULL
   }
+  
+  # RDX per-lab random-effect (BLUP) table -- for the Lab-effects forest plot
+  lab_effects_table_rdx <- if (inherits(model_rdx, "lmerMod")) {
+    build_lab_effects_table(model_rdx, alpha)
+  } else {
+    NULL
+  }
+  
+  # RDX per-lab x per-surface descriptive means -- for the Lab x Surface
+  # interaction plot (descriptive only; the model has no Lab:SurfaceName
+  # fixed-effect term)
+  lab_surface_means_table_rdx <- long_data_rdx %>%
+    group_by(Lab, SurfaceName) %>%
+    summarise(Mean = mean(Recovery, na.rm = TRUE), .groups = "drop")
   
   # RDX pairwise comparisons
   if (n_surfaces >= 2) {
@@ -875,9 +687,6 @@ if (analysis_mode %in% c("few_labs", "multi_lab")) {
   
 }
 
-# Set model_combined to NULL (no longer used)
-model_combined <- NULL
-
 # =========================================================
 # Descriptive statistics (always available)
 # =========================================================
@@ -916,94 +725,7 @@ print("")
 print("=== Generating Diagnostic Plots ===")
 print("")
 
-if (!is.null(model_combined) || (!is.null(model_petn) && !is.null(model_rdx))) {
-  
-  # Only generate combined model diagnostics if model_combined exists
-  if (!is.null(model_combined)) {
-    
-  # 1. Residual QQ plot
-  residual_vals <- if (inherits(model_combined, "lmerMod")) {
-    residuals(model_combined)
-  } else {
-    residuals(model_combined)
-  }
-  
-  p_qq <- ggplot(data.frame(residuals = residual_vals), aes(sample = residuals)) +
-    stat_qq() +
-    stat_qq_line() +
-    labs(title = "Residual Q-Q Plot",
-         subtitle = paste("Model:", ifelse(inherits(model_combined, "lmerMod"), 
-                                            "Mixed-Effects", "ANOVA")),
-         x = "Theoretical Quantiles", y = "Sample Quantiles") +
-    theme_bw()
-  
-  ggsave(file.path(diag_dir, "Residual_QQ.png"), p_qq, 
-         width = 6, height = 5, dpi = 300)
-  
-  # 2. Residuals vs Fitted
-  fitted_vals <- fitted(model_combined)
-  
-  resid_data <- data.frame(
-    fitted = fitted_vals,
-    residuals = residual_vals
-  )
-  
-  p_resid <- ggplot(resid_data, aes(x = fitted, y = residuals)) +
-    geom_point(alpha = 0.3) +
-    geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-    geom_smooth(se = FALSE, color = "blue", method = "loess") +
-    labs(title = "Residuals vs Fitted Values",
-         x = "Fitted Values", y = "Residuals") +
-    theme_bw()
-  
-  ggsave(file.path(diag_dir, "Residuals_vs_Fitted.png"), p_resid,
-         width = 6, height = 5, dpi = 300)
-  
-  # 3. Variance components bar chart (if available)
-  if (!is.null(variance_components) && !all(is.na(variance_components$Percent_Total))) {
-    vc_plot_data <- variance_components %>%
-      filter(!is.na(Percent_Total)) %>%
-      mutate(Source = factor(Source, levels = c("Between-Participant (within Lab)", 
-                                                 "Residual (within Participant)")))
-    
-    p_vc <- ggplot(vc_plot_data, aes(x = Source, y = Percent_Total)) +
-      geom_bar(stat = "identity", fill = "steelblue") +
-      geom_text(aes(label = sprintf("%.1f%%", Percent_Total)), 
-                vjust = -0.5, size = 4) +
-      labs(title = "Variance Components",
-           x = "Source", y = "Percent of Total Variance") +
-      ylim(0, 100) +
-      theme_bw() +
-      theme(axis.text.x = element_text(angle = 45, hjust = 1))
-    
-    ggsave(file.path(diag_dir, "Variance_Components.png"), p_vc,
-           width = 7, height = 5, dpi = 300)
-  }
-  
-  # 4. Surface effect forest plot
-  tryCatch({
-    if (inherits(model_combined, "lmerMod")) {
-      emm_surface_plot <- emmeans(model_combined, ~ SurfaceName | Analyte)
-    } else {
-      emm_surface_plot <- emmeans(model_combined, ~ SurfaceName | Analyte)
-    }
-    
-    emm_plot_data <- as.data.frame(emm_surface_plot)
-    
-    p_forest <- ggplot(emm_plot_data, aes(x = SurfaceName, y = emmean, 
-                                           ymin = lower.CL, ymax = upper.CL)) +
-      geom_pointrange() +
-      facet_wrap(~ Analyte) +
-      labs(title = "Estimated Marginal Means by Surface",
-           x = "Surface", y = "Recovery (%)") +
-      coord_flip() +
-      theme_bw()
-    
-    ggsave(file.path(diag_dir, "Surface_Effects.png"), p_forest,
-           width = 8, height = 5, dpi = 300)
-  }, error = function(e) {
-    print(paste("Warning: Could not generate forest plot:", e$message))
-  })
+if (!is.null(model_petn) && !is.null(model_rdx)) {
   
   # 5. Box plot by surface (always available)
   p_boxplot <- ggplot(long_data, aes(x = SurfaceName, y = Recovery, fill = SurfaceName)) +
@@ -1020,124 +742,77 @@ if (!is.null(model_combined) || (!is.null(model_petn) && !is.null(model_rdx))) {
   ggsave(file.path(diag_dir, "Recovery_Boxplots.png"), p_boxplot,
          width = 8, height = 5, dpi = 300)
   
-  # 6. Lab effects forest plot (multi-lab only)
-  if (!is.null(lab_effects_table) && n_labs > 1) {
-    tryCatch({
-      p_lab_forest <- ggplot(lab_effects_table, 
-                             aes(x = reorder(Lab, Estimate), y = Estimate)) +
-        geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
-        geom_point(aes(color = Significant), size = 3) +
-        geom_errorbar(aes(ymin = CI_lower, ymax = CI_upper, color = Significant),
-                      width = 0.2) +
-        coord_flip() +
-        scale_color_manual(values = c("No" = "gray50", "Yes" = "red")) +
-        labs(title = "Lab Effects (Deviations from Grand Mean)",
-             subtitle = paste0("95% CI, α = ", alpha),
-             x = "Lab",
-             y = "Deviation from Grand Mean (%)") +
-        theme_bw() +
-        theme(legend.position = "bottom")
-      
-      ggsave(file.path(diag_dir, "Lab_Effects_ForestPlot.png"),
-             p_lab_forest, width = 8, height = 10, dpi = 300)
-    }, error = function(e) {
-      print(paste("Warning: Could not generate Lab effects forest plot:", e$message))
-    })
+  # 6. Lab effects forest plot (multi-lab only) -- per analyte, since Lab's
+  # random-effect (BLUP) estimates come from the separate PETN/RDX models
+  lab_effects_tables <- list(PETN = lab_effects_table_petn, RDX = lab_effects_table_rdx)
+  for (analyte_name in names(lab_effects_tables)) {
+    tbl <- lab_effects_tables[[analyte_name]]
+    if (!is.null(tbl) && n_labs > 1) {
+      tryCatch({
+        p_lab_forest <- ggplot(tbl, 
+                               aes(x = reorder(Lab, Estimate), y = Estimate)) +
+          geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
+          geom_point(aes(color = Significant), size = 3) +
+          geom_errorbar(aes(ymin = CI_lower, ymax = CI_upper, color = Significant),
+                        width = 0.2) +
+          coord_flip() +
+          scale_color_manual(values = c("No" = "gray50", "Yes" = "red")) +
+          labs(title = paste0(analyte_name, ": Lab Effects (Random-Effect BLUPs)"),
+               subtitle = paste0(round(100 * (1 - alpha)), "% CI, alpha = ", alpha),
+               x = "Lab",
+               y = "Deviation from Grand Mean (%)") +
+          theme_bw() +
+          theme(legend.position = "bottom")
+        
+        ggsave(file.path(diag_dir, paste0("Lab_Effects_ForestPlot_", analyte_name, ".png")),
+               p_lab_forest, width = 8, height = 10, dpi = 300)
+      }, error = function(e) {
+        print(paste0("Warning: Could not generate ", analyte_name,
+                      " Lab effects forest plot: ", e$message))
+      })
+    }
   }
   
-  # 7. Lab × Surface interaction plot (multi-lab only)
-  if (!is.null(lab_surface_means_table) && n_labs > 1) {
-    tryCatch({
-      p_lab_surf <- ggplot(lab_surface_means_table,
-                           aes(x = Surface, y = Mean, group = Lab, color = Lab)) +
-        geom_line(alpha = 0.6) +
-        geom_point(size = 2) +
-        labs(title = "Lab × Surface Interaction",
-             subtitle = "Does surface ranking differ by lab?",
-             x = "Surface",
-             y = "Estimated Marginal Mean Recovery (%)") +
-        theme_bw() +
-        theme(axis.text.x = element_text(angle = 45, hjust = 1))
-      
-      # If too many labs, remove legend
-      if (n_labs > 10) {
-        p_lab_surf <- p_lab_surf + 
-          theme(legend.position = "none") +
-          labs(subtitle = "Each line = one lab")
-      } else {
-        p_lab_surf <- p_lab_surf +
-          theme(legend.position = "right")
-      }
-      
-      ggsave(file.path(diag_dir, "Lab_Surface_Interaction.png"),
-             p_lab_surf, width = 10, height = 6, dpi = 300)
-    }, error = function(e) {
-      print(paste("Warning: Could not generate Lab × Surface interaction plot:", e$message))
-    })
+  # 7. Lab x Surface interaction plot (multi-lab only) -- per analyte,
+  # descriptive means (no Lab:SurfaceName term in either model)
+  lab_surface_tables <- list(PETN = lab_surface_means_table_petn, RDX = lab_surface_means_table_rdx)
+  for (analyte_name in names(lab_surface_tables)) {
+    tbl <- lab_surface_tables[[analyte_name]]
+    if (!is.null(tbl) && n_labs > 1) {
+      tryCatch({
+        p_lab_surf <- ggplot(tbl,
+                             aes(x = SurfaceName, y = Mean, group = Lab, color = Lab)) +
+          geom_line(alpha = 0.6) +
+          geom_point(size = 2) +
+          labs(title = paste0(analyte_name, ": Lab x Surface Interaction"),
+               subtitle = "Does surface ranking differ by lab?",
+               x = "Surface",
+               y = "Mean Recovery (%)") +
+          theme_bw() +
+          theme(axis.text.x = element_text(angle = 45, hjust = 1))
+        
+        # If too many labs, remove legend
+        if (n_labs > 10) {
+          p_lab_surf <- p_lab_surf + 
+            theme(legend.position = "none") +
+            labs(subtitle = "Each line = one lab")
+        } else {
+          p_lab_surf <- p_lab_surf +
+            theme(legend.position = "right")
+        }
+        
+        ggsave(file.path(diag_dir, paste0("Lab_Surface_Interaction_", analyte_name, ".png")),
+               p_lab_surf, width = 10, height = 6, dpi = 300)
+      }, error = function(e) {
+        print(paste0("Warning: Could not generate ", analyte_name,
+                      " Lab x Surface interaction plot: ", e$message))
+      })
+    }
   }
   
-  # 8. Variance partition plot (2 components)
-  if (!is.null(variance_components) && nrow(variance_components) > 0) {
-    tryCatch({
-      # Diagnostic output
-      print("=== Variance Components for Plotting ===")
-      print(variance_components)
-      print("")
-      print("Structure:")
-      print(str(variance_components))
-      print("")
-      print("Source column check:")
-      print(table(variance_components$Source, useNA = "always"))
-      print("")
-      
-      # Filter to rows with valid Percent_Total (must be numeric and not NA)
-      # Keep Source column even if some variances are NA
-      vc_plot_data <- variance_components %>%
-        filter(!is.na(Percent_Total), Percent_Total > 0) %>%
-        mutate(
-          Source = factor(Source, 
-                          levels = c("Between-Participant (within Lab)",
-                                    "Residual (within Participant)"))
-        )
-      
-      # Only plot if we have at least 1 valid row
-      if (nrow(vc_plot_data) > 0) {
-        print(paste0("Plotting ", nrow(vc_plot_data), " variance components"))
-        
-        p_variance <- ggplot(vc_plot_data, aes(x = "", y = Percent_Total, fill = Source)) +
-          geom_bar(stat = "identity", width = 1) +
-          coord_polar("y", start = 0) +
-          scale_fill_brewer(palette = "Set2") +
-          labs(title = "Variance Partition",
-               subtitle = "Lab is fixed effect (not shown)",
-               fill = "Source") +
-          theme_void() +
-          theme(legend.position = "right") +
-          geom_text(aes(label = paste0(round(Percent_Total, 1), "%")),
-                    position = position_stack(vjust = 0.5))
-        
-        ggsave(file.path(diag_dir, "Variance_Partition.png"),
-               p_variance, width = 8, height = 6, dpi = 300)
-        
-        print("-> Variance partition plot saved")
-      } else {
-        print("Warning: No valid variance components to plot (all NA or zero)")
-      }
-    }, error = function(e) {
-      print(paste("Warning: Could not generate variance partition plot:", e$message))
-      print("Variance components dataframe:")
-      print(variance_components)
-    })
-  } else {
-    print("Warning: variance_components is NULL or empty - skipping variance partition plot")
-  }
-  
-  }  # End of model_combined-specific diagnostics
-  
-  # Generate separate diagnostics for PETN and RDX models
-  if (!is.null(model_petn) && !is.null(model_rdx)) {
-    
-    print("Generating separate PETN and RDX diagnostic plots...")
+  # Generate separate diagnostics for PETN and RDX models (condition already
+  # guaranteed true by the outer if -- no need to re-check)
+  print("Generating separate PETN and RDX diagnostic plots...")
     
     # =========================================================
     # PETN DIAGNOSTIC PLOTS
@@ -1171,7 +846,8 @@ if (!is.null(model_combined) || (!is.null(model_petn) && !is.null(model_rdx))) {
     if (!is.null(variance_components_petn) && !all(is.na(variance_components_petn$Percent_Total))) {
       vc_plot_data_petn <- variance_components_petn %>%
         filter(!is.na(Percent_Total)) %>%
-        mutate(Source = factor(Source, levels = c("Between-Participant (within Lab)", 
+        mutate(Source = factor(Source, levels = c("Between-Lab",
+                                                   "Between-Participant (within Lab)", 
                                                    "Residual (within Participant)")))
       
       p_vc_petn <- ggplot(vc_plot_data_petn, aes(x = Source, y = Percent_Total)) +
@@ -1220,7 +896,8 @@ if (!is.null(model_combined) || (!is.null(model_petn) && !is.null(model_rdx))) {
     if (!is.null(variance_components_rdx) && !all(is.na(variance_components_rdx$Percent_Total))) {
       vc_plot_data_rdx <- variance_components_rdx %>%
         filter(!is.na(Percent_Total)) %>%
-        mutate(Source = factor(Source, levels = c("Between-Participant (within Lab)", 
+        mutate(Source = factor(Source, levels = c("Between-Lab",
+                                                   "Between-Participant (within Lab)", 
                                                    "Residual (within Participant)")))
       
       p_vc_rdx <- ggplot(vc_plot_data_rdx, aes(x = Source, y = Percent_Total)) +
@@ -1238,7 +915,6 @@ if (!is.null(model_combined) || (!is.null(model_petn) && !is.null(model_rdx))) {
     }
     
     print("-> PETN and RDX diagnostic plots saved")
-  }
   
 }
 
@@ -1261,7 +937,9 @@ sheets_list <- list()
 for (sheet in existing_sheets) {
   if (!sheet %in% c("Descriptive_Statistics", "Statistical_Summary", "Fixed_Effects", 
                     "Variance_Components", "Lab_Effects", "Lab_x_Surface", 
-                    "Surface_Comparisons", "Model_Fit", "Pairwise_Comparisons")) {
+                    "Surface_Comparisons", "Model_Fit", "Pairwise_Comparisons",
+                    "Lab_Effects_PETN", "Lab_Effects_RDX",
+                    "Lab_x_Surface_PETN", "Lab_x_Surface_RDX")) {
     sheets_list[[sheet]] <- readxl::read_excel(input_xlsx, sheet = sheet)
   }
 }
@@ -1271,57 +949,10 @@ sheets_list[["Descriptive_Statistics"]] <- descriptive_stats %>%
   mutate_at(vars(Mean:CI_95_upper), ~round(., 3))
 
 # Add statistical analysis sheets (if models fitted)
-if (!is.null(model_combined) || (!is.null(model_petn) && !is.null(model_rdx))) {
-  
-  # Export for combined model (single-lab mode)
-  if (!is.null(model_combined)) {
-  
-  # Add Statistical_Summary (ANOVA table)
-  if (!is.null(anova_combined)) {
-    sheets_list[["Statistical_Summary"]] <- anova_combined
-  }
-  
-  # Add Fixed_Effects (all coefficients)
-  if (!is.null(fixed_effects_combined)) {
-    sheets_list[["Fixed_Effects"]] <- fixed_effects_combined
-  }
-  
-  # Add Variance_Components
-  if (!is.null(variance_components)) {
-    sheets_list[["Variance_Components"]] <- variance_components
-  }
-  
-  # Add Lab_Effects (deviations from grand mean)
-  if (!is.null(lab_effects_table)) {
-    sheets_list[["Lab_Effects"]] <- lab_effects_table
-  }
-  
-  # Add Lab_x_Surface (interaction means)
-  if (!is.null(lab_surface_means_table)) {
-    sheets_list[["Lab_x_Surface"]] <- lab_surface_means_table
-  }
-  
-  # Add Surface_Comparisons (pairwise)
-  if (!is.null(pairs_table)) {
-    # Round numeric columns that exist
-    numeric_cols <- intersect(c("Estimate", "SE", "df", "t_ratio"), colnames(pairs_table))
-    pairwise_export <- pairs_table %>%
-      mutate(across(all_of(numeric_cols), ~round(., 4))) %>%
-      mutate(across(c(p_value, p_adjusted), ~round(., 6)))
-    
-    sheets_list[["Surface_Comparisons"]] <- pairwise_export
-  }
-  
-  # Add Model_Fit
-  if (!is.null(model_fit)) {
-    sheets_list[["Model_Fit"]] <- model_fit
-  }
-  
-  }  # End of model_combined-specific exports
-  
-  # Export for separate models (multi-lab mode)
-  if (!is.null(model_petn) && !is.null(model_rdx)) {
-    print("Multi-lab mode: Exporting separate PETN and RDX results")
+if (!is.null(model_petn) && !is.null(model_rdx)) {
+  # Export for separate models (multi-lab mode; condition already
+  # guaranteed true by the outer if -- no need to re-check)
+  print("Multi-lab mode: Exporting separate PETN and RDX results")
     
     # Descriptive stats by lab
     desc_by_lab <- long_data %>%
@@ -1394,6 +1025,22 @@ if (!is.null(model_combined) || (!is.null(model_petn) && !is.null(model_rdx))) {
     # Variance Components - RDX
     if (!is.null(variance_components_rdx)) {
       sheets_list[["Variance_Components_RDX"]] <- variance_components_rdx
+    }
+    
+    # Lab Effects (random-effect BLUPs, deviations from grand mean) - PETN/RDX
+    if (!is.null(lab_effects_table_petn)) {
+      sheets_list[["Lab_Effects_PETN"]] <- lab_effects_table_petn
+    }
+    if (!is.null(lab_effects_table_rdx)) {
+      sheets_list[["Lab_Effects_RDX"]] <- lab_effects_table_rdx
+    }
+    
+    # Lab x Surface descriptive means - PETN/RDX
+    if (!is.null(lab_surface_means_table_petn)) {
+      sheets_list[["Lab_x_Surface_PETN"]] <- lab_surface_means_table_petn
+    }
+    if (!is.null(lab_surface_means_table_rdx)) {
+      sheets_list[["Lab_x_Surface_RDX"]] <- lab_surface_means_table_rdx
     }
     
     # Non-parametric tests
@@ -1478,7 +1125,6 @@ if (!is.null(model_combined) || (!is.null(model_petn) && !is.null(model_rdx))) {
     }
     
     print("-> 14 sheets exported for separate PETN/RDX models")
-  }
   
 }
 
@@ -1516,106 +1162,42 @@ desc_summary <- descriptive_stats %>%
 print("")
 
 # Model results
-if (!is.null(model_combined) || (!is.null(model_petn) && !is.null(model_rdx))) {
-  
-  if (!is.null(anova_combined) && nrow(anova_combined) > 0) {
-    print("ANOVA Results:")
-    
-    if (inherits(anova_combined, "data.frame")) {
-      if ("F value" %in% names(anova_combined)) {
-        # ANOVA table
-        surface_row <- which(grepl("Surface", anova_combined$Term))[1]
-        if (!is.na(surface_row) && surface_row <= nrow(anova_combined)) {
-          surface_p <- anova_combined$`Pr(>F)`[surface_row]
-          if (!is.null(surface_p) && !is.na(surface_p)) {
-            surface_sig <- ifelse(surface_p < alpha, "SIGNIFICANT", "NOT SIGNIFICANT")
-            print(paste0("  Surface Effect: ", surface_sig, " (p = ", round(surface_p, 6), ")"))
-          }
-        }
-      } else if ("p_value" %in% names(anova_combined)) {
-        # From lmer summary
-        print("  See Statistical_Summary sheet for details")
-      }
-    }
-  }
-  
-  print("")
-  
-  # Variance components
-  if (!is.null(variance_components) && !all(is.na(variance_components$Percent_Total))) {
-    print("Variance Components:")
-    for (i in 1:nrow(variance_components)) {
-      if (!is.na(variance_components$Percent_Total[i])) {
-        print(paste0("  ", variance_components$Source[i], ": ", 
-                     round(variance_components$Percent_Total[i], 1), "%"))
-      }
-    }
-    
-    # ICC only available for some model types
-    if ("ICC" %in% colnames(variance_components)) {
-      print("")
-      print("ICC (Intraclass Correlation):")
-      icc_vals <- variance_components %>% filter(!is.na(ICC))
-      if (nrow(icc_vals) > 0) {
-        for (i in 1:nrow(icc_vals)) {
-          print(paste0("  ", icc_vals$Source[i], ": ", round(icc_vals$ICC[i], 3)))
-        }
-      }
-    }
-  }
+if (!is.null(model_petn) && !is.null(model_rdx)) {
   
   print("")
   print("Key Findings:")
   
-  if (analysis_mode == "single_lab") {
-    print("  → Single lab analysis: Cannot estimate between-lab variance")
-    print("  → Results apply to this lab only (not generalizable)")
-    if (n_participants == 1) {
-      print("  → Single participant: Cannot assess operator variability")
-    } else {
-      print(paste0("  → ", n_participants, " participants: Limited operator variability assessment"))
-    }
-  } else {
-    # Check for combined model results
-    if (!is.null(anova_combined) && "Pr(>F)" %in% names(anova_combined)) {
-      if ("Surface" %in% anova_combined$Term) {
-        surface_row <- which(anova_combined$Term == "Surface")
-        if (length(surface_row) > 0 && surface_row <= nrow(anova_combined)) {
-          surface_p <- anova_combined$`Pr(>F)`[surface_row]
-          if (!is.na(surface_p)) {
-            if (surface_p < alpha) {
-              print("  → Recovery differs significantly by surface type")
-              print("  → See Pairwise_Comparisons sheet for which surfaces differ")
-            } else {
-              print("  → No significant difference in recovery between surfaces")
-            }
-          }
-        }
-      }
-    }
+  # Surface effect + between-lab/between-participant variance from the
+  # separate PETN/RDX models (Lab modelled as random -- see
+  # variance_components_petn/rdx)
+  if (exists("anova_petn") && exists("anova_rdx")) {
+    petn_surface_p <- anova_petn["SurfaceName", "Pr(>F)"]
+    rdx_surface_p <- anova_rdx["SurfaceName", "Pr(>F)"]
     
-    # Check for separate model results (multi-lab with PETN/RDX split)
-    if (!is.null(model_petn) && !is.null(model_rdx)) {
-      # Get ANOVA results from separate models
-      if (exists("anova_petn") && exists("anova_rdx")) {
-        petn_surface_p <- anova_petn["SurfaceName", "Pr(>F)"]
-        rdx_surface_p <- anova_rdx["SurfaceName", "Pr(>F)"]
-        
-        print("  → Separate PETN and RDX models fitted")
-        print(paste0("  → PETN surface effect: ", 
-                     ifelse(petn_surface_p < alpha, "SIGNIFICANT", "NOT SIGNIFICANT"),
-                     " (p = ", format(petn_surface_p, digits = 3, scientific = TRUE), ")"))
-        print(paste0("  → RDX surface effect: ",
-                     ifelse(rdx_surface_p < alpha, "SIGNIFICANT", "NOT SIGNIFICANT"),
-                     " (p = ", format(rdx_surface_p, digits = 3, scientific = TRUE), ")"))
-        
-        if (exists("variance_components_petn") && exists("variance_components_rdx")) {
-          petn_between <- variance_components_petn$Percent_Total[1]
-          rdx_between <- variance_components_rdx$Percent_Total[1]
-          print(paste0("  → PETN between-participant variance: ", round(petn_between, 1), "%"))
-          print(paste0("  → RDX between-participant variance: ", round(rdx_between, 1), "%"))
-        }
-      }
+    print("  \u2192 Separate PETN and RDX models fitted")
+    print(paste0("  \u2192 PETN surface effect: ", 
+                 ifelse(petn_surface_p < alpha, "SIGNIFICANT", "NOT SIGNIFICANT"),
+                 " (p = ", format(petn_surface_p, digits = 3, scientific = TRUE), ")"))
+    print(paste0("  \u2192 RDX surface effect: ",
+                 ifelse(rdx_surface_p < alpha, "SIGNIFICANT", "NOT SIGNIFICANT"),
+                 " (p = ", format(rdx_surface_p, digits = 3, scientific = TRUE), ")"))
+    
+    if (exists("variance_components_petn") && exists("variance_components_rdx")) {
+      # Select by Source name (not position) -- Lab is now a random
+      # effect, so a "Between-Lab" row exists alongside
+      # "Between-Participant (within Lab)".
+      petn_between_lab <- variance_components_petn$Percent_Total[
+        variance_components_petn$Source == "Between-Lab"]
+      rdx_between_lab <- variance_components_rdx$Percent_Total[
+        variance_components_rdx$Source == "Between-Lab"]
+      petn_between_participant <- variance_components_petn$Percent_Total[
+        variance_components_petn$Source == "Between-Participant (within Lab)"]
+      rdx_between_participant <- variance_components_rdx$Percent_Total[
+        variance_components_rdx$Source == "Between-Participant (within Lab)"]
+      print(paste0("  \u2192 PETN between-lab variance: ", round(petn_between_lab, 1), "%"))
+      print(paste0("  \u2192 RDX between-lab variance: ", round(rdx_between_lab, 1), "%"))
+      print(paste0("  \u2192 PETN between-participant variance: ", round(petn_between_participant, 1), "%"))
+      print(paste0("  \u2192 RDX between-participant variance: ", round(rdx_between_participant, 1), "%"))
     }
   }
   
