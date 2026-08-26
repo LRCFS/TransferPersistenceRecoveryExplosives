@@ -183,88 +183,6 @@ deinterleave_sim <- function(df, pair_gap = 0.1) {
 }
 
 #############################################################
-#####       TIC SIM/Scan-Mode Deinterleaving             #####
-#############################################################
-# Added Aug 2026 -- see CONTEXT.md "Blank Other-Significant-Peak
-# Detection" session, "De-interleaving the wrong series" correction.
-#
-# This is NOT the same problem deinterleave_sim() solves, and must NOT
-# reuse its "always keep the second of the pair" rule. deinterleave_sim()
-# is for genuine duplicate-sampling of the SAME m/z channel (two scan
-# groups reading the same ion back-to-back -- Group B is a second,
-# typically cleaner read of an IDENTICAL quantity). The TIC channel in
-# this instrument's "SIM/Scan" simultaneous acquisition mode is a
-# fundamentally different situation: the raw TIC column alternates
-# between two DIFFERENT quantities --
-#   - a SIM-cycle total: the sum of intensities across only the
-#     handful of currently-active, time-windowed SIM group ions (e.g.
-#     3-4 ions -- confirmed directly against GcDataConvertedRcode/SIM/
-#     data: exactly matches the analyte/IS ions configured for whichever
-#     SIM group is active at that retention time)
-#   - a Scan-cycle total: the sum of intensities across the full m/z
-#     41-200 survey sweep (confirmed 16-21+ ions per scan in the same
-#     data), which is the ONLY channel that can show a genuine compound
-#     that isn't one of the specifically-monitored SIM ions -- i.e.
-#     exactly the "other significant peak" signal this whole feature
-#     exists to find.
-#
-# Blindly deinterleaving TIC with deinterleave_sim() (confirmed
-# empirically) discards the Scan-cycle points and keeps only the
-# SIM-cycle points -- which can only ever reflect the already-monitored
-# analyte/IS ions, never a genuine unknown compound. This produced a
-# badly misleading result: real, cleanly-resolved chromatographic peaks
-# (confirmed by direct visual inspection against ASTRA Analysis5 Line 25,
-# ~9-13 real peaks) were smeared into an apparent sawtooth "noise" floor
-# by the un-deinterleaved rolling-average + baseline correction, making
-# them statistically indistinguishable from noise -- not because they
-# were noise, but because every "quiet" and "peak" region alike was a
-# blend of two different signals the whole time.
-#
-# The correct fix: for each detected close pair, keep whichever point
-# has the HIGHER value (a direct, robust proxy for "this is the
-# Scan-cycle point" -- summing 16-21 ions is reliably larger than
-# summing 3-4, without needing to know the exact SIM group composition
-# active at that retention time). Discard the lower (SIM-cycle) point.
-#
-# Args:
-#   df         : data frame with RetentionTime and a value column
-#                (named by value_col), sorted or unsorted
-#   value_col  : name of the intensity/TIC column to compare within
-#                each pair (default "TIC")
-#   pair_gap   : maximum time gap (seconds) between two consecutive
-#                points to be considered a pair (default 0.1s; same
-#                convention as deinterleave_sim())
-#
-# Returns:
-#   data frame with the same columns, keeping the higher-value point
-#   of each pair plus any orphan (unpaired) points. Row count is
-#   approximately halved when interleaving is present.
-
-deinterleave_tic <- function(df, value_col = "TIC", pair_gap = 0.1) {
-
-  n <- nrow(df)
-  if (n < 2) return(df)
-
-  df <- df[order(df$RetentionTime), ]
-  deltas <- diff(df$RetentionTime)
-
-  is_group_b <- c(FALSE, deltas < pair_gap)  # second of pair
-  is_group_a <- c(deltas < pair_gap, FALSE)  # first of pair
-  is_orphan  <- !is_group_a & !is_group_b
-
-  keep <- is_orphan
-
-  pair_a_idx <- which(is_group_a)
-  pair_b_idx <- pair_a_idx + 1L
-  a_higher <- df[[value_col]][pair_a_idx] >= df[[value_col]][pair_b_idx]
-
-  keep[pair_a_idx[a_higher]]  <- TRUE
-  keep[pair_b_idx[!a_higher]] <- TRUE
-
-  df[keep, ]
-}
-
-#############################################################
 #####          Trapezoidal Peak Area Integration        #####
 #############################################################
 # Computes peak area by trapezoidal integration over ordered
@@ -327,9 +245,10 @@ process_sim_channel <- function(raw_data, mz, rt_windows,
 
   # Filter to this m/z using a +/- 0.5 Da window to capture
   # centroid drift (e.g. m/z 46 vs 46.1 from different scan groups)
-  channel_data <- raw_data[abs(raw_data$Mass - mz) < 0.5, , drop = FALSE]
-  channel_data <- channel_data[, c("RetentionTime", "Intensity"), drop = FALSE]
-  channel_data <- channel_data[channel_data$RetentionTime < rt_upper_limit, , drop = FALSE]
+  channel_data <- raw_data %>%
+    dplyr::filter(abs(Mass - mz) < 0.5) %>%
+    dplyr::select(RetentionTime, Intensity) %>%
+    dplyr::filter(RetentionTime < rt_upper_limit)
 
   # Guard: no data for this m/z channel
   if (nrow(channel_data) == 0) {
@@ -409,115 +328,6 @@ process_sim_channel <- function(raw_data, mz, rt_windows,
 }
 
 #############################################################
-#####   TIC "Other Significant Peak" Detection           #####
-#############################################################
-# Scans a baseline-corrected, DEINTERLEAVED (see deinterleave_tic()
-# above -- this MUST be applied by the caller before baseline
-# correction) TIC trace for peaks NOT explained by either analyte's own
-# expected retention time (added Aug 2026 -- see CONTEXT.md "Blank
-# Other-Significant-Peak Detection" session; implements the "other
-# significant peak" branch of Diagnostics/Improved_QC_Flowchart.dot
-# Section A, A2/A_OTHER).
-#
-# FINAL DESIGN (after 3 redesigns -- see GlobalCode.R's
-# tic_other_peak_min_height comment for the full history): a single
-# ABSOLUTE height floor (min_height) on the baseline-corrected signal --
-# the same design pattern as MinPeakHeight_PETN/RDX elsewhere in this
-# pipeline. ModPeaks()'s own candidacy check (height above LOCAL
-# minimum, with a minimum width) already does legitimate local
-# peak-shape detection; no separate relative/statistical significance
-# test on top of it is needed once the input signal is correctly
-# extracted (i.e. deinterleaved). Two earlier, more complex designs
-# (a region-pooled noise estimate, then per-candidate local flanking
-# windows) were both defeated by real data -- not by a flawed statistic,
-# but because the underlying signal itself was never deinterleaved,
-# smearing real peaks into an apparent noise floor throughout the whole
-# chromatogram. Once fixed at the extraction level, a simple absolute
-# floor works cleanly (validated against 14 real injections spanning
-# both studies -- see GlobalCode.R).
-#
-# A fixed front-edge exclusion zone (front_edge_clear) removes a
-# universal residual solvent-front artefact present, at near-identical
-# magnitude, in every injection -- confirmed empirically to decay to a
-# stable background by ~140s (default 150s gives a small safety margin),
-# and confirmed still present (i.e. NOT an interleaving artefact itself)
-# even after correct deinterleaving.
-#
-# This function is deliberately non-gating by design -- it is purely a
-# diagnostic/detection primitive. Whatever calls it decides what (if
-# anything) to do with the result; see evaluate_blanks() in
-# Code/InjectionAcceptance.R, which per the flowchart must NOT let this
-# affect blank_status/petn_blank_bracket/rdx_blank_bracket.
-#
-# Args:
-#   baseline_corrected : data frame with RetentionTime, Subtracted
-#                         columns (e.g. from apply_baseline_correction()
-#                         on ALREADY-DEINTERLEAVED data -- see
-#                         deinterleave_tic() above)
-#   analyte_rts         : numeric vector of the analytes' own expected
-#                         RTs (e.g. c(petn_rt, rdx_rt)); NA values ignored
-#   front_edge_clear    : RT (s) below which data is excluded entirely
-#                         (default 150)
-#   rt_buffer           : seconds excluded on each side of
-#                         min(analyte_rts)/max(analyte_rts) (default 25)
-#   min_height          : absolute significance floor for ModPeaks()
-#                         (default 20000 -- see GlobalCode.R
-#                         tic_other_peak_min_height for derivation)
-#   min_usable_points   : minimum data points required in the usable
-#                         (non-excluded) region before attempting
-#                         detection at all (default 10)
-#
-# Returns:
-#   list with:
-#     count : number of candidates clearing the height floor (the TRUE
-#             total -- may exceed nrow(peaks) if a caller subsequently
-#             caps how many it reports/exports, e.g. via
-#             tic_other_peak_max_report in GlobalCode.R)
-#     peaks : data frame (rt, height), one row per candidate, sorted by
-#             height descending (largest first); zero rows if none
-#             found.
-
-find_other_tic_peaks <- function(baseline_corrected, analyte_rts,
-                                  front_edge_clear = 150, rt_buffer = 25,
-                                  min_height = 20000, min_usable_points = 10) {
-
-  empty_peaks <- data.frame(rt = numeric(0), height = numeric(0))
-  na_result <- list(count = 0L, peaks = empty_peaks)
-
-  analyte_rts <- analyte_rts[!is.na(analyte_rts)]
-  if (length(analyte_rts) == 0 || nrow(baseline_corrected) == 0) {
-    return(na_result)
-  }
-
-  excl_lo <- min(analyte_rts) - rt_buffer
-  excl_hi <- max(analyte_rts) + rt_buffer
-
-  usable <- baseline_corrected[
-    baseline_corrected$RetentionTime >= front_edge_clear &
-    (baseline_corrected$RetentionTime <= excl_lo | baseline_corrected$RetentionTime >= excl_hi),
-    , drop = FALSE
-  ]
-  usable <- usable[order(usable$RetentionTime), c("RetentionTime", "Subtracted")]
-
-  if (nrow(usable) < min_usable_points ||
-      max(usable$Subtracted, na.rm = TRUE) < min_height) {
-    return(na_result)
-  }
-
-  peaks <- ModPeaks(data.frame(x = usable$RetentionTime, y = usable$Subtracted),
-                     minPH = min_height, minPW = 0.2)
-
-  if (nrow(peaks) == 0) return(na_result)
-
-  result_peaks <- data.frame(rt = peaks$x, height = peaks$y)
-  # Largest first
-  result_peaks <- result_peaks[order(-result_peaks$height), , drop = FALSE]
-  rownames(result_peaks) <- NULL
-
-  list(count = nrow(result_peaks), peaks = result_peaks)
-}
-
-#############################################################
 #####        Signal-to-Noise Ratio Calculation           #####
 #############################################################
 # Calculates the signal-to-noise ratio (SNR) for a detected
@@ -553,11 +363,11 @@ calculate_snr <- function(baseline_corrected, peak_height,
   }
 
   # Extract noise region from baseline-corrected signal
-  noise_data <- baseline_corrected[
-    baseline_corrected$RetentionTime >= noise_window[1] &
-    baseline_corrected$RetentionTime <= noise_window[2],
-    , drop = FALSE
-  ]
+  noise_data <- baseline_corrected %>%
+    dplyr::filter(
+      RetentionTime >= noise_window[1] &
+      RetentionTime <= noise_window[2]
+    )
 
   if (nrow(noise_data) < min_noise_points) {
     warning("Noise window [", noise_window[1], ", ", noise_window[2],
@@ -646,11 +456,8 @@ extract_peak_area <- function(peaks, signal, expected_rt, step_size,
   }
 
   # Filter peaks to expected RT window
-  candidate <- peaks[
-    peaks$x < (expected_rt + rt_tolerance) & 
-    peaks$x > (expected_rt - rt_tolerance),
-    , drop = FALSE
-  ]
+  candidate <- peaks %>%
+    dplyr::filter(x < (expected_rt + rt_tolerance) & x > (expected_rt - rt_tolerance))
 
   if (nrow(candidate) == 0) {
     return(na_result)
@@ -670,26 +477,8 @@ extract_peak_area <- function(peaks, signal, expected_rt, step_size,
   lmin <- peak_rt - (boundary_steps * step_size)
   lmax <- peak_rt + (boundary_steps * step_size)
 
-  peak_data <- signal[
-    signal$RTime >= lmin & signal$RTime <= lmax,
-    , drop = FALSE
-  ]
-
-  # Floor at zero before integration. Baseline correction (rollingBall) can
-  # overshoot/undershoot near small peaks, leaving negative "shoulders" in
-  # the baseline-corrected signal immediately flanking the peak apex. Left
-  # unfloored, trapz_area() sums these negative excursions together with
-  # the true positive peak area, partially cancelling it out -- this is
-  # negligible for large peaks but can distort small/near-LOQ peak areas by
-  # several-fold (verified against ASTRA Analysis4 pilot data, August 2026;
-  # see also the "Negative Peak Area Issue" noted for RDX in CONTEXT.md).
-  # Chromatographic intensity cannot be physically negative, so flooring at
-  # zero here is the standard/correct treatment. This intentionally does
-  # NOT touch calculate_snr()'s noise-window statistic (noise is legitimately
-  # bidirectional; flooring it would artificially shrink the noise SD and
-  # inflate every SNR value), nor peak height/detection (already determined
-  # above from the unfloored signal).
-  peak_data$Intensity <- pmax(peak_data$Intensity, 0)
+  peak_data <- signal %>%
+    dplyr::filter(dplyr::between(RTime, lmin, lmax))
 
   if (nrow(peak_data) < 2) {
     return(list(rt = peak_rt, pa = NA_real_,
@@ -750,7 +539,6 @@ extract_peak_area <- function(peaks, signal, expected_rt, step_size,
 plot_integration <- function(baseline_corrected, signal, peak_result,
                               expected_rt, step_size, compound_name,
                               boundary_steps = 15, save_path, filename,
-                              noise_window = NULL,
                               ylim = NULL) {
 
   # Nothing to plot if no peak was detected
@@ -767,31 +555,15 @@ plot_integration <- function(baseline_corrected, signal, peak_result,
   plot_min <- peak_rt - (boundary_steps * step_size) - plot_margin
   plot_max <- peak_rt + (boundary_steps * step_size) + plot_margin
 
-  # Extend plot range to include noise window if provided
-  if (!is.null(noise_window) && length(noise_window) == 2) {
-    plot_min <- min(plot_min, noise_window[1])
-    plot_max <- max(plot_max, noise_window[2])
-  }
-
   # Filter baseline-corrected data to plot range (context trace)
-  context_data <- baseline_corrected[
-    baseline_corrected$RetentionTime >= plot_min & 
-    baseline_corrected$RetentionTime <= plot_max,
-    , drop = FALSE
-  ]
+  context_data <- baseline_corrected %>%
+    dplyr::filter(RetentionTime >= plot_min & RetentionTime <= plot_max)
 
   if (nrow(context_data) == 0) return(invisible(NULL))
 
   # Filter signal data to integration window (shaded area)
-  integration_data <- signal[
-    signal$RTime >= lmin & signal$RTime <= lmax,
-    , drop = FALSE
-  ]
-  # Floor to match the flooring applied in extract_peak_area() before
-  # trapz_area(), so the shaded area shown here matches the annotated PA.
-  # The wider grey context_data trace below is intentionally left
-  # unfloored so baseline-correction ringing remains visible for QA.
-  integration_data$Intensity <- pmax(integration_data$Intensity, 0)
+  integration_data <- signal %>%
+    dplyr::filter(dplyr::between(RTime, lmin, lmax))
 
   # Build annotation text
   ann_parts <- paste0(compound_name)
@@ -821,30 +593,30 @@ plot_integration <- function(baseline_corrected, signal, peak_result,
 
   # Build the plot
   p <- ggplot() +
+    # Context trace (baseline-corrected signal around the peak)
     geom_line(data = context_data,
               aes(x = RetentionTime, y = Subtracted),
               colour = "grey50", linewidth = 0.4) +
+    # Shaded integration area
     geom_area(data = integration_data,
               aes(x = RTime, y = Intensity),
               fill = "#1f77b4", alpha = 0.3) +
+    # Integration signal line on top of shading
     geom_line(data = integration_data,
               aes(x = RTime, y = Intensity),
               colour = "#1f77b4", linewidth = 0.6) +
+    # Integration boundaries
     geom_vline(xintercept = lmin, colour = "red", linetype = "solid", linewidth = 0.5) +
     geom_vline(xintercept = lmax, colour = "red", linetype = "solid", linewidth = 0.5) +
+    # Detected peak RT
     geom_vline(xintercept = peak_rt, colour = "black", linetype = "dashed", linewidth = 0.5) +
-    geom_vline(xintercept = expected_rt, colour = "blue", linetype = "dotted", linewidth = 0.5)
-
-  if (!is.null(noise_window) && length(noise_window) == 2) {
-    p <- p +
-      geom_vline(xintercept = noise_window[1], colour = "orange", linetype = "dashed", linewidth = 0.5) +
-      geom_vline(xintercept = noise_window[2], colour = "orange", linetype = "dashed", linewidth = 0.5)
-  }
-
-  p <- p +
+    # Expected RT
+    geom_vline(xintercept = expected_rt, colour = "blue", linetype = "dotted", linewidth = 0.5) +
+    # Annotation
     annotate("text", x = plot_min + (plot_max - plot_min) * 0.02,
              y = ann_y_top,
              label = ann_parts, hjust = 0, size = 3) +
+    # Legend-style labels for the vertical lines
     annotate("text", x = peak_rt, y = ann_y_bottom,
              label = sprintf(" RT: %.1fs", peak_rt), hjust = 0, vjust = 1, size = 2.5) +
     annotate("text", x = expected_rt, y = ann_y_bottom,

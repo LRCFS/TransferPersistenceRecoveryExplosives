@@ -1,0 +1,218 @@
+digraph GCMS_QC_Flow {
+  rankdir=TB;
+  fontname="Helvetica";
+  fontsize=20;
+  labelloc="t";
+  label="GC-MS PETN/RDX Injection & Sample Acceptance Flowchart (Revised v3)\nSTATUS: TARGET DESIGN -- describes the INTENDED future pipeline. Sections A and D, and several\nSection B/C refinements below, are NOT yet implemented in the live script (see legend notes).";
+  bgcolor="white";
+  nodesep=0.35;
+  ranksep=0.55;
+  splines=true;
+  node [fontname="Helvetica", fontsize=11, style="filled,rounded", shape=box, margin="0.15,0.08"];
+  edge [fontname="Helvetica", fontsize=9.5];
+
+  // ---------- COLOUR KEY ----------
+  // green   #d1e7dd / #0f5132  = PASS / accepted outcome
+  // amber   #fff3cd / #664d03  = WARN / qualitative flag / reduced confidence / flagged design change
+  // red     #f8d7da / #842029  = FAIL / reanalysis required
+  // blue    #cfe2ff / #084298  = decision point
+  // purple  #e2d9f3 / #432874  = routing node (recalls an earlier answer, not a new decision)
+  // grey    #e2e3e5 / #41464b  = register / log (informational, read by later checks)
+
+  START [label="Run GC-MS Sequence", shape=ellipse, fillcolor="#41464b", fontcolor=white];
+
+  //////////////////////////////////////////////////////////////////
+  subgraph cluster_A {
+    label="SECTION A -- Blank Injection Evaluation  (run for every blank)";
+    style="filled"; color="#adb5bd"; fillcolor="#f8f9fa"; fontsize=13; fontcolor="#212529";
+
+    A0 [label="Analyse blank injection\n(same peak-detection pipeline as samples)"];
+    A1 [label="PETN or RDX peak\ndetected? (SNR ≥ 3)", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    A2 [label="Any other significant peak?\n(height above clean-blank baseline)", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    A_CONTAM [label="BLANK CONTAMINATED\nInvestigate carryover source.\nFlag as HIGH carryover-risk for any\nQC/sample bracketed by this blank.", fillcolor="#f8d7da", fontcolor="#842029"];
+    A_OTHER [label="NON-TARGET PEAK PRESENT\nInstrument-performance risk only --\ndoes NOT set a carryover-risk flag\n(no PETN/RDX signal was seen, so there\nis nothing to carry over).", fillcolor="#fff3cd", fontcolor="#664d03"];
+    A_PASS [label="BLANK CLEAN -- PASS\nNo carryover-risk flag set.", fillcolor="#d1e7dd", fontcolor="#0f5132"];
+    INSTR_LOG [label="Instrument-Performance Log\n(trend-only; does NOT gate anything\ndownstream -- separate from the\ncarryover-risk register below)", shape=note, fillcolor="#e2e3e5", fontcolor="#41464b", fontsize=9.5];
+
+    A0 -> A1;
+    A1 -> A_CONTAM [label="Yes"];
+    A1 -> A2 [label="No"];
+    A2 -> A_OTHER [label="Yes"];
+    A2 -> A_PASS [label="No"];
+    A_OTHER -> INSTR_LOG;
+  }
+
+  BLANK_REG [label="Blank Carryover-Risk Register\n(per blank: clean / flagged)\nOnly an ACTUAL PETN/RDX detection (A_CONTAM)\nflags a blank here -- a non-target peak (A_OTHER)\nis instrument-performance information only and\ncounts as CLEAN for this register.\nRead by the bracketing-blank check in Section C.", shape=cylinder, fillcolor="#e2e3e5", fontcolor="#41464b", fontsize=10.5];
+
+  START -> A0;
+  A_CONTAM -> BLANK_REG;
+  A_PASS -> BLANK_REG;
+  A_OTHER -> BLANK_REG [style=dashed, color="#adb5bd", label="counts as clean"];
+
+  //////////////////////////////////////////////////////////////////
+  subgraph cluster_B {
+    label="SECTION B -- QC Evaluation  (both PETN & RDX; each level bracketed pre- & post- sample block)";
+    style="filled"; color="#adb5bd"; fillcolor="#f8f9fa"; fontsize=13; fontcolor="#212529";
+
+    B0 [label="Analyse QC injections"];
+    B_INJCHECK [label="Did THIS QC injection itself\nsucceed? (IS detected &\nPA ≥ minimum criteria)", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    B_HASMORE [label="Is a further QC of the SAME\nlevel & analyte available,\none position further from\nthe sample block?", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    B_SUBSTITUTE [label="FALLBACK: substitute that\nfurther QC for this bracket\nposition (re-check its own\ninjection validity in turn)"];
+    B_NOSUB [label="No usable substitute in that\ndirection -- this bracket\nposition counts as MISSING", fillcolor="#f8d7da", fontcolor="#842029"];
+    B1 [label="QC concentration level?", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+
+    B2 [label="SNR ≥ 3 (LOD)?", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    B2b [label="SNR ≥ 10 also?\n(WARN tier -- applied uniformly to\nBOTH PETN and RDX)", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    B_SENS_FAIL [label="SENSITIVITY CHECK FAIL\nSystem LOD not met at this bracket.\nAny result relying on this bracket for\na negative/trace call must be reanalysed.", fillcolor="#f8d7da", fontcolor="#842029"];
+    B_SENS_WARN [label="SENSITIVITY CHECK WARN\n(3 ≤ SNR < 10)\nBracket usable; marginal sensitivity noted.", fillcolor="#fff3cd", fontcolor="#664d03"];
+    B_SENS_PASS [label="SENSITIVITY CHECK PASS", fillcolor="#d1e7dd", fontcolor="#0f5132"];
+
+    B3 [label="Quantitative bias\nwithin ±20%?", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    B_QUANT_PASS [label="QUANTITATION CHECK PASS", fillcolor="#d1e7dd", fontcolor="#0f5132"];
+    B_QUANT_FAIL [label="QUANTITATION CHECK FAIL\nAny quantified-positive result relying on\nthis bracket must be reanalysed.", fillcolor="#f8d7da", fontcolor="#842029"];
+
+    B0 -> B_INJCHECK;
+    B_INJCHECK -> B1 [label="Yes, injected OK"];
+    B_INJCHECK -> B_HASMORE [label="No (this QC\ndid not inject)"];
+    B_HASMORE -> B_SUBSTITUTE [label="Yes"];
+    B_HASMORE -> B_NOSUB [label="No"];
+    B_SUBSTITUTE -> B_INJCHECK [label="re-check substitute"];
+    B1 -> B2 [label="0.2ng\n(sensitivity check)"];
+    B1 -> B3 [label="6ng\n(quantitation check)"];
+    B2 -> B_SENS_FAIL [label="No"];
+    B2 -> B2b [label="Yes"];
+    B2b -> B_SENS_WARN [label="No"];
+    B2b -> B_SENS_PASS [label="Yes"];
+    B3 -> B_QUANT_PASS [label="Yes"];
+    B3 -> B_QUANT_FAIL [label="No"];
+  }
+
+  QC_REG [label="QC Bracket Status Register (per analyte, per level)\nEvaluated at BOTH the pre- and post- QC injection\n(after the injection-fallback substitution above):\n• Combined = PASS only if pre AND post are BOTH present\n   AND BOTH PASS\n• Combined = WARN only if BOTH present and at least one\n   is WARN (0.2ng only -- 6ng has no WARN tier)\n• Combined = FAIL if EITHER side is MISSING (incl. an\n   injection failure with no usable substitute) or FAILED\n   -- both sides are REQUIRED", shape=cylinder, fillcolor="#e2e3e5", fontcolor="#41464b", fontsize=10.5];
+
+  BLANK_REG -> B0 [label="sequence continues"];
+  B_NOSUB -> QC_REG;
+  B_SENS_FAIL -> QC_REG; B_SENS_WARN -> QC_REG; B_SENS_PASS -> QC_REG;
+  B_QUANT_PASS -> QC_REG; B_QUANT_FAIL -> QC_REG;
+
+  //////////////////////////////////////////////////////////////////
+  subgraph cluster_C {
+    label="SECTION C -- Per-Analyte Evaluation (run INDEPENDENTLY for PETN and for RDX; NCs run the IDENTICAL tree -- no structural divergence)";
+    style="filled"; color="#adb5bd"; fillcolor="#f8f9fa"; fontsize=13; fontcolor="#212529";
+
+    C0 [label="Analyse sample/NC injection"];
+    C1 [label="Internal Standard (IS) detected\n& PA ≥ minimum criteria (1000)?", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    C_NOINJECT [label="ROW = FAIL: Injection failure\nOutcome = Reanalyse\nSHORT-CIRCUIT EXIT -- stops here immediately.\nNeither analyte's peaks nor Section D are\nevaluated at all for this row (first-failure-\nonly policy applies from the very first check).", fillcolor="#f8d7da", fontcolor="#842029"];
+    C_ISLOW [label="ROW = FAIL: IS abnormally low (PA=x)\nOutcome = Reanalyse\nSHORT-CIRCUIT EXIT -- stops here immediately,\nidentical treatment to Not detected (C_NOINJECT).\n[Fixed 2026-08-11: previously a WARNING caveat\nthat continued to C2 -- an abnormally low IS\ndenominator can inflate an IS-ratio-quantified\nanalyte's (RDX, or PETN when IS-ratio mode is\nused) reported concentration/recovery to\nphysically impossible values (e.g. observed\nRDX recovery = 164.8%). No override exists.]", fillcolor="#f8d7da", fontcolor="#842029"];
+
+    C2 [label="FOR EACH ANALYTE (PETN, RDX)\nindependently, starting here:\nIs a peak present?\n(height ≥ minimum criteria)", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+
+    C3 [label="Are bracketing blanks clean\nfor THIS analyte?", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    C_CARRYOVER [label="PEAK MAY BE DUE TO CARRYOVER\nCannot distinguish from genuine\ndetection -- reanalysis required.", fillcolor="#f8d7da", fontcolor="#842029"];
+
+    C4 [label="Peak SNR classification\nfor THIS analyte?", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+
+    C4b [label="[Quantifiable tier ONLY, added 2026-08-12]\nAre this analyte's designated\nconfirmatory ion(s) ALSO detected\n(SNR ≥ 3) at the same RT?\nPETN: m/z76 only. RDX: m/z46 AND m/z75.\n(Not checked at Trace/Negative tier --\nqualifier signal too weak to be meaningful\nthere. Skipped, not failed, if the qualifier\ncolumns don't exist in the data at all.)", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    C_NOCONFIRM [label="CONFIRMATORY ION NOT DETECTED\nIdentity not confirmed -- a peak at the right\nSNR/RT alone is insufficient; independent\nfragment-ion evidence is required for a\nQuantifiable-tier call. Reanalysis required.\n[m/z57 deliberately excluded as a PETN\nqualifier -- only 18.2% of pure Cal standards\never reach a measurable SNR for it; requiring\nit would fail ~70-100% of genuine detections.\nA ratio-based check was also rejected -- RDX's\nqualifier/quantifier ratio showed real,\nsignificant concentration-dependence\n(r=-0.72/-0.69, p<1e-10), so a fixed\nratio+tolerance would not be valid across\nthe calibration range.]", fillcolor="#f8d7da", fontcolor="#842029"];
+
+    C6 [label="[Quantifiable tier ONLY]\nDo bracketing 6ng QCs\n(pre & post, BOTH required)\npass? (reads QC Bracket Register)", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    C_6FAIL [label="6ng QC BRACKET FAILED OR UNAVAILABLE\nQuantitation accuracy not confirmed for this\npositive result -- reanalysis required.\nOnly checked when this analyte is Quantifiable;\nno override exists.", fillcolor="#f8d7da", fontcolor="#842029"];
+
+    C7 [label="[Trace or Negative tier ONLY]\nDo bracketing 0.2ng QCs\n(pre & post, BOTH required)\npass? (reads QC Bracket Register)", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    C_02FAIL [label="0.2ng QC BRACKET FAILED OR UNAVAILABLE\nSystem LOD not confirmed adequate at the time\nof this result -- reanalysis required.\nNo override, for samples OR NCs: a missing/\nfailed bracket always hard-fails here.", fillcolor="#f8d7da", fontcolor="#842029"];
+    C_CAVEAT [label="CAVEAT NOTED\n(0.2ng bracket WARN -- both sides present,\nmarginal but usable)\nContributes to row-level PASS* in Section D.", fillcolor="#fff3cd", fontcolor="#664d03"];
+
+    C_ROUTE [label="Route by THIS analyte's SNR tier\n(determined earlier at the peak-present /\nSNR-classification steps above, carried\nforward unchanged by the bracket checks)", shape=hexagon, fillcolor="#e2d9f3", fontcolor="#432874"];
+    C_QUANTIFIED [label="ANALYTE DETECTED AND QUANTIFIED\n(append caveat if flagged above)", fillcolor="#d1e7dd", fontcolor="#0f5132"];
+    C_TRACE [label="TRACE ANALYTE DETECTED\nBelow quantitation level -- reported as a\nqualitative positive, not a numeric value.\nGENUINE outcome (not forced to FAIL), but ALWAYS\ncontributes a WARNING caveat to Section D --\neven if brackets were clean -- since it is\ninherently a below-quantitation call.\n[DESIGN CHANGE vs. current script -- see\nlegend: current code always FAILs this\ntier for samples.]", fillcolor="#fff3cd", fontcolor="#664d03"];
+    C_NEGATIVE [label="ANALYTE NEGATIVE\nNo peak / below LOD, AND system LOD\nconfirmed adequate via 0.2ng bracket.", fillcolor="#d1e7dd", fontcolor="#0f5132"];
+
+    C0 -> C1;
+    C1 -> C_NOINJECT [label="Not detected"];
+    C1 -> C_ISLOW [label="Detected, low"];
+    C1 -> C2 [label="OK"];
+
+    C2 -> C7 [label="No peak\n(tier = Negative,\npending LOD confirmation)"];
+    C2 -> C3 [label="Yes, peak\npresent"];
+
+    C3 -> C_CARRYOVER [label="No (flagged)"];
+    C3 -> C4 [label="Yes (clean)"];
+
+    C4 -> C4b [label="SNR ≥ 10\n(tier = Quantifiable /\n\"positive\" -> 6ng only)"];
+    C4 -> C7 [label="3 ≤ SNR < 10\n(tier = Trace -> 0.2ng only)"];
+    C4 -> C7 [label="SNR < 3\n(tier = Negative, pending\nLOD confirmation -> 0.2ng only)"];
+
+    C4b -> C_NOCONFIRM [label="No"];
+    C4b -> C6 [label="Yes\n(or check not applicable --\nqualifier columns absent)"];
+
+    C6 -> C_6FAIL [label="No"];
+    C6 -> C_ROUTE [label="Yes"];
+
+    C7 -> C_ROUTE [label="PASS (both sides)"];
+    C7 -> C_CAVEAT [label="WARN (both present,\nneither missing/FAIL)"];
+    C7 -> C_02FAIL [label="Missing or FAIL\n(either side) -- no override"];
+
+    C_CAVEAT -> C_ROUTE;
+
+    C_ROUTE -> C_QUANTIFIED [label="Quantifiable"];
+    C_ROUTE -> C_TRACE [label="Trace"];
+    C_ROUTE -> C_NEGATIVE [label="Negative"];
+  }
+
+  QC_REG -> C0 [label="sequence continues"];
+  BLANK_REG -> C3 [style=dashed, color="#41464b", constraint=false, label="reads register"];
+  QC_REG -> C6 [style=dashed, color="#41464b", constraint=false, label="reads register"];
+  QC_REG -> C7 [style=dashed, color="#41464b", constraint=false, label="reads register"];
+
+  //////////////////////////////////////////////////////////////////
+  subgraph cluster_D {
+    label="SECTION D -- Combine Per-Analyte Results into ONE Row-Level Outcome (FIRST-FAILURE-ONLY policy, fixed check order: IS -> PETN -> RDX)";
+    style="filled"; color="#adb5bd"; fillcolor="#f8f9fa"; fontsize=13; fontcolor="#212529";
+
+    D0 [label="Collect this row's results:\nPETN's Section C outcome +\nRDX's Section C outcome\n(only reached if IS passed C1 --\nan injection failure never gets here)"];
+    D2 [label="Did PETN's Section C path end in\na FAIL-class terminal (carryover /\nconfirmatory-ion-not-detected /\n6ng-fail / 0.2ng-fail)?", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    D_FAIL_PETN [label="ROW = FAIL: <PETN's specific reason>\nOutcome = Reanalyse\n(RDX's result is not reported --\nfirst-failure-only policy)", fillcolor="#f8d7da", fontcolor="#842029"];
+
+    D3 [label="Did RDX's Section C path end in\na FAIL-class terminal?", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    D_FAIL_RDX [label="ROW = FAIL: <RDX's specific reason>\nOutcome = Reanalyse", fillcolor="#f8d7da", fontcolor="#842029"];
+
+    D4 [label="Does either analyte carry a WARNING\ncaveat -- 0.2ng WARN, a 0.2ng\noverride, OR either analyte's tier is\nTrace (always a caveat, even if brackets\nwere clean)?", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    D_PASSSTAR [label="ROW = PASS*\nOutcome = Complete\n(both analytes' Quantified/Trace/Negative\nresults are reported, with caveat noted --\nincluding: any analyte reported as Trace\nalways lands here, never as a plain PASS)", fillcolor="#fff3cd", fontcolor="#664d03"];
+    D_PASS [label="ROW = PASS\nOutcome = Complete\n(both analytes' results reported cleanly)", fillcolor="#d1e7dd", fontcolor="#0f5132"];
+
+    D0 -> D2;
+    D2 -> D_FAIL_PETN [label="Yes"];
+    D2 -> D3 [label="No"];
+    D3 -> D_FAIL_RDX [label="Yes"];
+    D3 -> D4 [label="No"];
+    D4 -> D_PASSSTAR [label="Yes"];
+    D4 -> D_PASS [label="No"];
+  }
+
+  C_CARRYOVER -> D0;
+  C_NOCONFIRM -> D0;
+  C_6FAIL -> D0;
+  C_02FAIL -> D0;
+  C_QUANTIFIED -> D0;
+  C_TRACE -> D0;
+  C_NEGATIVE -> D0;
+
+  //////////////////////////////////////////////////////////////////
+  subgraph cluster_L {
+    label="Legend & Notes";
+    style="filled"; color="#adb5bd"; fillcolor="#ffffff"; fontsize=13; fontcolor="#212529";
+    node [shape=note, fillcolor="#ffffff", fontsize=9.5, style="filled"];
+
+    KEY [label="Colour key:\nGreen = PASS / accepted outcome\nAmber = WARN / qualitative flag / flagged design change\nRed = FAIL / reanalysis required\nBlue = decision point\nPurple hexagon = routing node (recalls an earlier\n  answer, not a new decision)\nGrey cylinder = register (informational, read by\n  later checks)"];
+    NOTE1 [label="Every decision node shows BOTH outcomes\nexplicitly (no implicit 'pass' branch)."];
+    NOTE2 [label="Carryover (bracketing-blank) check applies to\nANY detected peak, not only quantifiable ones --\na 'trace' result can also be carryover."];
+    NOTE3 [label="Bracket checks are now CONDITIONAL on tier, not\nuniversal: 6ng (accuracy) is only checked when this\nanalyte is Quantifiable ('positive'); 0.2ng (LOD) is\nonly checked when this analyte is Trace or Negative.\nA missing pre- or post- QC counts as FAIL, not WARN\n(both required) -- UNLESS a same-level/analyte QC\nfurther from the sample block can be substituted for\nan injection-failed bracket QC (Section B fallback)."];
+    NOTE3B [label="CONFIRMED DESIGN DECISION: there is NO override at\neither bracket gate, for samples or NCs. Because\n0.2ng is only ever checked when an analyte's tier is\nTrace/Negative (never Quantifiable), the old 'sample's\nown peak is Quantifiable, so downgrade the 0.2ng FAIL'\nescape hatch no longer has a coherent trigger and has\nbeen removed entirely -- a missing/failed 0.2ng (or\n6ng) bracket is always a hard FAIL, with identical\ntreatment for samples and NCs."];
+    NOTE4 [label="PETN/RDX asymmetry -- justified vs. removed:\nKEPT (grounded in chemistry/instrumentation):\n IS-ratio quantification for RDX only (15N-RDX is\n not a valid drift proxy for PETN -- tested and\n rejected); drift correction for PETN only;\n noise-window position; per-analyte height/SNR\n floors.\nREMOVED (was an incidental implementation gap,\nnot a scientific requirement): the 0.2ng\nsensitivity WARN tier is now identical for both\nanalytes (Section B)."];
+    NOTE5 [label="Row-level outcome (Section D) uses a FIXED,\nagreed check order -- IS, then PETN, then RDX --\nand reports ONLY the first blocking failure found.\nThe IS check short-circuits immediately at C1 (see\nC_NOINJECT / C_ISLOW -- BOTH IS outcomes are hard\nFAILs as of 2026-08-11) -- it does NOT wait for\nSection D; only PETN-vs-RDX ordering is resolved\nthere, since IS already gates entry to the\nper-analyte loop."];
+    NOTE6 [label="CONFIRMED DESIGN DECISION: a bracket-confirmed\ntrace-level detection is a genuine, reportable\noutcome, not an automatic reanalysis trigger --\nthis is a deliberate departure from the current\nlive script, whose compute_analysis_accepted()\ntoday auto-FAILs ANY sample with a detected-but-\nnot-Quantifiable peak (Below_LOD or Below_LOQ);\ncurrently only a fully Quantifiable result or a\ntrue no-peak-at-all (NA) avoids FAIL. Under this\nchart, a Trace result ALWAYS carries a WARNING\ncaveat forward (Section D, D4) -- if every other\ncheck passes, the row is PASS*, never a plain\nPASS, reflecting the reduced confidence of an\nunquantified detection."];
+    NOTE7 [label="Negative Controls (NCs) now run the IDENTICAL tree\nas samples (Sections C, then D) with NO structural\ndifference -- the two points that used to distinguish\nthem (auto-fail on non-Quantifiable, and the 0.2ng\noverride) have both been removed/replaced above. NCs\nand samples diverge ONLY in reporting-label vocabulary\nat the very end (e.g. 'Negative (clean)', 'Positive:\ntrace detected' map onto C_NEGATIVE/C_TRACE/\nC_QUANTIFIED at reporting time; not separately\ndiagrammed here)."];
+    NOTE8 [label="Confirmatory ion check (C4b, added 2026-08-12):\nderived empirically from all 11 'Accepted Analysis'\ndatasets (Cal standards + real Sample/QC data).\nPETN's second monitored ion (m/z57) was tested and\nREJECTED as a confirmatory requirement -- only 18.2%\nof pure Cal standards ever reach a measurable SNR for\nit, so requiring it would fail most genuine detections,\nnot catch misidentifications. m/z76 alone is used.\nRDX requires BOTH its monitored ions (m/z46, m/z75) --\nboth are reliably detected (~100% in Cal standards) and\nrequiring both costs zero extra failures on any real\nSample/QC/Cal row in the study. A ratio-based check\n(qualifier/quantifier PA ratio) was also investigated\nand rejected: RDX's ratio showed real, significant\nconcentration-dependence (r=-0.72/-0.69, p<1e-10),\nso a single fixed ratio+tolerance would not be valid\nacross the calibration range -- a qualitative detection\ncheck (SNR ≥ 3) was used instead. A full-scan (m/z\n41-200) survey at PETN's RT found no better second\nqualifier candidate than the currently-monitored ions."];
+
+    KEY -> NOTE1 -> NOTE2 -> NOTE3 -> NOTE3B -> NOTE4 -> NOTE5 -> NOTE6 -> NOTE7 -> NOTE8 [style=invis];
+  }
+}

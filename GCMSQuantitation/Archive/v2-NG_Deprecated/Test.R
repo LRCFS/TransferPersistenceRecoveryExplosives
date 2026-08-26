@@ -6,18 +6,11 @@
 # Prior running, GC-MS data must be converted using Proteo Wizard/ MsConvert
 # The MS1 files needs to be converted using the MsFilesReoganiser.R code
 
-# *********************************************************************
-# CONSOLIDATED VERSION: Uses only 15N-RDX as internal standard (no NG)
-# This version extracts:
-#   - RDX IS (15N-RDX) peak area from m/z 122 channel
-#   - Analyte peaks (PETN m/z 46, RDX m/z 120)
-# *********************************************************************
-
 #####################################################################
 # Set to TRUE to reprocess all files from scratch;
 # set to FALSE to skip files whose Summary output already exists
 reprocess_tic <- FALSE
-reprocess_sim <- FALSE
+reprocess_sim <- TRUE
 #####################################################################
 
 # Load Metadata files
@@ -62,29 +55,6 @@ for (file in filenameGcData) {
   
   DataTIC <- GcDataCodeOrdered
   
-  # De-interleave the TIC channel BEFORE any smoothing/baseline correction
-  # (added Aug 2026 -- see CONTEXT.md "Blank Other-Significant-Peak
-  # Detection" session for the full investigation). This instrument's
-  # "SIM/Scan" simultaneous acquisition mode alternates every raw TIC
-  # datapoint between a SIM-cycle total (sum of only the few currently
-  # time-windowed-monitored analyte/IS ions) and a Scan-cycle total (sum
-  # across the full m/z 41-200 survey sweep) -- two genuinely different
-  # signals, not a duplicate/redundant read of the same one. Rolling-
-  # averaging and baseline-correcting the raw alternating mix smeared
-  # real chromatographic peaks into an apparent sawtooth "noise" floor
-  # throughout the WHOLE run (confirmed directly: real, cleanly-resolved
-  # peaks visually confirmed on ASTRA Analysis5 were statistically
-  # indistinguishable from noise until this fix). deinterleave_tic()
-  # keeps the HIGHER-value point of each interleaved pair (a robust
-  # proxy for "this is the Scan-cycle point") -- the only channel that
-  # can ever show a genuine compound not among the specifically-
-  # monitored SIM ions, which is exactly what find_other_tic_peaks()
-  # below needs. This is the OPPOSITE selection rule from
-  # deinterleave_sim() (used for SIM channels, where both interleaved
-  # points genuinely measure the SAME m/z and the SECOND is correctly
-  # kept) -- do not swap these two functions' usage.
-  DataTIC <- deinterleave_tic(DataTIC, value_col = "TIC", pair_gap = 0.1)
-  
   # rolling average across the data, value set in Global
   smoothDataTIC <- DataTIC %>%
     mutate(srate_ma02 = rollmean(TIC, k = rolling.average, fill = NA))
@@ -93,7 +63,7 @@ for (file in filenameGcData) {
     select(RetentionTime, TIC=srate_ma02)
   
   DataTIC <- DataTIC %>%
-    filter(RetentionTime > 120)  # lowered from 180
+    filter(RetentionTime > 120)  # lowered from 180 to include NG region (~138s)
   
   DataTIC <- na.omit(DataTIC)
   
@@ -154,28 +124,6 @@ for (file in filenameGcData) {
   QTIC <- QTIC%>%
     select(RTime,TIC)
   
-  # -------------------------------------------------------------------
-  # "Other significant peak" detection (added Aug 2026) -- see
-  # CONTEXT.md "Blank Other-Significant-Peak Detection" session, and
-  # find_other_tic_peaks() in Code/ModPeaks.R for the full design notes.
-  # Purely additive/diagnostic: scans the same baseline-corrected TIC
-  # trace (Combined.bc.fillPeakTIC, already computed above) for peaks
-  # NOT explained by either analyte's own RT, using a much lower,
-  # noise-relative threshold than SignalMaxThresholdTIC above (which is
-  # tuned for gross artefacts only, not blank-level significance).
-  # Computed for every injection type (cheap -- reuses the already
-  # baseline-corrected signal), but only acted upon downstream for
-  # Blank-type rows (Code/InjectionAcceptance.R's evaluate_blanks()).
-  # Does NOT affect SignalMaxTIC/QTIC/the existing RTimeN/TICN columns
-  # above in any way.
-  other_peak <- find_other_tic_peaks(
-    Combined.bc.fillPeakTIC,
-    analyte_rts = c(analytes$PETN$rt, analytes$RDX$rt),
-    front_edge_clear = tic_quiet_front_edge_clear,
-    rt_buffer = tic_other_peak_rt_buffer,
-    min_height = tic_other_peak_min_height
-  )
-  
   if (nrow(QTIC) > 0){
     # Initialize an empty list to store the new columns
     columns <- list()
@@ -191,26 +139,6 @@ for (file in filenameGcData) {
     
     # Convert the list to a data frame (single row with multiple columns)
     columns <- na.omit(columns)
-
-    # Append "other significant peak" columns (see above) -- kept
-    # separate from the na.omit() step above (untouched, existing
-    # behaviour) since these are not subject to the same NA handling.
-    # count is the TRUE total found; rtN/heightN report up to
-    # tic_other_peak_max_report of them (largest first) so a
-    # recurring-but-secondary peak isn't masked by a single stronger
-    # one-off peak in the same injection -- see CONTEXT.md "Blank
-    # Other-Significant-Peak Detection: Recurring Peak Tracking".
-    columns[["tic_other_peak_count"]] <- other_peak$count
-    for (j in seq_len(tic_other_peak_max_report)) {
-      if (j <= nrow(other_peak$peaks)) {
-        columns[[paste0("tic_other_peak_rt", j)]]     <- other_peak$peaks$rt[j]
-        columns[[paste0("tic_other_peak_height", j)]] <- other_peak$peaks$height[j]
-      } else {
-        columns[[paste0("tic_other_peak_rt", j)]]     <- NA_real_
-        columns[[paste0("tic_other_peak_height", j)]] <- NA_real_
-      }
-    }
-
     TICPeaks <- as.data.frame(columns)
     write.table(TICPeaks, file=paste0(GcData.dir,GcDataName, "TIC.csv"), sep = ",", row.names = FALSE) 
   }
@@ -221,78 +149,58 @@ for (file in filenameGcData) {
 #######      Calculate PA for SIM                 #######
 #########################################################
 
-# Build a list of "channels" to process. Each channel has a unique key,
-# an m/z, a set of RT windows, and a minimum peak height (added Aug 2026
-# -- see CONTEXT.md "Confirmatory Ion Detection" session). Historically
-# there was exactly one channel per unique m/z (quantifier/IS roles never
-# shared a m/z). Qualifier (confirmatory) ions break that assumption --
-# e.g. m/z 46 is BOTH PETN's own quantifier ion AND RDX's qualifier ion
-# (confirmed in the real acqmeth.txt SIM group ions) -- so qualifier
-# channels are ALWAYS given their own dedicated, role-specific key
-# (never reusing/merging with a quantifier/IS channel's key), each with
-# its OWN RT window and its OWN (deliberately lenient) detection floor.
-# This is essential: process_sim_channel()/ModPeaks() apply a single
-# peak-height floor to whatever they're given, so sharing one call
-# between a strict quantifier role (needs a high floor to reject blank
-# noise, see MinPeakHeight_PETN's validation notes above) and a lenient
-# qualifier role (needs a low floor to detect a weaker fragment ion)
-# would silently weaken the quantifier's own noise rejection everywhere
-# in the channel -- exactly the kind of regression a per-role dedicated
-# channel avoids entirely, at the cost of (harmless) duplicate
-# baseline-correction work for the one shared m/z.
-channel_specs <- list()
-add_channel <- function(key, mz, rt, height, make_plots = TRUE) {
-  channel_specs[[key]] <<- list(mz = mz, windows = list(c(rt, 5)), height = height,
-                                 make_plots = make_plots)
+# Collect all unique m/z values needed across both IS and analytes
+all_mz <- unique(c(rdx_is_config$mz, petn_is_config$mz, sapply(analytes, function(a) a$mz)))
+
+# Create SIM subfolders for each m/z channel
+for (mz_val in all_mz) {
+  dir.create(file.path(GCSampleTrace.dir, sprintf("SIM_mz%s", mz_val)), recursive = TRUE)
 }
 
-# Quantifier/IS roles -- key = plain m/z (unchanged from prior behaviour).
-# Diagnostic plots (baseline-correction TIFF + integration TIFF) are kept
-# for these, as before.
-add_channel(as.character(rdx_is_config$mz), rdx_is_config$mz,
-            rdx_is_config$rt, rdx_is_config$min_peak_height)
-for (name in names(analytes)) {
-  a <- analytes[[name]]
-  add_channel(as.character(a$mz), a$mz, a$rt, a$min_peak_height)
-}
-
-# Qualifier (confirmatory) roles -- key = "<analyte>_qual<mz>", always
-# its own dedicated channel regardless of whether the m/z collides with
-# a quantifier/IS role above. `make_plots = FALSE`: per-injection
-# diagnostic TIFF plots (baseline-correction + integration) are
-# deliberately NOT generated for qualifier channels. Numeric extraction
-# (PA/PH/SNR -- the only thing the confirmatory-ion analysis actually
-# needs) still happens unconditionally below. This was found necessary
-# during real-data verification: with ~90 injections/dataset, uncompressed
-# TIFF plots for 4 qualifier channels + their integration plots consumed
-# ~10 GB per dataset (verified on Lab9), repeatedly exhausting disk space
-# during batch reprocessing -- see CONTEXT.md "Confirmatory Ion Detection"
-# session for the full incident. If per-injection visual QA of a specific
-# qualifier peak is ever needed, it can be regenerated ad hoc for that one
-# injection/channel rather than for the whole study by default.
-for (name in names(analytes)) {
-  a <- analytes[[name]]
-  if (is.null(a$qualifiers) || length(a$qualifiers) == 0) next
-  for (qmz in a$qualifiers) {
-    role_key <- paste0(tolower(name), "_qual", qmz)
-    add_channel(role_key, qmz, a$rt, MinPeakHeight_Qualifier, make_plots = FALSE)
+# Build RT windows for each m/z channel
+# Each window is c(centre, half_width) -- determines which RT regions
+# are kept after baseline correction for peak detection
+rt_windows_by_mz <- list()
+for (mz_val in all_mz) {
+  windows <- list()
+  if (rdx_is_config$mz == mz_val && !is.na(rdx_is_config$rt)) {
+    windows <- c(windows, list(c(rdx_is_config$rt, 5)))
   }
-}
-
-channel_keys <- names(channel_specs)
-
-# Create SIM subfolders only for channels that will actually generate plots
-# (qualifier channels have make_plots = FALSE -- see above -- so no
-# subfolder is created for them at all)
-for (key in channel_keys) {
-  if (isTRUE(channel_specs[[key]]$make_plots)) {
-    dir.create(file.path(GCSampleTrace.dir, sprintf("SIM_mz%s", key)), recursive = TRUE)
+  if (petn_is_config$mz == mz_val && !is.na(petn_is_config$rt)) {
+    windows <- c(windows, list(c(petn_is_config$rt, 5)))
   }
+  for (a in analytes) {
+    if (a$mz == mz_val && !is.na(a$rt)) {
+      windows <- c(windows, list(c(a$rt, 5)))
+    }
+  }
+  rt_windows_by_mz[[as.character(mz_val)]] <- windows
 }
 
 # --- Integration plot queue for shared y-axis scaling ---
 # Instead of generating integration plots inside the SIM loop (where
-# Integration plots are generated inline during SIM processing (auto-scaled per plot)
+# only the current file's data is available), we queue the plot data
+# and track the maximum y-value per compound across all files.  After
+# the loop, plots are generated with a shared y-axis per compound so
+# that visual comparison across injections is meaningful.
+integration_plot_queue <- list()
+y_max_by_compound     <- list()
+
+# Helper: compute the max baseline-corrected intensity within the
+# plot range that plot_integration() would use for a given peak.
+compute_plot_range_ymax <- function(baseline_corrected, peak_rt, step_size,
+                                     boundary_steps = 15) {
+  if (is.na(peak_rt)) return(NA_real_)
+  plot_margin <- boundary_steps * step_size * 2
+  plot_min <- peak_rt - (boundary_steps * step_size) - plot_margin
+  plot_max <- peak_rt + (boundary_steps * step_size) + plot_margin
+  vals <- baseline_corrected$Subtracted[
+    baseline_corrected$RetentionTime >= plot_min &
+    baseline_corrected$RetentionTime <= plot_max
+  ]
+  if (length(vals) == 0) return(NA_real_)
+  max(vals, na.rm = TRUE)
+}
 
 filenameGcData <- list.files(GcDataConvertedRcodeSIM.dir, extensionCSV, full.names = TRUE)
 
@@ -321,37 +229,34 @@ for (file in filenameGcData) {
   GcDataCodeOrdered <- read.csv2(file, sep = ",", header = TRUE)
   GcDataCodeOrdered <- GcDataCodeOrdered %>% mutate(across(everything(), ~as.numeric(as.character(.x))))
 
-  # Process each channel (one process_sim_channel() call per channel key,
-  # NOT per unique m/z -- see channel_specs comment above)
+  # Process each m/z channel
   channel_results <- list()
-  for (key in channel_keys) {
-    spec <- channel_specs[[key]]
-    channel_results[[key]] <- process_sim_channel(
-      GcDataCodeOrdered, spec$mz,
-      spec$windows,
+  for (mz_val in all_mz) {
+    channel_results[[as.character(mz_val)]] <- process_sim_channel(
+      GcDataCodeOrdered, mz_val,
+      rt_windows_by_mz[[as.character(mz_val)]],
       rolling_avg = rolling.average,
-      min_peak_height = spec$height
+      min_peak_height = SignalMaxThresholdSIM
     )
   }
 
-  # Plot each channel (skip qualifier channels -- make_plots = FALSE)
-  for (key in channel_keys) {
-    if (!isTRUE(channel_specs[[key]]$make_plots)) next
-    ch <- channel_results[[key]]
+  # Plot each m/z channel
+  for (mz_val in all_mz) {
+    ch <- channel_results[[as.character(mz_val)]]
     p <- ggplot(ch$baseline_corrected, aes(x = RetentionTime, y = Subtracted)) +
       geom_line(color = "red") +
       labs(
-        title = paste0("Baseline-Corrected SIM m/z ", channel_specs[[key]]$mz, " (", key, ")"),
+        title = paste0("Baseline-Corrected SIM m/z ", mz_val),
         x = "Retention Time (s)",
         y = "Corrected Intensity"
       ) +
       theme_minimal()
     print(p)
     ggsave(
-      sprintf("%s_SIM_mz%s.tiff", GcDataName, key),
+      sprintf("%s_SIM_mz%s.tiff", GcDataName, mz_val),
       plot = p,
       device = NULL,
-      path = file.path(GCSampleTrace.dir, sprintf("SIM_mz%s", key)),
+      path = file.path(GCSampleTrace.dir, sprintf("SIM_mz%s", mz_val)),
       scale = 1,
       width = 7.5,
       height = 5.0,
@@ -370,11 +275,14 @@ for (file in filenameGcData) {
                                       snr_lod = snr_detect,
                                       snr_loq = snr_quant)
 
-  # Generate RDX IS integration plot (auto-scaled)
-  print(paste0("  RDX IS noise_window: ", 
-               ifelse(is.null(rdx_is_config$noise_window), "NULL",
-                      paste(rdx_is_config$noise_window, collapse = "-"))))
-  plot_integration(
+  # Queue RDX IS integration plot (deferred for shared y-axis scaling)
+  rdx_is_key <- "RDX_IS"
+  rdx_is_ymax <- compute_plot_range_ymax(rdx_is_ch$baseline_corrected,
+                                          rdx_is_result$rt, rdx_is_ch$step_size)
+  if (!is.na(rdx_is_ymax)) {
+    y_max_by_compound[[rdx_is_key]] <- max(y_max_by_compound[[rdx_is_key]] %||% 0, rdx_is_ymax)
+  }
+  integration_plot_queue[[length(integration_plot_queue) + 1]] <- list(
     baseline_corrected = rdx_is_ch$baseline_corrected,
     signal             = rdx_is_ch$signal,
     peak_result        = rdx_is_result,
@@ -383,7 +291,35 @@ for (file in filenameGcData) {
     compound_name      = "RDX IS (15N-RDX, m/z 122)",
     save_path          = file.path(GCSampleTrace.dir, "Integration"),
     filename           = sprintf("%s_Integration_RDX_IS.tiff", GcDataName),
-    noise_window       = rdx_is_config$noise_window
+    compound_key       = rdx_is_key
+  )
+
+  # Extract PETN IS (NG) peak area from m/z 76 channel
+  petn_is_ch <- channel_results[[as.character(petn_is_config$mz)]]
+  petn_is_result <- extract_peak_area(petn_is_ch$peaks, petn_is_ch$signal,
+                                       petn_is_config$rt, petn_is_ch$step_size,
+                                       baseline_corrected = petn_is_ch$baseline_corrected,
+                                       noise_window = petn_is_config$noise_window,
+                                       snr_lod = snr_detect,
+                                       snr_loq = snr_quant)
+
+  # Queue PETN IS integration plot (deferred for shared y-axis scaling)
+  petn_is_key <- "PETN_IS"
+  petn_is_ymax <- compute_plot_range_ymax(petn_is_ch$baseline_corrected,
+                                           petn_is_result$rt, petn_is_ch$step_size)
+  if (!is.na(petn_is_ymax)) {
+    y_max_by_compound[[petn_is_key]] <- max(y_max_by_compound[[petn_is_key]] %||% 0, petn_is_ymax)
+  }
+  integration_plot_queue[[length(integration_plot_queue) + 1]] <- list(
+    baseline_corrected = petn_is_ch$baseline_corrected,
+    signal             = petn_is_ch$signal,
+    peak_result        = petn_is_result,
+    expected_rt        = petn_is_config$rt,
+    step_size          = petn_is_ch$step_size,
+    compound_name      = "PETN IS (NG, m/z 76)",
+    save_path          = file.path(GCSampleTrace.dir, "Integration"),
+    filename           = sprintf("%s_Integration_PETN_IS.tiff", GcDataName),
+    compound_key       = petn_is_key
   )
 
   # Extract each analyte's peak area from its own m/z channel
@@ -399,11 +335,14 @@ for (file in filenameGcData) {
       snr_loq = snr_quant
     )
 
-    # Generate analyte integration plot (auto-scaled)
-    print(paste0("  ", name, " noise_window: ", 
-                 ifelse(is.null(a$noise_window), "NULL",
-                        paste(a$noise_window, collapse = "-"))))
-    plot_integration(
+    # Queue analyte integration plot (deferred for shared y-axis scaling)
+    analyte_key <- name
+    analyte_ymax <- compute_plot_range_ymax(a_ch$baseline_corrected,
+                                             analyte_results[[name]]$rt, a_ch$step_size)
+    if (!is.na(analyte_ymax)) {
+      y_max_by_compound[[analyte_key]] <- max(y_max_by_compound[[analyte_key]] %||% 0, analyte_ymax)
+    }
+    integration_plot_queue[[length(integration_plot_queue) + 1]] <- list(
       baseline_corrected = a_ch$baseline_corrected,
       signal             = a_ch$signal,
       peak_result        = analyte_results[[name]],
@@ -412,38 +351,8 @@ for (file in filenameGcData) {
       compound_name      = paste0(name, " (m/z ", a$mz, ")"),
       save_path          = file.path(GCSampleTrace.dir, "Integration"),
       filename           = sprintf("%s_Integration_%s.tiff", GcDataName, name),
-      noise_window       = a$noise_window
+      compound_key       = analyte_key
     )
-  }
-
-  # Extract each analyte's qualifier (confirmatory) ion peak area, at the
-  # SAME expected RT/noise window as that analyte's own quantifier (added
-  # Aug 2026 -- qualifiers coelute with the quantifier peak, same SIM
-  # group). Not used for quantification; retained purely for identity
-  # confirmation (ion ratio vs the quantifier, computed downstream in
-  # 03_Quantification.R / InjectionAcceptance.R).
-  analyte_qualifier_results <- list()
-  for (name in names(analytes)) {
-    a <- analytes[[name]]
-    if (is.null(a$qualifiers) || length(a$qualifiers) == 0) next
-    analyte_qualifier_results[[name]] <- list()
-    for (qmz in a$qualifiers) {
-      q_key <- paste0(tolower(name), "_qual", qmz)
-      q_ch <- channel_results[[q_key]]
-      q_result <- extract_peak_area(
-        q_ch$peaks, q_ch$signal, a$rt, q_ch$step_size,
-        baseline_corrected = q_ch$baseline_corrected,
-        noise_window = a$noise_window,
-        snr_lod = snr_detect,
-        snr_loq = snr_quant
-      )
-      analyte_qualifier_results[[name]][[as.character(qmz)]] <- q_result
-
-      # NOTE (Aug 2026): no per-injection integration plot is generated
-      # here, deliberately -- see the make_plots = FALSE comment above
-      # channel_specs. Only the numeric PA/PH/SNR extraction (above) is
-      # needed for the confirmatory-ion ratio analysis.
-    }
   }
 
   # Build Results data frame dynamically
@@ -453,7 +362,12 @@ for (file in filenameGcData) {
     rdx_is_pa       = rdx_is_result$pa,
     rdx_is_ph       = rdx_is_result$ph,
     rdx_is_snr      = rdx_is_result$snr,
-    rdx_is_snr_flag = rdx_is_result$snr_flag
+    rdx_is_snr_flag = rdx_is_result$snr_flag,
+    petn_is_rt       = petn_is_result$rt,
+    petn_is_pa       = petn_is_result$pa,
+    petn_is_ph       = petn_is_result$ph,
+    petn_is_snr      = petn_is_result$snr,
+    petn_is_snr_flag = petn_is_result$snr_flag
   )
   for (name in names(analytes)) {
     prefix <- tolower(name)
@@ -462,28 +376,60 @@ for (file in filenameGcData) {
     Results[[paste0(prefix, "_ph")]]       <- analyte_results[[name]]$ph
     Results[[paste0(prefix, "_snr")]]      <- analyte_results[[name]]$snr
     Results[[paste0(prefix, "_snr_flag")]] <- analyte_results[[name]]$snr_flag
-
-    # Qualifier (confirmatory) ion columns (added Aug 2026)
-    a <- analytes[[name]]
-    if (!is.null(a$qualifiers) && length(a$qualifiers) > 0) {
-      for (qmz in a$qualifiers) {
-        qres <- analyte_qualifier_results[[name]][[as.character(qmz)]]
-        qprefix <- paste0(prefix, "_qual", qmz)
-        Results[[paste0(qprefix, "_rt")]]       <- qres$rt
-        Results[[paste0(qprefix, "_pa")]]       <- qres$pa
-        Results[[paste0(qprefix, "_ph")]]       <- qres$ph
-        Results[[paste0(qprefix, "_snr")]]      <- qres$snr
-        Results[[paste0(qprefix, "_snr_flag")]] <- qres$snr_flag
-      }
-    }
   }
 
   write.table(Results, file = paste0(GcData.dir, GcDataName, "SIM.csv"), sep = ",", row.names = FALSE)
   print(paste0(file, " SIM processed"))
 }
 
-# Integration plots generated inline during SIM processing (auto-scaled per plot)
+# =========================================================
+# Generate integration plots with shared y-axis scales
+# =========================================================
+# All integration plot data was queued during the SIM loop above.
+# Now that we know the global max y-value per compound, generate
+# every plot with a consistent y-axis so that visual comparison
+# across injections is meaningful.  Low-signal samples (blanks,
+# negative controls) will show visibly smaller peaks against the
+# same scale as the highest-response injection.
 
+if (length(integration_plot_queue) > 0) {
+  print(paste0("Generating ", length(integration_plot_queue),
+               " integration plots with shared y-axis scales..."))
+
+  for (entry in integration_plot_queue) {
+    # Look up the shared y-max for this compound; add 5% headroom
+    shared_ymax <- y_max_by_compound[[entry$compound_key]]
+    if (!is.null(shared_ymax) && !is.na(shared_ymax) && shared_ymax > 0) {
+      shared_ylim <- c(0, shared_ymax * 1.05)
+    } else {
+      shared_ylim <- NULL  # fall back to auto-scale
+    }
+
+    plot_integration(
+      baseline_corrected = entry$baseline_corrected,
+      signal             = entry$signal,
+      peak_result        = entry$peak_result,
+      expected_rt        = entry$expected_rt,
+      step_size          = entry$step_size,
+      compound_name      = entry$compound_name,
+      save_path          = entry$save_path,
+      filename           = entry$filename,
+      ylim               = shared_ylim
+    )
+  }
+
+  # Report the shared scales used
+  for (cmpd in names(y_max_by_compound)) {
+    print(paste0("  ", cmpd, " shared y-max: ",
+                 round(y_max_by_compound[[cmpd]], 0)))
+  }
+
+  # Free queue memory
+  integration_plot_queue <- NULL
+  y_max_by_compound <- NULL
+
+  print("Integration plots complete.")
+}
 
 TICFile <- list.files(path = GcData.dir, pattern = "\\TIC.csv$")
 SIMFile <- list.files(path = GcData.dir, pattern = "\\SIM.csv$")

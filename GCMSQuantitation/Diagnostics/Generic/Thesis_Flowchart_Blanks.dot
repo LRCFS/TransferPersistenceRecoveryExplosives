@@ -1,0 +1,39 @@
+digraph Thesis_Blanks {
+  rankdir=TB;
+  fontname="Georgia";
+  fontsize=14;
+  labelloc="t";
+  label="GC-MS Blank Injection Evaluation";
+  bgcolor="white";
+  splines=ortho;
+  nodesep=0.6;
+  ranksep=0.6;
+  concentrate=false;
+  node [fontname="Georgia", fontsize=11, style="filled,rounded", shape=box, margin="0.14,0.08", color="#555555", fillcolor="#f2f2f2"];
+  edge [fontname="Georgia", fontsize=10, color="#333333", arrowsize=0.7, labelfontsize=10];
+
+  b1 [label="Blank injection"];
+  b2 [label="PETN/RDX\ndetected?", shape=diamond, fillcolor="#eef2f7"];
+  b3 [label="Other peak\npresent?", shape=diamond, fillcolor="#eef2f7"];
+  b_contam [label="Contaminated\n(carryover risk)", fillcolor="#fdeaea"];
+  b_warn [label="Instrument-\nperformance flag", fillcolor="#fff6e0"];
+  b_pass [label="Clean", fillcolor="#e6f4ea"];
+
+  b1 -> b2;
+  b2 -> b_contam [xlabel="  Y  "];
+  b2 -> b3 [xlabel="  N  "];
+  b3 -> b_warn [xlabel="  Y  "];
+  b3 -> b_pass [xlabel="  N  "];
+
+  subgraph cluster_key {
+    label=""; style="invis";
+    key [shape=plaintext, fontsize=9.5, label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+        <TR><TD BGCOLOR="#eef2f7">  </TD><TD ALIGN="LEFT">Decision</TD>
+            <TD BGCOLOR="#e6f4ea">  </TD><TD ALIGN="LEFT">Accepted</TD></TR>
+        <TR><TD BGCOLOR="#fff6e0">  </TD><TD ALIGN="LEFT">Flagged</TD>
+            <TD BGCOLOR="#fdeaea">  </TD><TD ALIGN="LEFT">Failed</TD></TR>
+      </TABLE>
+    >];
+  }
+}

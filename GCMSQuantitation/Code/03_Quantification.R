@@ -32,15 +32,32 @@ suppressPackageStartupMessages({
 # -----------------------------
 # Configuration toggle: use_15nrdx_for_petn
 # -----------------------------
-if (!exists("use_15nrdx_for_petn", where = .GlobalEnv, inherits = FALSE)) {
+# NOTE: deliberately NOT `where = .GlobalEnv, inherits = FALSE` -- this script is
+# sometimes sourced into an isolated environment (e.g. RunAllDatasets.R's
+# dataset_env), and a literal .GlobalEnv check would miss config set there.
+# Plain exists() (inherits = TRUE, default envir = current evaluation frame)
+# correctly resolves whether this script is run at top level or sourced with
+# local = <env>.
+if (!exists("use_15nrdx_for_petn")) {
   use_15nrdx_for_petn <- TRUE
 }
 
 # -----------------------------
 # Configuration toggle: use_is_for_rdx
 # -----------------------------
-if (!exists("use_is_for_rdx", where = .GlobalEnv, inherits = FALSE)) {
+if (!exists("use_is_for_rdx")) {
   use_is_for_rdx <- TRUE
+}
+
+# -----------------------------
+# Configuration toggle: drift_correction_min_qc
+# -----------------------------
+# Minimum same-level QC points required to attempt a PowerLaw fit. Default
+# (3) matches the general FINEX validation; GlobalCode.R relaxes this to 2
+# for the ASTRA Swabbing pilot study. Fallback here only for standalone runs
+# of this script without GlobalCode.R having set it.
+if (!exists("drift_correction_min_qc")) {
+  drift_correction_min_qc <- 3
 }
 
 # -----------------------------
@@ -58,10 +75,22 @@ required_globals <- c(
   "qc_monitoring_file",
   "snr_detect",
   "snr_quant",
-  "apply_petn_drift_correction"
+  "apply_petn_drift_correction",
+  "MinPeakArea_IS"
 )
 
-missing_globals <- required_globals[!sapply(required_globals, exists, where = .GlobalEnv, inherits = FALSE)]
+# NOTE: explicit envir = <this script's own execution frame> (captured below),
+# NOT `where = .GlobalEnv, inherits = FALSE` and NOT bare exists() inside sapply().
+# Bare exists() called via sapply()/lapply() does NOT reliably resolve the
+# calling frame (a well-known R gotcha -- exists()'s default frame lookup sees
+# sapply's internal frame, not this script's), so it would silently report every
+# global as missing when this script is sourced into an isolated environment
+# (e.g. RunAllDatasets.R's dataset_env). Capturing environment() explicitly and
+# passing it as envir (with inherits = TRUE) works correctly whether this script
+# runs at top level (.GlobalEnv) or is sourced with local = <env>.
+.this_env <- environment()
+missing_globals <- required_globals[!sapply(required_globals, exists, envir = .this_env, inherits = TRUE)]
+rm(.this_env)
 if (length(missing_globals) > 0) {
   stop("Missing required globals: ",
        paste(missing_globals, collapse = ", "))
@@ -73,7 +102,7 @@ if (length(missing_globals) > 0) {
 solve_concentration <- function(y, quad_model, cal_y_range) {
 
   if (is.na(y)) {
-    return(list(value = NA_real_, method = "No_peak", range_flag = NA_character_))
+    return(list(value = NA_real_, method = "No_peak", extrapolated = NA))
   }
 
   coefs <- coef(quad_model)
@@ -84,7 +113,7 @@ solve_concentration <- function(y, quad_model, cal_y_range) {
   disc <- b^2 - 4 * a * (c_int - y)
 
   if (!is.finite(disc) || disc < 0 || abs(a) < .Machine$double.eps) {
-    return(list(value = NA_real_, method = "Unquantifiable", range_flag = NA_character_))
+    return(list(value = NA_real_, method = "Unquantifiable", extrapolated = NA))
   }
 
   roots <- c(
@@ -95,7 +124,7 @@ solve_concentration <- function(y, quad_model, cal_y_range) {
   roots <- roots[is.finite(roots)]
 
   if (length(roots) == 0) {
-    return(list(value = NA_real_, method = "Unquantifiable", range_flag = NA_character_))
+    return(list(value = NA_real_, method = "Unquantifiable", extrapolated = NA))
   }
 
   # Select smallest positive root (physically meaningful concentration)
@@ -106,11 +135,19 @@ solve_concentration <- function(y, quad_model, cal_y_range) {
   } else {
     concentration <- 0
   }
-  
-  # Set range flag based on concentration (ng/µL), not calibration response
-  # Note: range_flag will be assigned later based on row type (Samples only)
-  
-  list(value = concentration, method = "Quadratic", range_flag = NA_character_)
+
+  # Flag responses outside the fitted calibration range (cal_y_range is the
+  # min/max of the calibrator response values actually used to fit
+  # quad_model). Because the calibration is quadratic (non-monotonic in
+  # general), a response outside this range means `concentration` above is
+  # an unvalidated extrapolation, not an interpolated result -- flag it so
+  # downstream reporting/QC can distinguish the two rather than treating
+  # every "Quadratic" result as equally defensible.
+  is_extrapolated <- length(cal_y_range) == 2 &&
+    all(is.finite(cal_y_range)) &&
+    (y < cal_y_range[1] || y > cal_y_range[2])
+
+  list(value = concentration, method = "Quadratic", extrapolated = is_extrapolated)
 }
 
 # =========================================================
@@ -253,6 +290,30 @@ Combined$petn_ratio <- ifelse(invalid_is, NA_real_, Combined$petn_pa / Combined$
 Combined$rdx_ratio  <- ifelse(invalid_is, NA_real_, Combined$rdx_pa / Combined$rdx_is_pa)
 
 # =========================================================
+# IS (15N-RDX) injection-validity flag
+# =========================================================
+# Confirms the internal standard was actually present at a reliable level in
+# this injection, independent of what the analyte peaks show. A peak can be
+# "detected" (SNR/PH above the peak-detection gate) yet still sit at
+# blank-channel noise level, which does not confirm the IS was genuinely
+# injected -- see MinPeakArea_IS in GlobalCode.R for the evidence behind the
+# threshold. Not computed for Blanks (no IS is spiked into blank vials, so a
+# low/absent IS signal there is expected, not a failure).
+Combined$rdx_is_pa_flag <- ifelse(
+  Combined$Type == "Blank", NA_character_,
+  ifelse(is.na(Combined$rdx_is_pa), "NOT_DETECTED",
+         ifelse(Combined$rdx_is_pa < MinPeakArea_IS, "LOW", "OK"))
+)
+
+n_is_not_detected <- sum(Combined$rdx_is_pa_flag == "NOT_DETECTED", na.rm = TRUE)
+n_is_low <- sum(Combined$rdx_is_pa_flag == "LOW", na.rm = TRUE)
+if (n_is_not_detected > 0 || n_is_low > 0) {
+  message("  IS injection-validity check: ", n_is_not_detected,
+          " injection(s) with IS not detected, ", n_is_low,
+          " injection(s) with IS below ", MinPeakArea_IS, " PA (LOW).")
+}
+
+# =========================================================
 # Build calibration sets
 # =========================================================
 CalData <- Combined %>%
@@ -298,7 +359,12 @@ for (name in names(analytes)) {
   prefix <- tolower(name)
 
   Combined[[paste0(prefix, "_concentration")]] <- NA_real_
-  Combined[[paste0(prefix, "_range_flag")]]    <- NA_character_
+  # TRUE when the response used for quantification fell outside the fitted
+  # calibration curve's response range (cal_y_range) -- i.e. the reported
+  # concentration is an unvalidated extrapolation from a non-monotonic
+  # quadratic, not an interpolated result. NA where no concentration was
+  # attempted (Below_LOD / no peak).
+  Combined[[paste0(prefix, "_extrapolated")]] <- NA
 }
 
 # Add petn_quant_method column
@@ -426,7 +492,7 @@ for (analyte_name in names(analytes)) {
     }
 
     conc_col  <- paste0(prefix, "_concentration")
-    range_col <- paste0(prefix, "_range_flag")
+    extrap_col <- paste0(prefix, "_extrapolated")
 
     for (j in rows) {
 
@@ -437,13 +503,13 @@ for (analyte_name in names(analytes)) {
 
       if (!is.na(row_snr_flag) && row_snr_flag == "Below_LOD") {
         Combined[[conc_col]][j]   <- NA_real_
-        Combined[[range_col]][j]  <- NA_character_
         next
       }
 
-      if (!is.na(row_snr_flag) && row_snr_flag == "Below_LOQ") {
+      # Below_LOQ samples still get quantified (signal is present, just low precision)
+      # Skip quantification only for Below_LOD (no reliable signal)
+      if (!is.na(row_snr_flag) && row_snr_flag == "Below_LOD") {
         Combined[[conc_col]][j]   <- NA_real_
-        Combined[[range_col]][j]  <- NA_character_
         next
       }
 
@@ -452,14 +518,14 @@ for (analyte_name in names(analytes)) {
         quad_model,
         cal_y_range
       )
-      Combined[[conc_col]][j]   <- res$value
-      Combined[[range_col]][j]  <- res$range_flag
+      Combined[[conc_col]][j]   <- res$value / Dilution
+      Combined[[extrap_col]][j] <- res$extrapolated
     }
 
     curve_x <- seq(min(cal$CalLevelAdj), max(cal$CalLevelAdj), length.out = 200)
     curve_df <- data.frame(
       CalibrationSet = i,
-      CalLevelAdj = curve_x,
+      Xplot = curve_x / Dilution,
       Fitted = predict(quad_model, newdata = data.frame(CalLevelAdj = curve_x)),
       Method = y_label
     )
@@ -468,7 +534,7 @@ for (analyte_name in names(analytes)) {
     pd <- Combined %>%
       filter(CalibrationSet == i & !is.na(.data[[resp_col]])) %>%
       mutate(
-        Xplot  = ifelse(Type %in% c("Cal", "QC"), CalLevel * Dilution, .data[[conc_col]]),
+        Xplot  = ifelse(Type %in% c("Cal", "QC"), CalLevel, .data[[conc_col]]),
         y_val  = .data[[resp_col]],
         Group  = case_when(
           Type == "Cal" ~ "Standard",
@@ -493,7 +559,7 @@ for (analyte_name in names(analytes)) {
         ) +
         geom_line(
           data = curve_df,
-          aes(CalLevelAdj, Fitted),
+          aes(Xplot, Fitted),
           color = "black"
         ) +
         theme_bw() +
@@ -517,7 +583,7 @@ for (analyte_name in names(analytes)) {
 
   all_cals <- Combined %>%
     filter(Type %in% c("Cal", "QC")) %>%
-    mutate(Xplot = CalLevel * Dilution)
+    mutate(Xplot = CalLevel)
 
   if (!all(is.na(all_cals[[resp_col]]))) {
     all_cals$y_val <- all_cals[[resp_col]]
@@ -534,7 +600,7 @@ for (analyte_name in names(analytes)) {
         scale_shape_manual(values = c("Cal" = 16, "QC" = 17)) +
         geom_line(
           data = all_curves,
-          aes(CalLevelAdj, Fitted, color = factor(CalibrationSet)),
+          aes(Xplot, Fitted, color = factor(CalibrationSet)),
           linewidth = 1
         ) +
         theme_bw() +
@@ -695,6 +761,7 @@ if (nrow(cal_stats_df) > 0) {
 Combined$petn_drift_correction_factor <- 1.0
 Combined$petn_drift_model             <- NA_character_
 Combined$petn_concentration_dc        <- Combined$petn_concentration
+Combined$petn_extrapolated_dc         <- Combined$petn_extrapolated
 
 if (apply_petn_drift_correction && has_calibration && length(stored_petn_models) > 0) {
 
@@ -720,16 +787,44 @@ if (apply_petn_drift_correction && has_calibration && length(stored_petn_models)
       selected_qc_level <- max(qc_candidates$CalLevel, na.rm = TRUE)
     }
 
-    qc_drift_data <- Combined %>%
+    qc_drift_data_all <- Combined %>%
       filter(Type == "QC",
              CalLevel == selected_qc_level,
              !is.na(.data[[resp_col_for_drift]])) %>%
       arrange(Row) %>%
-      select(Row, Response = !!sym(resp_col_for_drift))
+      select(Row, Line, CalibrationSet, Response = !!sym(resp_col_for_drift))
+
+    # Optionally exclude specific QC injections (by sequence Line number,
+    # drift_correction_exclude_qc_lines in GlobalCode.R) from the drift
+    # MODEL FIT itself -- e.g. an anomalous QC whose own shape doesn't
+    # match the rest of the run. An excluded QC is NOT removed from
+    # Combined or from QC evaluation: it still receives a correction
+    # factor from the resulting fit below (extrapolated, since it's no
+    # longer one of the fitted points) and is still evaluated for its own
+    # bias/PASS-FAIL exactly like any other QC further down this script --
+    # this only controls which points the curve is fit through.
+    qc_drift_data <- qc_drift_data_all %>%
+      filter(!(Line %in% drift_correction_exclude_qc_lines))
+
+    n_excluded_qc <- nrow(qc_drift_data_all) - nrow(qc_drift_data)
+    if (n_excluded_qc > 0) {
+      excluded_lines_present <- intersect(drift_correction_exclude_qc_lines, qc_drift_data_all$Line)
+      message("  PETN drift correction: excluding ", n_excluded_qc,
+              " QC point(s) from the fit (Line ", paste(excluded_lines_present, collapse = ", "),
+              ") per drift_correction_exclude_qc_lines -- still evaluated for its own bias/PASS-FAIL using the resulting fit.")
+    }
 
     n_qc <- nrow(qc_drift_data)
     
-    if (n_qc >= 2) {
+    # Continuous power law/polynomial models generally need at least 3
+    # points to fit a meaningful curve; drift_correction_min_qc (set in
+    # GlobalCode.R) relaxes this to 2 for the ASTRA Swabbing pilot study,
+    # deliberately allowing a degenerate/exact 2-point fit rather than
+    # skipping correction outright -- see the comment on
+    # drift_correction_min_qc in GlobalCode.R.
+    min_qc_required <- drift_correction_min_qc
+    
+    if (n_qc >= min_qc_required) {
       message("  PETN drift correction: using ", n_qc,
               " QC points at ", selected_qc_level, " ng")
       
@@ -741,7 +836,12 @@ if (apply_petn_drift_correction && has_calibration && length(stored_petn_models)
       power_b <- NA_real_
       
       # ===== POWER LAW METHOD =====
-      if (drift_correction_method == "power_law" && n_qc >= 3) {
+      # Fit whatever QC data exists for this run with no per-dataset shape
+      # exclusions (see drift_correction_method comment in GlobalCode.R).
+      # n_qc >= 2 is the absolute minimum for any fit at all; the actual
+      # policy decision (whether to attempt a fit with as few as 2 points)
+      # is already made by min_qc_required above.
+      if (drift_correction_method == "power_law" && n_qc >= 2) {
         
         message("  Fitting power law: Response ~ a * Row^b")
         
@@ -749,7 +849,7 @@ if (apply_petn_drift_correction && has_calibration && length(stored_petn_models)
           nls(Response ~ a * Row^b,
               data = qc_drift_data,
               start = list(a = max(qc_drift_data$Response), b = -1.0),
-              control = nls.control(maxiter = 100))
+              control = nls.control(maxiter = 200, warnOnly = TRUE))
         }, error = function(e) {
           warning("  Power law fit failed: ", e$message, ". Falling back to polynomial.")
           return(NULL)
@@ -763,10 +863,14 @@ if (apply_petn_drift_correction && has_calibration && length(stored_petn_models)
           residuals_power <- residuals(power_model)
           ss_res <- sum(residuals_power^2)
           ss_tot <- sum((qc_drift_data$Response - mean(qc_drift_data$Response))^2)
-          r2_val <- 1 - (ss_res / ss_tot)
+          r2_val <- if (ss_tot > 0) 1 - (ss_res / ss_tot) else NA_real_
           
-          if (r2_val < 0.90) {
-            warning("  Power law R² = ", round(r2_val, 3), " (< 0.90) -- fit may be poor.")
+          if (n_qc == 2) {
+            message("  Note: PowerLaw fit with only 2 QC points has zero residual ",
+                    "degrees of freedom -- this is an exact/degenerate fit, not a ",
+                    "meaningful curve fit; R\u00B2 is not informative here.")
+          } else if (!is.na(r2_val) && r2_val < 0.90) {
+            warning("  Power law R\u00B2 = ", round(r2_val, 3), " (< 0.90) -- fit may be poor.")
           }
           
           first_qc_row <- qc_drift_data$Row[1]
@@ -781,7 +885,7 @@ if (apply_petn_drift_correction && has_calibration && length(stored_petn_models)
           
           message("  Power law fit: a = ", format(power_a, scientific = FALSE),
                   ", b = ", round(power_b, 4))
-          message("  R² = ", round(r2_val, 4))
+          message("  R\u00B2 = ", if (is.na(r2_val)) "N/A" else round(r2_val, 4))
         }
       }
       
@@ -807,7 +911,7 @@ if (apply_petn_drift_correction && has_calibration && length(stored_petn_models)
               
               r2 <- summary(drift_model)$r.squared
               if (is.na(r2) || r2 < 0.5) {
-                message("  Quadratic R² = ", round(r2, 3), " (poor); falling back to linear.")
+                message("  Quadratic R\u00B2 = ", round(r2, 3), " (poor); falling back to linear.")
                 drift_model <- lm(CorrFactor ~ Row, data = qc_drift)
                 drift_method <- "Linear"
               }
@@ -863,7 +967,9 @@ if (apply_petn_drift_correction && has_calibration && length(stored_petn_models)
               row_snr_flag <- Combined[[m$snr_flag_col]][j]
             }
             
-            if (!is.na(row_snr_flag) && row_snr_flag %in% c("Below_LOD", "Below_LOQ")) {
+            # Only skip drift correction for Below_LOD (no signal)
+            # Below_LOQ samples get drift correction applied
+            if (!is.na(row_snr_flag) && row_snr_flag == "Below_LOD") {
               Combined$petn_concentration_dc[j] <- NA_real_
               next
             }
@@ -873,14 +979,20 @@ if (apply_petn_drift_correction && has_calibration && length(stored_petn_models)
               m$quad_model,
               m$cal_y_range
             )
-            Combined$petn_concentration_dc[j] <- res$value
+            
+            Combined$petn_concentration_dc[j] <- res$value / Dilution
+            Combined$petn_extrapolated_dc[j]  <- res$extrapolated
           }
         }
         
         message("  PETN drift correction applied:")
         message("    Model: ", drift_method)
         message("    QC points used: ", n_qc)
-        message("    R²: ", round(r2_val, 4))
+        if (is.na(r2_val)) {
+          message("    R\u00B2: N/A (constant correction, no regression fit)")
+        } else {
+          message("    R\u00B2: ", round(r2_val, 4))
+        }
         if (drift_method == "PowerLaw") {
           message("    Exponent (b): ", round(power_b, 4))
         }
@@ -892,9 +1004,21 @@ if (apply_petn_drift_correction && has_calibration && length(stored_petn_models)
         first_qc_row <- qc_drift_data$Row[1]
         
         if (drift_method == "PowerLaw") {
-          # Power law plot: show PA decay and fitted curve
+          # Power law plot: show PA decay and fitted curve.
+          # Curve is drawn only within the observed Row range of ALL same-
+          # level QCs (qc_drift_data_all), not just the ones actually used
+          # to fit the model -- if a QC was excluded via
+          # drift_correction_exclude_qc_lines, the curve still needs to
+          # extend out to its Row position so the plot doesn't look
+          # truncated relative to where that point is marked. Otherwise
+          # unchanged from before: outside this range the fit is
+          # unvalidated extrapolation, and for degenerate low-n fits (e.g.
+          # a 2-QC run) the extrapolated curve can be orders of magnitude
+          # larger than the actual data, making the plot unreadable. The
+          # correction factors applied to real Sample/QC rows are NOT
+          # affected by this -- this only restricts what's drawn.
           pred_line <- data.frame(
-            Row = seq(min(Combined$Row), max(Combined$Row), length.out = 200)
+            Row = seq(min(qc_drift_data_all$Row), max(qc_drift_data_all$Row), length.out = 200)
           )
           pred_line$Response <- predict(power_model, newdata = pred_line)
           
@@ -904,12 +1028,28 @@ if (apply_petn_drift_correction && has_calibration && length(stored_petn_models)
                       colour = "steelblue", linewidth = 1) +
             geom_point(data = qc_drift_data,
                        aes(x = Row, y = Response),
-                       colour = "red", size = 4, shape = 17) +
+                       colour = "red", size = 4, shape = 17)
+          
+          # Excluded QC(s) (drift_correction_exclude_qc_lines): plotted
+          # distinctly (hollow orange X) so it's visible at a glance which
+          # points were left out of the fit -- these still show their real
+          # measured Response and still get a correction factor/bias from
+          # the resulting curve, they just weren't used to fit it.
+          if (n_excluded_qc > 0) {
+            excluded_points <- qc_drift_data_all %>% filter(Line %in% drift_correction_exclude_qc_lines)
+            p_drift <- p_drift +
+              geom_point(data = excluded_points,
+                         aes(x = Row, y = Response),
+                         colour = "darkorange", size = 5, shape = 4, stroke = 1.5)
+          }
+          
+          p_drift <- p_drift +
             theme_bw() +
             labs(
               title = paste0("PETN Power Law Drift (R\u00B2 = ", round(r2_val, 4), ")"),
               subtitle = paste0("PA ~ ", format(power_a, digits = 4, scientific = FALSE),
-                               " × Row^", round(power_b, 3)),
+                               " \u00d7 Row^", round(power_b, 3),
+                               if (n_excluded_qc > 0) " | orange X = excluded from fit" else ""),
               x = "Injection Number",
               y = ifelse(use_15nrdx_for_petn, "PETN Ratio", "PETN Peak Area")
             )
@@ -965,7 +1105,9 @@ if (apply_petn_drift_correction && has_calibration && length(stored_petn_models)
       }
       
     } else {
-      message("  PETN drift correction: fewer than 2 usable QC points -- skipping.")
+      message("  PETN drift correction: fewer than ", min_qc_required,
+              " usable QC points (need \u2265", min_qc_required,
+              " for power law fit) -- skipping.")
       Combined$petn_drift_model <- "None"
     }
     
@@ -985,7 +1127,7 @@ if (apply_petn_drift_correction && has_calibration && length(stored_petn_models)
 
 if (apply_petn_drift_correction && 
     !is.na(Combined$petn_drift_model[1]) &&
-    Combined$petn_drift_model[1] %in% c("Quadratic", "Linear")) {
+    Combined$petn_drift_model[1] %in% c("PowerLaw", "Quadratic", "Linear")) {
   
   message("  Generating PETN drift-corrected calibration plots...")
   
@@ -1006,7 +1148,7 @@ if (apply_petn_drift_correction &&
                      max(cal_data$CalLevelAdj, na.rm = TRUE),
                      length.out = 200)
       curve_df <- data.frame(
-        CalLevelAdj = curve_x,
+        Xplot = curve_x / Dilution,
         Fitted = predict(m$quad_model, newdata = data.frame(CalLevelAdj = curve_x))
       )
       
@@ -1014,7 +1156,7 @@ if (apply_petn_drift_correction &&
         filter(CalibrationSet == model_idx) %>%
         mutate(
           Xplot = case_when(
-            Type %in% c("Cal", "QC") ~ CalLevel * Dilution,
+            Type %in% c("Cal", "QC") ~ CalLevel,
             TRUE                     ~ petn_concentration_dc
           ),
           y_val = .data[[drift_col]],
@@ -1029,7 +1171,7 @@ if (apply_petn_drift_correction &&
       
       if (nrow(pd_dc) > 0 && nrow(curve_df) > 0) {
         p_dc <- ggplot() +
-          geom_line(data = curve_df, aes(CalLevelAdj, Fitted), color = "black") +
+          geom_line(data = curve_df, aes(Xplot, Fitted), color = "black") +
           geom_point(data = pd_dc, aes(Xplot, y_val, color = Group, shape = SNR_Flag), size = 3) +
           scale_shape_manual(
             values = c("Quantifiable" = 16, "Below_LOQ" = 17, "Below_LOD" = 4),
@@ -1057,277 +1199,16 @@ if (apply_petn_drift_correction &&
 }
 
 # =========================================================
-# RDX Drift Correction (QC-based) - PA only when use_is_for_rdx = FALSE
+# RDX Drift Correction - Not Applied
 # =========================================================
-Combined$rdx_drift_correction_factor <- 1.0
-Combined$rdx_drift_model             <- NA_character_
-Combined$rdx_concentration_dc         <- Combined$rdx_concentration
+# RDX uses IS ratio correction only (when use_is_for_rdx = TRUE)
+# No QC-based drift correction is applied to RDX PA
+# No RDX drift-corrected columns (_dc suffix) are created
 
-if (apply_rdx_drift_correction && !use_is_for_rdx && has_calibration && length(stored_rdx_models) > 0) {
-
-  resp_col_for_drift <- "rdx_pa"
-
-  qc_candidates <- Combined %>%
-    filter(Type == "QC", !is.na(.data[[resp_col_for_drift]]), !is.na(CalLevel))
-
-  if (nrow(qc_candidates) > 0) {
-    
-    if (!is.na(drift_correction_qc_level) && 
-        drift_correction_qc_level %in% qc_candidates$CalLevel) {
-      selected_qc_level <- drift_correction_qc_level
-    } else if (!is.na(drift_correction_qc_level)) {
-      selected_qc_level <- max(qc_candidates$CalLevel, na.rm = TRUE)
-      warning("RDX drift correction: specified QC level ", drift_correction_qc_level,
-              " ng not found; using ", selected_qc_level, " ng")
-    } else {
-      selected_qc_level <- max(qc_candidates$CalLevel, na.rm = TRUE)
-    }
-
-    ref_val <- Combined %>%
-      filter(Type == "QC",
-             CalLevel == selected_qc_level,
-             !is.na(.data[[resp_col_for_drift]])) %>%
-      arrange(Row) %>%
-      slice(1) %>%
-      pull(.data[[resp_col_for_drift]])
-
-    if (is.finite(ref_val) && ref_val > 0) {
-
-      qc_drift <- Combined %>%
-        filter(Type == "QC",
-               CalLevel == selected_qc_level,
-               !is.na(.data[[resp_col_for_drift]])) %>%
-        mutate(CorrFactor = ref_val / .data[[resp_col_for_drift]]) %>%
-        filter(is.finite(CorrFactor), CorrFactor > 0)
-
-      n_qc <- nrow(qc_drift)
-
-      if (n_qc >= 2) {
-        message("  RDX drift correction: using ", n_qc,
-                " QC points at ", selected_qc_level, " ng (reference = first QC)")
-
-        drift_model  <- NULL
-        drift_method <- "None"
-
-        if (n_qc >= 4) {
-          drift_model <- lm(CorrFactor ~ Row + I(Row^2), data = qc_drift)
-          drift_method <- "Quadratic"
-
-          r2 <- summary(drift_model)$r.squared
-          if (is.na(r2) || r2 < 0.5) {
-            message("  RDX drift correction: quadratic R2 = ", round(r2, 3),
-                    " (poor fit); falling back to linear.")
-            drift_model  <- lm(CorrFactor ~ Row, data = qc_drift)
-            drift_method <- "Linear"
-          }
-
-        } else if (n_qc == 3) {
-          drift_model  <- lm(CorrFactor ~ Row + I(Row^2), data = qc_drift)
-          drift_method <- "Quadratic"
-          message("  RDX drift correction: only 3 QC points -- quadratic fit is exact.")
-
-        } else if (n_qc == 2) {
-          drift_model  <- lm(CorrFactor ~ Row, data = qc_drift)
-          drift_method <- "Linear"
-          message("  RDX drift correction: only 2 QC points -- using linear interpolation.")
-        }
-
-        if (!is.null(drift_model)) {
-          predicted_cf <- predict(drift_model, newdata = data.frame(Row = Combined$Row))
-
-          first_qc_row <- qc_drift %>%
-            arrange(Row) %>%
-            slice(1) %>%
-            pull(Row)
-
-          predicted_cf[Combined$Row <= first_qc_row] <- 1.0
-
-          message("  RDX drift correction: first QC at row ", first_qc_row,
-                  ". Correcting rows > ", first_qc_row, " only.")
-
-          if (any(predicted_cf < 0, na.rm = TRUE)) {
-            warning("  RDX drift correction: some correction factors negative -- clamping to 1.0.")
-            predicted_cf[predicted_cf < 0] <- 1.0
-          }
-          if (any(predicted_cf > 10.0, na.rm = TRUE)) {
-            warning("  RDX drift correction: some correction factors exceed 10.0 -- severe drift.")
-          }
-
-          Combined$rdx_drift_correction_factor <- predicted_cf
-          Combined$rdx_drift_model             <- drift_method
-
-          corrected_resp <- Combined[[resp_col_for_drift]] * predicted_cf
-          
-          Combined$rdx_pa_dc <- corrected_resp
-
-          for (model_idx in seq_along(stored_rdx_models)) {
-            m <- stored_rdx_models[[model_idx]]
-
-            for (j in m$rows) {
-              row_snr_flag <- NA_character_
-              if (m$snr_flag_col %in% names(Combined)) {
-                row_snr_flag <- Combined[[m$snr_flag_col]][j]
-              }
-
-              if (!is.na(row_snr_flag) && row_snr_flag %in% c("Below_LOD", "Below_LOQ")) {
-                Combined$rdx_concentration_dc[j] <- NA_real_
-                next
-              }
-
-              res <- solve_concentration(
-                corrected_resp[j],
-                m$quad_model,
-                m$cal_y_range
-              )
-              Combined$rdx_concentration_dc[j] <- res$value
-            }
-          }
-
-          r2_val <- round(summary(drift_model)$r.squared, 4)
-          message("  RDX drift correction applied:")
-          message("    Model: ", drift_method)
-          message("    QC points used: ", n_qc)
-          message("    R-squared: ", r2_val)
-          message("    Correction factor range: ",
-                  round(min(predicted_cf, na.rm = TRUE), 4), " - ",
-                  round(max(predicted_cf, na.rm = TRUE), 4))
-
-          pred_line <- data.frame(
-            Row = seq(min(Combined$Row), max(Combined$Row), length.out = 200)
-          )
-          pred_line$CorrFactor <- predict(drift_model, newdata = pred_line)
-
-          sample_points <- data.frame(
-            Row = Combined$Row,
-            CorrFactor = predicted_cf,
-            Type = Combined$Type
-          )
-
-          p_drift <- ggplot() +
-            geom_line(data = pred_line,
-                      aes(x = Row, y = CorrFactor),
-                      colour = "steelblue", linewidth = 1) +
-            geom_point(data = qc_drift,
-                       aes(x = Row, y = CorrFactor),
-                       colour = "red", size = 4, shape = 17) +
-            geom_point(data = sample_points %>% filter(Type == "Sample"),
-                       aes(x = Row, y = CorrFactor),
-                       colour = "grey50", size = 2, alpha = 0.6) +
-            geom_hline(yintercept = 1.0, linetype = "dashed", colour = "grey40") +
-            theme_bw() +
-            labs(
-              title = paste0("RDX Drift Correction (", drift_method,
-                             ", R\\u00B2 = ", r2_val, ")"),
-              subtitle = "QC correction factors (red), fitted model (blue), samples (grey)",
-              x = "Injection Number",
-              y = "Correction Factor"
-            )
-
-          ggsave(
-            "RDX_DriftCorrection.png",
-            p_drift,
-            path = Results.dir,
-            width = 10, height = 5, dpi = 300
-          )
-
-        } else {
-          Combined$rdx_drift_model <- "None"
-        }
-
-      } else {
-        message("  RDX drift correction: fewer than 2 usable QC points -- skipping.")
-        Combined$rdx_drift_model <- "None"
-      }
-
-    } else {
-      message("  RDX drift correction: reference value invalid -- skipping.")
-      Combined$rdx_drift_model <- "None"
-    }
-  } else {
-    message("  RDX drift correction: no usable QC rows -- skipping.")
-    Combined$rdx_drift_model <- "None"
-  }
-
-} else if (!apply_rdx_drift_correction) {
-  Combined$rdx_drift_model <- "Disabled"
-  message("  RDX drift correction: disabled (apply_rdx_drift_correction = FALSE).")
-} else if (use_is_for_rdx) {
-  Combined$rdx_drift_model <- "Not_needed"
-  message("  RDX drift correction: not needed (use_is_for_rdx = TRUE, IS ratio correction sufficient).")
-}
-
-# =========================================================
-# RDX Drift-Corrected Calibration Plots
-# =========================================================
-
-if (apply_rdx_drift_correction && 
-    !use_is_for_rdx &&
-    !is.na(Combined$rdx_drift_model[1]) &&
-    Combined$rdx_drift_model[1] %in% c("Quadratic", "Linear")) {
-  
-  message("  Generating RDX drift-corrected calibration plots...")
-  
-  for (model_idx in seq_along(stored_rdx_models)) {
-    
-    m <- stored_rdx_models[[model_idx]]
-    
-    cal_data <- Combined %>%
-      filter(Type == "Cal", CalibrationSet == model_idx, !is.na(rdx_pa)) %>%
-      mutate(CalLevelAdj = CalLevel * Dilution)
-    
-    if (nrow(cal_data) > 0) {
-      curve_x <- seq(min(cal_data$CalLevelAdj, na.rm = TRUE),
-                     max(cal_data$CalLevelAdj, na.rm = TRUE),
-                     length.out = 200)
-      curve_df <- data.frame(
-        CalLevelAdj = curve_x,
-        Fitted = predict(m$quad_model, newdata = data.frame(CalLevelAdj = curve_x))
-      )
-      
-      pd_dc <- Combined %>%
-        filter(CalibrationSet == model_idx) %>%
-        mutate(
-          Xplot = case_when(
-            Type %in% c("Cal", "QC") ~ CalLevel * Dilution,
-            TRUE                     ~ rdx_concentration_dc
-          ),
-          y_val = rdx_pa_dc,
-          Group = case_when(
-            Type == "Cal" ~ "Standard",
-            Type == "QC"  ~ "QC",
-            TRUE          ~ "Sample"
-          ),
-          SNR_Flag = if ("rdx_snr_flag" %in% names(.)) rdx_snr_flag else NA_character_
-        ) %>%
-        filter(!is.na(y_val), is.finite(Xplot))
-      
-      if (nrow(pd_dc) > 0 && nrow(curve_df) > 0) {
-        p_dc <- ggplot() +
-          geom_line(data = curve_df, aes(CalLevelAdj, Fitted), color = "black") +
-          geom_point(data = pd_dc, aes(Xplot, y_val, color = Group, shape = SNR_Flag), size = 3) +
-          scale_shape_manual(
-            values = c("Quantifiable" = 16, "Below_LOQ" = 17, "Below_LOD" = 4),
-            na.value = 1
-          ) +
-          theme_bw() +
-          labs(
-            title = paste("RDX - Calibration", model_idx, "(Drift-Corrected)"),
-            x = "RDX concentration (ng)",
-            y = "Corrected Peak Area",
-            shape = "SNR Flag"
-          )
-        
-        ggsave(
-          paste0("RDX_Calibration_", model_idx, "_DriftCorrected.png"),
-          p_dc,
-          path = Results.dir,
-          width = 8,
-          height = 5,
-          dpi = 300
-        )
-      }
-    }
-  }
+if (use_is_for_rdx) {
+  message("  RDX drift correction: not needed (IS ratio correction sufficient).")
+} else {
+  message("  RDX drift correction: not applied (PA-only mode uses uncorrected concentrations).")
 }
 
 # =========================================================
@@ -1336,7 +1217,7 @@ if (apply_rdx_drift_correction &&
 if (has_calibration) {
 
 Combined <- Combined %>%
-  mutate(TrueCalConcAdj = ifelse(Type %in% c("Cal", "QC"), CalLevel * Dilution, NA_real_))
+  mutate(TrueCalConcAdj = ifelse(Type %in% c("Cal", "QC"), CalLevel, NA_real_))
 
 for (name in names(analytes)) {
   prefix <- tolower(name)
@@ -1353,80 +1234,8 @@ for (name in names(analytes)) {
 }
 
 # =========================================================
-# Apply Fixed Concentration Threshold Range Flags (Samples Only)
+# 10. QC Evaluation (6ng QCs: bias-based; 0.2ng QCs: SNR-based)
 # =========================================================
-# Range flags evaluate sample concentrations against fixed thresholds:
-#   < 0.1 ng/µL → "Below_range"
-#   0.1-0.2 ng/µL → "Warning"  
-#   ≥ 0.2 ng/µL → "Within_range"
-#   NA concentration → NA flag
-# Applied to Sample rows only (not QCs, Cals, or Blanks)
-
-# Initialize drift-corrected range flag columns if drift correction was applied
-if ("petn_concentration_dc" %in% names(Combined)) {
-  Combined$petn_range_flag_dc <- NA_character_
-}
-if ("rdx_concentration_dc" %in% names(Combined)) {
-  Combined$rdx_range_flag_dc <- NA_character_
-}
-
-for (name in names(analytes)) {
-  prefix <- tolower(name)
-  
-  # Uncorrected concentration range flags
-  conc_col <- paste0(prefix, "_concentration")
-  range_col <- paste0(prefix, "_range_flag")
-  
-  if (conc_col %in% names(Combined)) {
-    for (i in which(Combined$Type == "Sample")) {
-      conc <- Combined[[conc_col]][i]
-      
-      if (is.na(conc)) {
-        Combined[[range_col]][i] <- NA_character_
-      } else if (conc < 0.1) {
-        Combined[[range_col]][i] <- "Below_range"
-      } else if (conc >= 0.1 && conc < 0.2) {
-        Combined[[range_col]][i] <- "Warning"
-      } else {
-        Combined[[range_col]][i] <- "Within_range"
-      }
-    }
-  }
-  
-  # Drift-corrected concentration range flags (PETN only, when applicable)
-  if (name == "PETN" && "petn_concentration_dc" %in% names(Combined)) {
-    for (i in which(Combined$Type == "Sample")) {
-      conc_dc <- Combined$petn_concentration_dc[i]
-      
-      if (is.na(conc_dc)) {
-        Combined$petn_range_flag_dc[i] <- NA_character_
-      } else if (conc_dc < 0.1) {
-        Combined$petn_range_flag_dc[i] <- "Below_range"
-      } else if (conc_dc >= 0.1 && conc_dc < 0.2) {
-        Combined$petn_range_flag_dc[i] <- "Warning"
-      } else {
-        Combined$petn_range_flag_dc[i] <- "Within_range"
-      }
-    }
-  }
-  
-  # RDX drift-corrected range flags (when PA-only drift correction applied)
-  if (name == "RDX" && "rdx_concentration_dc" %in% names(Combined)) {
-    for (i in which(Combined$Type == "Sample")) {
-      conc_dc <- Combined$rdx_concentration_dc[i]
-      
-      if (is.na(conc_dc)) {
-        Combined$rdx_range_flag_dc[i] <- NA_character_
-      } else if (conc_dc < 0.1) {
-        Combined$rdx_range_flag_dc[i] <- "Below_range"
-      } else if (conc_dc >= 0.1 && conc_dc < 0.2) {
-        Combined$rdx_range_flag_dc[i] <- "Warning"
-      } else {
-        Combined$rdx_range_flag_dc[i] <- "Within_range"
-      }
-    }
-  }
-}
 
 Combined$petn_percent_bias_dc <- ifelse(
   Combined$Type %in% c("Cal", "QC") &
@@ -1443,23 +1252,40 @@ for (i in which(Combined$Type == "QC")) {
   if (is.na(cal_level)) next
   
   if (cal_level == 0.2) {
-    # 0.2ng: SNR-based (use uncorrected SNR since drift correction doesn't change SNR)
+    # 0.2ng: Three-tier evaluation (concentration first, then SNR thresholds)
+    # Priority: conc <= 0 → FAIL (not quantifiable)
+    #           SNR < 3 → FAIL (below LOD)
+    #           SNR < 10 → WARN (detected but marginal)
+    #           SNR >= 10 AND conc > 0 → PASS (good sensitivity)
     snr_val <- if ("petn_snr" %in% names(Combined)) Combined$petn_snr[i] else NA_real_
-    if (is.na(snr_val)) {
-      Combined$petn_qc_flag_dc[i] <- NA_character_
-    } else if (snr_val >= 10) {
-      Combined$petn_qc_flag_dc[i] <- "SENSITIVITY_CHECK_PASS"
-    } else if (snr_val >= 3 && snr_val < 10) {
+    conc_dc_val <- Combined$petn_concentration_dc[i]
+    
+    if (is.na(snr_val) || is.na(conc_dc_val)) {
+      # No peak detected at all (non-detection) or concentration could not be
+      # computed -- per spec this is a sensitivity failure, not an unevaluated
+      # QC. Previously this silently produced NA, masking non-detection.
+      Combined$petn_qc_flag_dc[i] <- "SENSITIVITY_CHECK_FAIL"
+    } else if (conc_dc_val <= 0) {
+      # Concentration check FIRST: not quantifiable regardless of SNR
+      Combined$petn_qc_flag_dc[i] <- "SENSITIVITY_CHECK_FAIL"
+    } else if (snr_val < 3) {
+      # Below detection limit
+      Combined$petn_qc_flag_dc[i] <- "SENSITIVITY_CHECK_FAIL"
+    } else if (snr_val < 10) {
+      # Marginal: detected and quantifiable but SNR < 10
       Combined$petn_qc_flag_dc[i] <- "SENSITIVITY_CHECK_WARN"
     } else {
-      Combined$petn_qc_flag_dc[i] <- "SENSITIVITY_CHECK_FAIL"
+      # SNR >= 10 AND conc > 0
+      Combined$petn_qc_flag_dc[i] <- "SENSITIVITY_CHECK_PASS"
     }
   } else {
     # Higher QCs: Bias + SNR
     bias_val_dc <- Combined$petn_percent_bias_dc[i]
     snr_val <- if ("petn_snr" %in% names(Combined)) Combined$petn_snr[i] else NA_real_
     if (is.na(bias_val_dc)) {
-      Combined$petn_qc_flag_dc[i] <- NA_character_
+      # No concentration available (typically non-detection, SNR/PA both NA) --
+      # general failure per spec, not an unevaluated QC.
+      Combined$petn_qc_flag_dc[i] <- "FAIL"
     } else if (abs(bias_val_dc) <= qc_bias_limit && (!is.na(snr_val) && snr_val >= 10)) {
       Combined$petn_qc_flag_dc[i] <- "PASS"
     } else if (abs(bias_val_dc) > qc_bias_limit) {
@@ -1468,50 +1294,6 @@ for (i in which(Combined$Type == "QC")) {
       Combined$petn_qc_flag_dc[i] <- "FAIL_SNR"
     } else {
       Combined$petn_qc_flag_dc[i] <- "FAIL"
-    }
-  }
-}
-
-Combined$rdx_percent_bias_dc <- ifelse(
-  Combined$Type %in% c("Cal", "QC") &
-    !is.na(Combined$rdx_concentration_dc) &
-    !is.na(Combined$TrueCalConcAdj),
-  (Combined$rdx_concentration_dc - Combined$TrueCalConcAdj) / Combined$TrueCalConcAdj * 100,
-  NA_real_
-)
-
-# RDX drift-corrected QC flags (apply same logic as uncorrected)
-Combined$rdx_qc_flag_dc <- NA_character_
-for (i in which(Combined$Type == "QC")) {
-  cal_level <- Combined$CalLevel[i]
-  if (is.na(cal_level)) next
-  
-  if (cal_level == 0.2) {
-    # 0.2ng: SNR-based (use uncorrected SNR since drift correction doesn't change SNR)
-    snr_val <- if ("rdx_snr" %in% names(Combined)) Combined$rdx_snr[i] else NA_real_
-    if (is.na(snr_val)) {
-      Combined$rdx_qc_flag_dc[i] <- NA_character_
-    } else if (snr_val >= 10) {
-      Combined$rdx_qc_flag_dc[i] <- "SENSITIVITY_CHECK_PASS"
-    } else if (snr_val >= 3 && snr_val < 10) {
-      Combined$rdx_qc_flag_dc[i] <- "SENSITIVITY_CHECK_WARN"
-    } else {
-      Combined$rdx_qc_flag_dc[i] <- "SENSITIVITY_CHECK_FAIL"
-    }
-  } else {
-    # Higher QCs: Bias + SNR
-    bias_val_dc <- Combined$rdx_percent_bias_dc[i]
-    snr_val <- if ("rdx_snr" %in% names(Combined)) Combined$rdx_snr[i] else NA_real_
-    if (is.na(bias_val_dc)) {
-      Combined$rdx_qc_flag_dc[i] <- NA_character_
-    } else if (abs(bias_val_dc) <= qc_bias_limit && (!is.na(snr_val) && snr_val >= 10)) {
-      Combined$rdx_qc_flag_dc[i] <- "PASS"
-    } else if (abs(bias_val_dc) > qc_bias_limit) {
-      Combined$rdx_qc_flag_dc[i] <- "FAIL_BIAS"
-    } else if (!is.na(snr_val) && snr_val < 10) {
-      Combined$rdx_qc_flag_dc[i] <- "FAIL_SNR"
-    } else {
-      Combined$rdx_qc_flag_dc[i] <- "FAIL"
     }
   }
 }
@@ -1535,16 +1317,17 @@ for (name in names(analytes)) {
     
     if (cal_level == 0.2) {
       # 0.2ng QCs: SNR-based evaluation only (sensitivity check)
+      # PASS if SNR >= 3 (detectable), FAIL only if SNR < 3 (below LOD)
       Combined[[qc_type_col]][i] <- "SENSITIVITY"
       
       snr_val <- if (snr_col %in% names(Combined)) Combined[[snr_col]][i] else NA_real_
       
       if (is.na(snr_val)) {
-        Combined[[flag_col]][i] <- NA_character_
-      } else if (snr_val >= 10) {
+        # No peak detected at all (non-detection) -- below LOD, worse than
+        # SNR < 3. Previously silently produced NA, masking non-detection.
+        Combined[[flag_col]][i] <- "SENSITIVITY_CHECK_FAIL"
+      } else if (snr_val >= 3) {
         Combined[[flag_col]][i] <- "SENSITIVITY_CHECK_PASS"
-      } else if (snr_val >= 3 && snr_val < 10) {
-        Combined[[flag_col]][i] <- "SENSITIVITY_CHECK_WARN"
       } else {
         Combined[[flag_col]][i] <- "SENSITIVITY_CHECK_FAIL"
       }
@@ -1557,7 +1340,9 @@ for (name in names(analytes)) {
       snr_val <- if (snr_col %in% names(Combined)) Combined[[snr_col]][i] else NA_real_
       
       if (is.na(bias_val)) {
-        Combined[[flag_col]][i] <- NA_character_
+        # No concentration available (typically non-detection) -- general
+        # failure per spec, not an unevaluated QC.
+        Combined[[flag_col]][i] <- "FAIL"
       } else if (abs(bias_val) <= qc_bias_limit && (!is.na(snr_val) && snr_val >= 10)) {
         Combined[[flag_col]][i] <- "PASS"
       } else if (abs(bias_val) > qc_bias_limit) {
@@ -1707,44 +1492,6 @@ if (nrow(qc_plot_data) > 0 && has_calibration) {
       }
     }
 
-    # ===== 6ng QC Accuracy Plot - Drift Corrected (RDX PA-only mode) =====
-    if (analyte_name == "RDX" &&
-        !use_is_for_rdx &&
-        "rdx_percent_bias_dc" %in% names(qc_plot_data) &&
-        !all(is.na(qc_plot_data$rdx_percent_bias_dc))) {
-
-      qc_6ng_dc <- qc_plot_data %>%
-        filter(CalLevel == 6, !is.na(rdx_percent_bias_dc)) %>%
-        select(Row, PercentBias = rdx_percent_bias_dc, QCFlag = rdx_qc_flag_dc)
-
-      if (nrow(qc_6ng_dc) > 0) {
-        p_6ng_bias_dc <- ggplot(qc_6ng_dc, aes(x = Row, y = PercentBias, shape = QCFlag)) +
-          geom_point(size = 4, colour = "darkgreen") +
-          geom_line(colour = "darkgreen") +
-          geom_hline(yintercept = 0, colour = "grey50") +
-          geom_hline(yintercept = c(-qc_bias_limit, qc_bias_limit),
-                     linetype = "dashed", colour = "red", linewidth = 1) +
-          theme_bw() +
-          labs(
-            title = "RDX - 6ng QC Accuracy (Drift-Corrected)",
-            subtitle = paste("Red lines = ±", qc_bias_limit, "% acceptance limits"),
-            x = "Injection Number",
-            y = "% Bias vs True (6ng)",
-            shape = "QC Flag"
-          ) +
-          scale_shape_manual(
-            values = c("PASS" = 16, "FAIL_BIAS" = 4, "FAIL_SNR" = 17, "FAIL" = 4),
-            na.value = 1
-          )
-
-        ggsave(
-          "RDX_QC_6ng_Accuracy_DriftCorrected.png",
-          p_6ng_bias_dc,
-          path = Results.dir,
-          width = 10, height = 5, dpi = 300
-        )
-      }
-    }
   }
 }
 
@@ -1839,7 +1586,12 @@ if (file.exists(outfile)) {
   message("  Previous results backed up to: ", file.path(Backup.dir, backup_name))
 }
 
-write.csv(Combined, outfile, row.names = FALSE)
+# Remove RDX drift correction columns from output (not applicable - RDX uses IS ratio only)
+Combined_output <- Combined %>%
+  select(-any_of(c("rdx_drift_correction_factor", "rdx_concentration_dc", 
+                   "rdx_percent_bias_dc", "rdx_qc_flag_dc")))
+
+write.csv(Combined_output, outfile, row.names = FALSE)
 
 # =========================================================
 # Export XLSX workbook with separate sheets
@@ -1849,82 +1601,140 @@ xlsx_outfile <- file.path(
   paste0(ParentFolder, "_GCMSResults.xlsx")
 )
 
+# Confirmatory (qualifier) ion columns (added Aug 2026 -- see CONTEXT.md
+# "Confirmatory Ion Detection" session). Not used for quantification;
+# included here purely for audit visibility alongside each analyte's own
+# raw measurements. `any_of()` in the sheet-building select() calls below
+# means these are silently omitted for any dataset processed before this
+# feature existed (no error).
+petn_qual_cols <- c("petn_qual76_rt", "petn_qual76_pa", "petn_qual76_ph", "petn_qual76_snr", "petn_qual76_snr_flag")
+rdx_qual_cols  <- c("rdx_qual46_rt", "rdx_qual46_pa", "rdx_qual46_ph", "rdx_qual46_snr", "rdx_qual46_snr_flag",
+                    "rdx_qual75_rt", "rdx_qual75_pa", "rdx_qual75_ph", "rdx_qual75_snr", "rdx_qual75_snr_flag")
+
 # Tailored column sets per sheet type
+
+# "Other significant peak" TIC scan columns (added Aug 2026, extended to
+# ALL sheet types Aug 2026 Stage 5 -- see CONTEXT.md "TIC Deinterleaving
+# Fix" session). find_other_tic_peaks() (Code/ModPeaks.R) runs identically
+# for every injection type (Cal/QC/Sample/Blank) in Code/02_PeakDetection.R
+# -- Stage 4's study-wide re-analysis (Code/04_CollateStudyResults.R
+# Section 13a) showed "other" peaks are actually now MORE prevalent in QC
+# (94%) and Sample (90.5%) rows than in Blanks (44.8%), so restricting
+# per-lab XLSX visibility to only the Blanks sheet (the original,
+# Blanks-only conception of this feature) was a real gap once the
+# consumption broadened to all types -- fixed by adding these columns to
+# every sheet's column list below, not just blk_cols. Instrument-
+# performance-only, non-gating -- see Code/InjectionAcceptance.R
+# evaluate_blanks() for how Blank rows specifically feed into the (still
+# unaffected) blank_status/petn_blank_bracket/rdx_blank_bracket chain.
+# Reports up to tic_other_peak_max_report individual peaks (largest first)
+# so a recurring-but-secondary peak isn't masked by a larger one-off peak
+# in the same injection -- see the study-level Recurring Peak clustering
+# in Code/04_CollateStudyResults.R.
+tic_other_peak_cols <- c(
+  "tic_other_peak_count",
+  paste0("tic_other_peak_rt", seq_len(tic_other_peak_max_report)),
+  paste0("tic_other_peak_height", seq_len(tic_other_peak_max_report))
+)
+
 cal_cols <- c("Date", "Line", "SampleName", "DataFile", "Vial", "CalLevel", "CalibrationSet",
               # Internal Standard (15N-RDX)
-              "rdx_is_rt", "rdx_is_pa", "rdx_is_snr", "rdx_is_snr_flag",
+              "rdx_is_rt", "rdx_is_pa", "rdx_is_pa_flag", "rdx_is_snr", "rdx_is_snr_flag",
               # === ALL PETN COLUMNS ===
               # PETN raw measurements
               "petn_rt", "petn_pa", "petn_ph", "petn_snr", "petn_snr_flag", "petn_ratio",
+              # PETN confirmatory ions
+              petn_qual_cols,
               # PETN quantitation
-              "petn_concentration", "petn_range_flag", "petn_quant_method",
+              "petn_concentration", "petn_quant_method", "petn_extrapolated",
               # PETN accuracy
               "petn_percent_bias",
               # === ALL RDX COLUMNS ===
               # RDX raw measurements
               "rdx_rt", "rdx_pa", "rdx_ph", "rdx_snr", "rdx_snr_flag", "rdx_ratio",
+              # RDX confirmatory ions
+              rdx_qual_cols,
               # RDX quantitation
-              "rdx_concentration", "rdx_range_flag", "rdx_quant_method",
+              "rdx_concentration", "rdx_quant_method", "rdx_extrapolated",
               # RDX accuracy
               "rdx_percent_bias",
               # True concentration (for both analytes)
-              "TrueCalConcAdj")
+              "TrueCalConcAdj",
+              # "Other significant peak" TIC scan (see comment above)
+              tic_other_peak_cols)
 
 qc_cols <- c("Date", "Line", "SampleName", "DataFile", "Vial", "CalLevel", "CalibrationSet",
              # Internal Standard (15N-RDX)
-             "rdx_is_rt", "rdx_is_pa", "rdx_is_snr", "rdx_is_snr_flag",
+             "rdx_is_rt", "rdx_is_pa", "rdx_is_pa_flag",
              # === ALL PETN COLUMNS ===
              # PETN raw measurements
              "petn_rt", "petn_pa", "petn_ph", "petn_snr", "petn_snr_flag", "petn_ratio",
+             # PETN confirmatory ions
+             petn_qual_cols,
              # PETN quantitation (uncorrected)
-             "petn_concentration", "petn_range_flag",
+             "petn_concentration", "petn_extrapolated",
              # PETN drift correction
-             "petn_drift_correction_factor", "petn_concentration_dc",
-             # PETN accuracy (uncorrected)
-             "petn_percent_bias",
-             # PETN QC evaluation
-             "petn_qc_type", "petn_qc_flag",
-             # PETN accuracy (drift-corrected)
+             "petn_drift_correction_factor", "petn_concentration_dc", "petn_extrapolated_dc",
+             # PETN QC evaluation (drift-corrected only)
              "petn_percent_bias_dc", "petn_qc_flag_dc",
              # === ALL RDX COLUMNS ===
              # RDX raw measurements
              "rdx_rt", "rdx_pa", "rdx_ph", "rdx_snr", "rdx_snr_flag", "rdx_ratio",
+             # RDX confirmatory ions
+             rdx_qual_cols,
              # RDX quantitation (uncorrected)
-             "rdx_concentration", "rdx_range_flag",
-             # RDX drift correction
-             "rdx_drift_correction_factor", "rdx_concentration_dc",
+             "rdx_concentration", "rdx_extrapolated",
              # RDX accuracy (uncorrected)
              "rdx_percent_bias",
              # RDX QC evaluation
              "rdx_qc_type", "rdx_qc_flag",
-             # RDX accuracy (drift-corrected)
-             "rdx_percent_bias_dc", "rdx_qc_flag_dc",
              # True concentration (for both analytes)
-             "TrueCalConcAdj")
+             "TrueCalConcAdj",
+             # "Other significant peak" TIC scan (see comment above)
+             tic_other_peak_cols)
 
 smp_cols <- c("Date", "Line", "SampleName", "DataFile", "Vial",
               # Internal Standard (15N-RDX)
-              "rdx_is_rt", "rdx_is_pa", "rdx_is_snr", "rdx_is_snr_flag",
+              "rdx_is_rt", "rdx_is_pa", "rdx_is_pa_flag", "rdx_is_snr", "rdx_is_snr_flag",
               # === ALL PETN COLUMNS ===
               # PETN raw measurements
               "petn_rt", "petn_pa", "petn_ph", "petn_snr", "petn_snr_flag", "petn_ratio",
+              # PETN confirmatory ions
+              petn_qual_cols,
               # PETN quantitation (uncorrected)
-              "petn_concentration", "petn_range_flag", "petn_quant_method",
+              "petn_concentration", "petn_quant_method", "petn_extrapolated",
               # PETN drift correction
-              "petn_drift_correction_factor", "petn_concentration_dc",
+              "petn_drift_correction_factor", "petn_concentration_dc", "petn_extrapolated_dc",
               # === ALL RDX COLUMNS ===
               # RDX raw measurements
               "rdx_rt", "rdx_pa", "rdx_ph", "rdx_snr", "rdx_snr_flag", "rdx_ratio",
-              # RDX quantitation (uncorrected)
-              "rdx_concentration", "rdx_range_flag", "rdx_quant_method",
-              # RDX drift correction
-              "rdx_drift_correction_factor", "rdx_concentration_dc")
+              # RDX confirmatory ions
+              rdx_qual_cols,
+              # RDX quantitation (uncorrected only - no drift correction for RDX)
+              "rdx_concentration", "rdx_quant_method", "rdx_extrapolated",
+              # "Other significant peak" TIC scan (see comment above)
+              tic_other_peak_cols)
 
 blk_cols <- c("Date", "Line", "SampleName", "DataFile", "Vial",
               # === ALL PETN COLUMNS ===
               "petn_rt", "petn_pa", "petn_ph", "petn_snr", "petn_snr_flag",
+              # PETN confirmatory ions
+              petn_qual_cols,
               # === ALL RDX COLUMNS ===
-              "rdx_rt", "rdx_pa", "rdx_ph", "rdx_snr", "rdx_snr_flag")
+              "rdx_rt", "rdx_pa", "rdx_ph", "rdx_snr", "rdx_snr_flag",
+              # RDX confirmatory ions
+              rdx_qual_cols,
+              # "Other significant peak" TIC scan (added Aug 2026 -- see
+              # CONTEXT.md "Blank Other-Significant-Peak Detection" and
+              # find_other_tic_peaks() in Code/ModPeaks.R). Instrument-
+              # performance-only, non-gating -- see Code/InjectionAcceptance.R
+              # evaluate_blanks() for how this is consumed downstream.
+              # Reports up to tic_other_peak_max_report individual peaks
+              # (largest first) so recurring-but-secondary peaks aren't
+              # masked by a larger one-off peak in the same injection --
+              # see the study-level Recurring Peak clustering in
+              # Code/04_CollateStudyResults.R.
+              tic_other_peak_cols)
 
 # Build sheet list (using any_of to handle missing columns gracefully)
 sheet_list <- list(
@@ -1941,9 +1751,14 @@ sheet_list <- sheet_list[sapply(sheet_list, nrow) > 0]
 # ND = Not Detected (peak absent), BQL = Below Quantification Limit (detected but not quantifiable)
 nd_columns <- c("petn_rt", "petn_pa", "petn_ph", "petn_snr", "petn_ratio",
                 "rdx_rt", "rdx_pa", "rdx_ph", "rdx_snr", "rdx_ratio",
-                "rdx_is_rt", "rdx_is_pa", "rdx_is_snr")
+                "rdx_is_rt", "rdx_is_pa", "rdx_is_snr",
+                # Confirmatory (qualifier) ion columns (added Aug 2026; PETN
+                # m/z57 removed Aug 2026 -- see CONTEXT.md)
+                "petn_qual76_rt", "petn_qual76_pa", "petn_qual76_ph", "petn_qual76_snr",
+                "rdx_qual46_rt", "rdx_qual46_pa", "rdx_qual46_ph", "rdx_qual46_snr",
+                "rdx_qual75_rt", "rdx_qual75_pa", "rdx_qual75_ph", "rdx_qual75_snr")
 bql_columns <- c("petn_concentration", "rdx_concentration",
-                 "petn_concentration_dc", "rdx_concentration_dc")
+                 "petn_concentration_dc")
 
 fill_na_labels <- function(df) {
   for (col in names(df)) {
@@ -1977,67 +1792,483 @@ message("  XLSX results exported to: ", xlsx_outfile)
 # =========================================================
 if ("QC" %in% Combined$Type && has_calibration) {
 
-  qc_export_cols <- c("Date", "DataFile", "SampleName", "CalLevel",
-                       "CalibrationSet",
-                       "rdx_is_pa", "rdx_is_snr", "rdx_is_snr_flag",
-                       "petn_quant_method")
-
-  for (name in names(analytes)) {
-    prefix <- tolower(name)
-
-    qc_export_cols <- c(qc_export_cols,
-      paste0(prefix, "_pa"),
-      paste0(prefix, "_snr"),
-      paste0(prefix, "_snr_flag"),
-      paste0(prefix, "_ratio"),
-      paste0(prefix, "_concentration"),
-      paste0(prefix, "_range_flag"),
-      paste0(prefix, "_percent_bias"),
-      paste0(prefix, "_qc_flag"))
-  }
-
-  qc_export_cols <- c(qc_export_cols,
-    "petn_drift_correction_factor", "petn_drift_model",
-    "petn_concentration_dc",
+  # QC export columns - streamlined for monitoring (DataPath added at end)
+  # Note: RDX drift correction columns excluded (no DC applied to RDX)
+  # Note: IS SNR, PETN concentration, and qc_type removed per user request
+  qc_export_cols <- c(
+    "Date", "Line", "SampleName", "DataFile", "Vial", "CalLevel", "CalibrationSet",
+    # IS (15N-RDX) - PA only
+    "rdx_is_rt", "rdx_is_pa", "rdx_is_pa_flag",
+    # PETN - drift-corrected columns only
+    "petn_rt", "petn_pa", "petn_ph", "petn_snr", "petn_snr_flag", "petn_ratio",
+    "petn_drift_correction_factor", "petn_concentration_dc",
     "petn_percent_bias_dc", "petn_qc_flag_dc",
-    "rdx_drift_correction_factor", "rdx_drift_model",
-    "rdx_concentration_dc",
-    "rdx_percent_bias_dc", "rdx_qc_flag_dc")
+    # RDX (no drift correction columns)
+    "rdx_rt", "rdx_pa", "rdx_ph", "rdx_snr", "rdx_snr_flag", "rdx_ratio",
+    "rdx_concentration", "rdx_percent_bias", "rdx_qc_type", "rdx_qc_flag"
+  )
 
+  # Only keep columns that actually exist in Combined dataframe
   qc_export_cols <- intersect(qc_export_cols, names(Combined))
 
   QCResults <- Combined %>%
     filter(Type == "QC") %>%
     select(all_of(qc_export_cols))
+  
+  # Add DataPath (full folder path) as FINAL column
+  QCResults <- QCResults %>%
+    mutate(DataPath = DataFolder)
+  
+  # Split into separate dataframes for 0.2ng and 6ng QCs
+  QCResults_02ng <- QCResults %>% filter(CalLevel == 0.2)
+  QCResults_6ng <- QCResults %>% filter(CalLevel == 6)
+  
+  # For 0.2ng QCs: simplify drift-corrected flags to PASS/FAIL (sensitivity check only)
+  if (nrow(QCResults_02ng) > 0) {
+    QCResults_02ng <- QCResults_02ng %>%
+      mutate(
+        petn_qc_flag_dc = case_when(
+          grepl("PASS", petn_qc_flag_dc, ignore.case = TRUE) ~ "PASS",
+          grepl("FAIL", petn_qc_flag_dc, ignore.case = TRUE) ~ "FAIL",
+          grepl("WARN", petn_qc_flag_dc, ignore.case = TRUE) ~ "FAIL",
+          TRUE ~ petn_qc_flag_dc
+        ),
+        rdx_qc_flag = case_when(
+          grepl("PASS", rdx_qc_flag, ignore.case = TRUE) ~ "PASS",
+          grepl("FAIL", rdx_qc_flag, ignore.case = TRUE) ~ "FAIL",
+          grepl("WARN", rdx_qc_flag, ignore.case = TRUE) ~ "FAIL",
+          TRUE ~ rdx_qc_flag
+        )
+      )
+  }
 
   if (nrow(QCResults) > 0) {
+    # Fresh start: save directly as XLSX with separate sheets for 0.2ng and 6ng
     if (file.exists(qc_monitoring_file)) {
-      ExistingQC <- read.csv(qc_monitoring_file, stringsAsFactors = FALSE)
-
-      ExistingQC$Date <- as.character(ExistingQC$Date)
-      QCResults$Date  <- as.character(QCResults$Date)
-
-      CombinedQC <- bind_rows(ExistingQC, QCResults) %>%
-        distinct(DataFile, .keep_all = TRUE)
-
+      # Read existing XLSX sheets
+      sheet_names <- readxl::excel_sheets(qc_monitoring_file)
+      
+      # Read existing sheets if they exist
+      if ("QC_0.2ng" %in% sheet_names) {
+        Existing_02ng <- readxl::read_excel(qc_monitoring_file, sheet = "QC_0.2ng")
+        Existing_02ng$Date <- as.character(Existing_02ng$Date)
+      } else {
+        Existing_02ng <- NULL
+      }
+      
+      if ("QC_6ng" %in% sheet_names) {
+        Existing_6ng <- readxl::read_excel(qc_monitoring_file, sheet = "QC_6ng")
+        Existing_6ng$Date <- as.character(Existing_6ng$Date)
+      } else {
+        Existing_6ng <- NULL
+      }
+      
+      # Convert new QC dates to character
+      if (nrow(QCResults_02ng) > 0) QCResults_02ng$Date <- as.character(QCResults_02ng$Date)
+      if (nrow(QCResults_6ng) > 0) QCResults_6ng$Date <- as.character(QCResults_6ng$Date)
+      
+      # Combine and remove duplicates based on (DataPath, DataFile)
+      if (!is.null(Existing_02ng) && nrow(QCResults_02ng) > 0) {
+        Combined_02ng <- bind_rows(Existing_02ng, QCResults_02ng) %>%
+          distinct(DataPath, DataFile, .keep_all = TRUE)
+      } else if (nrow(QCResults_02ng) > 0) {
+        Combined_02ng <- QCResults_02ng
+      } else {
+        Combined_02ng <- Existing_02ng
+      }
+      
+      if (!is.null(Existing_6ng) && nrow(QCResults_6ng) > 0) {
+        Combined_6ng <- bind_rows(Existing_6ng, QCResults_6ng) %>%
+          distinct(DataPath, DataFile, .keep_all = TRUE)
+      } else if (nrow(QCResults_6ng) > 0) {
+        Combined_6ng <- QCResults_6ng
+      } else {
+        Combined_6ng <- Existing_6ng
+      }
+      
+      # Backup existing file
       qc_backup_dir <- file.path(dirname(qc_monitoring_file), "Backup")
       dir.create(qc_backup_dir, recursive = TRUE, showWarnings = FALSE)
       qc_backup_name <- paste0(
         format(Sys.time(), "%Y-%m-%d_%H-%M-%S"),
-        "_SystemMonitoring_backup.csv"
+        "_SystemMonitoring_backup.xlsx"
       )
-      write.csv(ExistingQC,
-                file = file.path(qc_backup_dir, qc_backup_name),
-                row.names = FALSE)
+      file.copy(qc_monitoring_file, file.path(qc_backup_dir, qc_backup_name))
       message("  QC monitoring file backed up to: ", file.path(qc_backup_dir, qc_backup_name))
-
-      write.csv(CombinedQC, file = qc_monitoring_file, row.names = FALSE)
-
+      
+      # Write combined data with separate sheets
+      sheets_to_write <- list()
+      if (!is.null(Combined_02ng) && nrow(Combined_02ng) > 0) {
+        sheets_to_write[["QC_0.2ng"]] <- Combined_02ng
+      }
+      if (!is.null(Combined_6ng) && nrow(Combined_6ng) > 0) {
+        sheets_to_write[["QC_6ng"]] <- Combined_6ng
+      }
+      
+      if (length(sheets_to_write) > 0) {
+        writexl::write_xlsx(sheets_to_write, qc_monitoring_file)
+      }
+      
     } else {
+      # Create new file with separate sheets
       dir.create(dirname(qc_monitoring_file), recursive = TRUE, showWarnings = FALSE)
-      write.csv(QCResults, file = qc_monitoring_file, row.names = FALSE)
+      
+      sheets_to_write <- list()
+      if (nrow(QCResults_02ng) > 0) {
+        sheets_to_write[["QC_0.2ng"]] <- QCResults_02ng
+      }
+      if (nrow(QCResults_6ng) > 0) {
+        sheets_to_write[["QC_6ng"]] <- QCResults_6ng
+      }
+      
+      if (length(sheets_to_write) > 0) {
+        writexl::write_xlsx(sheets_to_write, qc_monitoring_file)
+      }
+    }
+    message("  QC monitoring updated: ", qc_monitoring_file)
+    
+    # ============================================================
+    # Generate QC Monitoring Trend Plots
+    # ============================================================
+    # Generate PNG plots showing PETN and RDX peak area trends over time
+    # for 0.2ng and 6ng QC levels. Uses sequential dataset number as x-axis
+    # and shows mean PA per dataset.
+    
+    if (file.exists(qc_monitoring_file)) {
+      message("  Generating QC trend plots...")
+      
+      tryCatch({
+        # Read both sheets
+        sheet_names <- readxl::excel_sheets(qc_monitoring_file)
+        
+        # Process 0.2ng QCs if sheet exists
+        if ("QC_0.2ng" %in% sheet_names) {
+          qc_02ng <- readxl::read_excel(qc_monitoring_file, sheet = "QC_0.2ng")
+          
+          if (nrow(qc_02ng) > 0) {
+            # Prepare data: use individual QC injections (not aggregated)
+            qc_02ng_plot <- qc_02ng %>%
+              mutate(
+                Dataset = basename(DataPath),
+                Date = as.Date(as.character(Date), format = "%Y%m%d")
+              ) %>%
+              arrange(Date, Line) %>%
+              mutate(SequenceNumber = row_number())
+            
+            # Identify first QC injection of each new dataset (sequence)
+            qc_02ng_plot <- qc_02ng_plot %>%
+              group_by(Dataset) %>%
+              mutate(IsFirstOfSequence = row_number() == 1) %>%
+              ungroup()
+            
+            # Skip plot if only one QC injection (not enough for trend)
+            if (nrow(qc_02ng_plot) < 2) {
+              message("    -> Skipping QC_0.2ng_Trends.png (need ≥2 QC injections for trend)")
+            } else {
+            
+            # Reshape to long format for faceting
+            qc_02ng_long <- qc_02ng_plot %>%
+              pivot_longer(
+                cols = c(petn_pa, rdx_pa),
+                names_to = "Analyte",
+                values_to = "PA"
+              ) %>%
+              mutate(Analyte = ifelse(grepl("petn", Analyte), "PETN", "RDX")) %>%
+              filter(!is.na(PA))  # Remove NA values for proper line connections
+            
+            # Calculate overall mean per analyte for reference lines
+            mean_lines_02ng <- qc_02ng_long %>%
+              group_by(Analyte) %>%
+              summarise(MeanPA = mean(PA, na.rm = TRUE))
+            
+            # Generate 0.2ng PA plot
+            p_02ng <- ggplot(qc_02ng_long, aes(x = SequenceNumber, y = PA)) +
+              geom_line(color = "black", size = 0.8) +
+              geom_point(aes(color = IsFirstOfSequence), size = 3) +
+              scale_color_manual(values = c("FALSE" = "black", "TRUE" = "red"),
+                                 labels = c("FALSE" = "Within sequence", "TRUE" = "First of new sequence"),
+                                 name = NULL) +
+              geom_hline(data = mean_lines_02ng, 
+                         aes(yintercept = MeanPA),
+                         linetype = "dashed", 
+                         color = "gray40") +
+              facet_wrap(~ Analyte, ncol = 1, scales = "free_y") +
+              labs(
+                title = "QC 0.2ng Peak Area Trends",
+                subtitle = sprintf("Individual QC injections (n = %d)", 
+                                   max(qc_02ng_long$SequenceNumber, na.rm = TRUE)),
+                x = "Sequential QC Injection Number",
+                y = "Peak Area (AU)"
+              ) +
+              theme_bw(base_size = 12) +
+              theme(
+                strip.background = element_rect(fill = "gray90"),
+                strip.text = element_text(face = "bold", size = 12),
+                panel.grid.minor = element_blank(),
+                legend.position = "bottom"
+              )
+            
+            plot_path_02ng <- file.path(dirname(qc_monitoring_file), "QC_0.2ng_Trends.png")
+            ggsave(plot_path_02ng, plot = p_02ng, width = 10, height = 8, dpi = 300, units = "in")
+            message("    -> QC_0.2ng_Trends.png")
+            }
+          }
+        }
+        
+        # Process 6ng QCs if sheet exists
+        if ("QC_6ng" %in% sheet_names) {
+          qc_6ng <- readxl::read_excel(qc_monitoring_file, sheet = "QC_6ng")
+          
+          if (nrow(qc_6ng) > 0) {
+            # Prepare data: use individual QC injections (not aggregated)
+            qc_6ng_plot <- qc_6ng %>%
+              mutate(
+                Dataset = basename(DataPath),
+                Date = as.Date(as.character(Date), format = "%Y%m%d")
+              ) %>%
+              arrange(Date, Line) %>%
+              mutate(SequenceNumber = row_number())
+            
+            # Identify first QC injection of each new dataset (sequence)
+            qc_6ng_plot <- qc_6ng_plot %>%
+              group_by(Dataset) %>%
+              mutate(IsFirstOfSequence = row_number() == 1) %>%
+              ungroup()
+            
+            # Skip plot if only one QC injection (not enough for trend)
+            if (nrow(qc_6ng_plot) < 2) {
+              message("    -> Skipping QC_6ng_Trends.png (need ≥2 QC injections for trend)")
+            } else {
+            
+            # Reshape to long format for faceting
+            qc_6ng_long <- qc_6ng_plot %>%
+              pivot_longer(
+                cols = c(petn_pa, rdx_pa),
+                names_to = "Analyte",
+                values_to = "PA"
+              ) %>%
+              mutate(Analyte = ifelse(grepl("petn", Analyte), "PETN", "RDX")) %>%
+              filter(!is.na(PA))  # Remove NA values for proper line connections
+            
+            # Calculate overall mean per analyte for reference lines
+            mean_lines_6ng <- qc_6ng_long %>%
+              group_by(Analyte) %>%
+              summarise(MeanPA = mean(PA, na.rm = TRUE))
+            
+            # Generate 6ng PA plot
+            p_6ng <- ggplot(qc_6ng_long, aes(x = SequenceNumber, y = PA)) +
+              geom_line(color = "black", size = 0.8) +
+              geom_point(aes(color = IsFirstOfSequence), size = 3) +
+              scale_color_manual(values = c("FALSE" = "black", "TRUE" = "red"),
+                                 labels = c("FALSE" = "Within sequence", "TRUE" = "First of new sequence"),
+                                 name = NULL) +
+              geom_hline(data = mean_lines_6ng, 
+                         aes(yintercept = MeanPA),
+                         linetype = "dashed", 
+                         color = "gray40") +
+              facet_wrap(~ Analyte, ncol = 1, scales = "free_y") +
+              labs(
+                title = "QC 6ng Peak Area Trends",
+                subtitle = sprintf("Individual QC injections (n = %d)", 
+                                   max(qc_6ng_long$SequenceNumber, na.rm = TRUE)),
+                x = "Sequential QC Injection Number",
+                y = "Peak Area (AU)"
+              ) +
+              theme_bw(base_size = 12) +
+              theme(
+                strip.background = element_rect(fill = "gray90"),
+                strip.text = element_text(face = "bold", size = 12),
+                panel.grid.minor = element_blank(),
+                legend.position = "bottom"
+              )
+            
+            plot_path_6ng <- file.path(dirname(qc_monitoring_file), "QC_6ng_Trends.png")
+            ggsave(plot_path_6ng, plot = p_6ng, width = 10, height = 8, dpi = 300, units = "in")
+            message("    -> QC_6ng_Trends.png")
+            }
+          }
+        }
+        
+        # ============================================================
+        # Generate Drift-Corrected Concentration Trend Plots
+        # ============================================================
+        
+        # Process 0.2ng drift-corrected concentration trends
+        if ("QC_0.2ng" %in% sheet_names) {
+          qc_02ng <- readxl::read_excel(qc_monitoring_file, sheet = "QC_0.2ng")
+          
+          if (nrow(qc_02ng) > 0) {
+            # Prepare data: use individual QC injections
+            qc_02ng_conc_plot <- qc_02ng %>%
+              mutate(
+                Dataset = basename(DataPath),
+                Date = as.Date(as.character(Date), format = "%Y%m%d")
+              ) %>%
+              arrange(Date, Line) %>%
+              mutate(SequenceNumber = row_number())
+            
+            # Identify first QC injection of each new dataset (sequence)
+            qc_02ng_conc_plot <- qc_02ng_conc_plot %>%
+              group_by(Dataset) %>%
+              mutate(IsFirstOfSequence = row_number() == 1) %>%
+              ungroup()
+            
+            # Skip plot if only one QC injection
+            if (nrow(qc_02ng_conc_plot) < 2) {
+              message("    -> Skipping QC_0.2ng_DriftCorrected_Trends.png (need ≥2 QC injections)")
+            } else {
+            
+            # Reshape to long format for faceting
+            qc_02ng_conc_long <- qc_02ng_conc_plot %>%
+              pivot_longer(
+                cols = c(petn_concentration_dc, rdx_concentration),
+                names_to = "Analyte",
+                values_to = "Concentration"
+              ) %>%
+              mutate(Analyte = ifelse(grepl("petn", Analyte), "PETN", "RDX")) %>%
+              filter(!is.na(Concentration))  # Remove NA values
+            
+            # Calculate overall mean per analyte for reference lines
+            mean_lines_02ng_conc <- qc_02ng_conc_long %>%
+              group_by(Analyte) %>%
+              summarise(MeanConc = mean(Concentration, na.rm = TRUE))
+            
+            # Generate 0.2ng drift-corrected concentration plot
+            # Adjusted target: 0.18 ng (90% of 0.2ng nominal)
+            # Acceptance criteria: ±20% of adjusted = 0.144 to 0.216 ng
+            # Additional reference lines: -50% (0.09ng) and +50% (0.27ng)
+            # First QC of each sequence highlighted in red
+            p_02ng_conc <- ggplot(qc_02ng_conc_long, aes(x = SequenceNumber, y = Concentration)) +
+              geom_ribbon(aes(ymin = 0.144, ymax = 0.216), fill = "lightgreen", alpha = 0.2) +
+              geom_hline(yintercept = 0.18, linetype = "solid", color = "darkgreen", size = 0.8) +
+              geom_hline(yintercept = 0.144, linetype = "dashed", color = "red", size = 0.5) +
+              geom_hline(yintercept = 0.216, linetype = "dashed", color = "red", size = 0.5) +
+              geom_hline(yintercept = 0.09, linetype = "dotdash", color = "darkblue", size = 0.5) +  # -50% line
+              geom_hline(yintercept = 0.27, linetype = "dotdash", color = "darkblue", size = 0.5) +  # +50% line
+              geom_line(color = "black", size = 0.8) +
+              geom_point(aes(color = IsFirstOfSequence), size = 3) +
+              scale_color_manual(values = c("FALSE" = "black", "TRUE" = "red"),
+                                 labels = c("FALSE" = "Within sequence", "TRUE" = "First of new sequence"),
+                                 name = NULL) +
+              geom_hline(data = mean_lines_02ng_conc, 
+                         aes(yintercept = MeanConc),
+                         linetype = "dotted", 
+                         color = "blue") +
+              facet_wrap(~ Analyte, ncol = 1, scales = "free_y") +
+              labs(
+                title = "QC 0.2ng Drift-Corrected Concentration Trends",
+                subtitle = sprintf("Individual QC injections (n = %d), Target: 0.18 ng, Acceptance: ±20%%, Reference: ±50%%", 
+                                   max(qc_02ng_conc_long$SequenceNumber, na.rm = TRUE)),
+                x = "Sequential QC Injection Number",
+                y = "Concentration (ng)"
+              ) +
+              theme_bw(base_size = 12) +
+              theme(
+                strip.background = element_rect(fill = "gray90"),
+                strip.text = element_text(face = "bold", size = 12),
+                panel.grid.minor = element_blank(),
+                legend.position = "bottom"
+              )
+            
+            plot_path_02ng_conc <- file.path(dirname(qc_monitoring_file), "QC_0.2ng_DriftCorrected_Trends.png")
+            ggsave(plot_path_02ng_conc, plot = p_02ng_conc, width = 10, height = 8, dpi = 300, units = "in")
+            message("    -> QC_0.2ng_DriftCorrected_Trends.png")
+            }
+          }
+        }
+        
+        # Process 6ng drift-corrected concentration trends
+        if ("QC_6ng" %in% sheet_names) {
+          qc_6ng <- readxl::read_excel(qc_monitoring_file, sheet = "QC_6ng")
+          
+          if (nrow(qc_6ng) > 0) {
+            # Prepare data: use individual QC injections
+            qc_6ng_conc_plot <- qc_6ng %>%
+              mutate(
+                Dataset = basename(DataPath),
+                Date = as.Date(as.character(Date), format = "%Y%m%d")
+              ) %>%
+              arrange(Date, Line) %>%
+              mutate(SequenceNumber = row_number())
+            
+            # Identify first QC injection of each new dataset (sequence)
+            qc_6ng_conc_plot <- qc_6ng_conc_plot %>%
+              group_by(Dataset) %>%
+              mutate(IsFirstOfSequence = row_number() == 1) %>%
+              ungroup()
+            
+            # Skip plot if only one QC injection
+            if (nrow(qc_6ng_conc_plot) < 2) {
+              message("    -> Skipping QC_6ng_DriftCorrected_Trends.png (need ≥2 QC injections)")
+            } else {
+            
+            # Reshape to long format for faceting
+            qc_6ng_conc_long <- qc_6ng_conc_plot %>%
+              pivot_longer(
+                cols = c(petn_concentration_dc, rdx_concentration),
+                names_to = "Analyte",
+                values_to = "Concentration"
+              ) %>%
+              mutate(Analyte = ifelse(grepl("petn", Analyte), "PETN", "RDX")) %>%
+              filter(!is.na(Concentration))  # Remove NA values
+            
+            # Calculate overall mean per analyte for reference lines
+            mean_lines_6ng_conc <- qc_6ng_conc_long %>%
+              group_by(Analyte) %>%
+              summarise(MeanConc = mean(Concentration, na.rm = TRUE))
+            
+            # Generate 6ng drift-corrected concentration plot
+            # Adjusted target: 5.4 ng (90% of 6ng nominal)
+            # Acceptance criteria: ±20% of adjusted = 4.32 to 6.48 ng
+            # Additional reference lines: -50% (2.7ng) and +50% (8.1ng)
+            # First QC of each sequence highlighted in red
+            p_6ng_conc <- ggplot(qc_6ng_conc_long, aes(x = SequenceNumber, y = Concentration)) +
+              geom_ribbon(aes(ymin = 4.32, ymax = 6.48), fill = "lightgreen", alpha = 0.2) +
+              geom_hline(yintercept = 5.4, linetype = "solid", color = "darkgreen", size = 0.8) +
+              geom_hline(yintercept = 4.32, linetype = "dashed", color = "red", size = 0.5) +
+              geom_hline(yintercept = 6.48, linetype = "dashed", color = "red", size = 0.5) +
+              geom_hline(yintercept = 2.7, linetype = "dotdash", color = "darkblue", size = 0.5) +  # -50% line
+              geom_hline(yintercept = 8.1, linetype = "dotdash", color = "darkblue", size = 0.5) +  # +50% line
+              geom_line(color = "black", size = 0.8) +
+              geom_point(aes(color = IsFirstOfSequence), size = 3) +
+              scale_color_manual(values = c("FALSE" = "black", "TRUE" = "red"),
+                                 labels = c("FALSE" = "Within sequence", "TRUE" = "First of new sequence"),
+                                 name = NULL) +
+              geom_hline(data = mean_lines_6ng_conc, 
+                         aes(yintercept = MeanConc),
+                         linetype = "dotted", 
+                         color = "blue") +
+              facet_wrap(~ Analyte, ncol = 1, scales = "free_y") +
+              labs(
+                title = "QC 6ng Drift-Corrected Concentration Trends",
+                subtitle = sprintf("Individual QC injections (n = %d), Target: 5.4 ng, Acceptance: ±20%%, Reference: ±50%%", 
+                                   max(qc_6ng_conc_long$SequenceNumber, na.rm = TRUE)),
+                x = "Sequential QC Injection Number",
+                y = "Concentration (ng)"
+              ) +
+              theme_bw(base_size = 12) +
+              theme(
+                strip.background = element_rect(fill = "gray90"),
+                strip.text = element_text(face = "bold", size = 12),
+                panel.grid.minor = element_blank(),
+                legend.position = "bottom"
+              )
+            
+            plot_path_6ng_conc <- file.path(dirname(qc_monitoring_file), "QC_6ng_DriftCorrected_Trends.png")
+            ggsave(plot_path_6ng_conc, plot = p_6ng_conc, width = 10, height = 8, dpi = 300, units = "in")
+            message("    -> QC_6ng_DriftCorrected_Trends.png")
+            }
+          }
+        }
+        
+        message("  QC trend plots saved to: ", dirname(qc_monitoring_file))
+        
+      }, error = function(e) {
+        warning("  Failed to generate QC trend plots: ", e$message)
+      })
     }
   }
+
 }
 
 message("Quantification complete. Results exported to: ", outfile)

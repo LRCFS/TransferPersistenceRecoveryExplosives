@@ -1,0 +1,960 @@
+"Dataset","Line","SampleName","Type","petn_snr_flag","petn_qual76_snr_flag","petn_qual76_detected","rdx_snr_flag","rdx_qual46_snr_flag","rdx_qual75_snr_flag","rdx_qual46_detected","rdx_qual75_detected","rdx_both_detected","rdx_either_detected"
+"ABS-S-1",1,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",2,"0.2ng RDX PETN           ","ResponseCheck","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",3,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",4,"0.2ng RDX PETN           ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",5,"2ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",6,"4ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",7,"6ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",8,"8ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",9,"10ng RDX PETN            ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",10,"EtOH Blank               ","Blank","Quantifiable","Quantifiable",TRUE,NA,"Below_LOQ","Below_LOD",TRUE,FALSE,FALSE,TRUE
+"ABS-S-1",11,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",12,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"ABS-S-1",13,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",14,"EtOH Blank               ","Blank","Below_LOQ","Below_LOQ",TRUE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",15,"Lab6 P1 ABS-S NC         ","Sample",NA,NA,FALSE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",16,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,"Below_LOD",FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",17,"Lab6 P1 ABS-S1           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",18,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",19,"Lab6 P1 ABS-S2           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",20,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",21,"Lab6 P1 ABS-S3           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",22,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",23,"Lab6 P1 ABS-S4           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",24,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",25,"Lab6 P1 ABS-S5           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",26,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",27,"Lab6 P1 ABS-S6           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",28,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",29,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",30,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",31,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",32,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",33,"Lab6 P2 ABS-S NC         ","Sample",NA,NA,FALSE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",34,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",35,"Lab6 P2 ABS-S1           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",36,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",37,"Lab6 P2 ABS-S2           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",38,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",39,"Lab6 P2 ABS-S3           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",40,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",41,"Lab6 P2 ABS-S4           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",42,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",43,"Lab6 P2 ABS-S5           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",44,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",45,"Lab6 P2 ABS-S6           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",46,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",47,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",48,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",49,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",50,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",51,"Lab32 P1 ABS-S NC        ","Sample",NA,NA,FALSE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",52,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",53,"Lab32 P1 ABS-S1          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",54,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",55,"Lab32 P1 ABS-S2          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",56,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",57,"Lab32 P1 ABS-S3          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",58,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOD",FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",59,"Lab32 P1 ABS-S4          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",60,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",61,"Lab32 P1 ABS-S5          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",62,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"ABS-S-1",63,"Lab32 P1 ABS-S6          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",64,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",65,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",66,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"ABS-S-1",67,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",68,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"ABS-S-1",69,"Lab7 P1 ABS-S NC         ","Sample",NA,NA,FALSE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",70,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",71,"Lab7 P1 ABS-S1           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",72,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"ABS-S-1",73,"Lab7 P1 ABS-S2           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",74,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOD",FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",75,"Lab7 P1 ABS-S3           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",76,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",77,"Lab7 P1 ABS-S4           ","Sample","Quantifiable","Quantifiable",TRUE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",78,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",79,"Lab7 P1 ABS-S5           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",80,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",81,"Lab7 P1 ABS-S6           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",82,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",83,"0.2ng RDX PETN QC        ","QC","Below_LOQ","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",84,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-1",85,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-1",86,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",1,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",2,"0.2ng RDX PETN           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",3,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",4,"0.2ng RDX PETN           ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",5,"2ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",6,"4ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",7,"6ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",8,"8ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",9,"10ng RDX PETN            ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",10,"EtOH Blank               ","Blank","Quantifiable","Quantifiable",TRUE,NA,"Below_LOQ","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",11,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",12,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"ABS-S-2",13,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",14,"EtOH Blank               ","Blank","Below_LOQ","Quantifiable",TRUE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"ABS-S-2",15,"Lab20 P1 ABS-S NC        ","Sample","Below_LOQ","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",16,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",17,"Lab20 P1 ABS-S1          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",18,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"ABS-S-2",19,"Lab20 P1 ABS-S2          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",20,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"ABS-S-2",21,"Lab20 P1 ABS-S3          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",22,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",23,"Lab20 P1 ABS-S4          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",24,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"ABS-S-2",25,"Lab20 P1 ABS-S5          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",26,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"ABS-S-2",27,"Lab20 P1 ABS-S6          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",28,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"ABS-S-2",29,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",30,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"ABS-S-2",31,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",32,"EtOH Blank               ","Blank","Below_LOQ",NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"ABS-S-2",33,"Lab20 P2 ABS-S NC        ","Sample",NA,NA,FALSE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",34,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",35,"Lab20 P2 ABS-S1          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",36,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",37,"Lab20 P2 ABS-S2          ","Sample",NA,NA,FALSE,NA,"Below_LOQ","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",38,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",39,"Lab20 P2 ABS-S3          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",40,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",41,"Lab20 P2 ABS-S4          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",42,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",43,"Lab20 P2 ABS-S5          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",44,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"ABS-S-2",45,"Lab20 P2 ABS-S6          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",46,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",47,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",48,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",49,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",50,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"ABS-S-2",51,"Lab21 P1 ABS-S NC        ","Sample",NA,"Below_LOQ",TRUE,"Below_LOQ","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",52,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",53,"Lab21 P1 ABS-S1          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",54,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",55,"Lab21 P1 ABS-S2          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",56,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"ABS-S-2",57,"Lab21 P1 ABS-S3          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",58,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",59,"Lab21 P1 ABS-S4          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",60,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"ABS-S-2",61,"Lab21 P1 ABS-S5          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",62,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",63,"Lab21 P1 ABS-S6          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",64,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",65,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",66,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",67,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",68,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",69,"Lab38 P1 ABS-S NC        ","Sample",NA,NA,FALSE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",70,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",71,"Lab38 P1 ABS-S1          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",72,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",73,"Lab38 P1ABS-S2           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",74,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"ABS-S-2",75,"Lab38 P1ABS-S3           ","Sample","Quantifiable","Quantifiable",TRUE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",76,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"ABS-S-2",77,"Lab38 P1ABS-S4           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",78,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",79,"Lab38 P1ABS-S5           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",80,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"ABS-S-2",81,"Lab38 P1ABS-S6           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",82,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"ABS-S-2",83,"0.2ng RDX PETN QC        ","QC","Below_LOQ","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",84,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"ABS-S-2",85,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"ABS-S-2",86,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",1,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab10-1",2,"0.2ng RDX PETN           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",3,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",4,"0.2ng RDX PETN           ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",5,"2ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",6,"4ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",7,"6ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",8,"8ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",9,"10ng RDX PETN            ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",10,"EtOH Blank               ","Blank","Below_LOQ","Quantifiable",TRUE,NA,"Below_LOQ","Below_LOD",TRUE,FALSE,FALSE,TRUE
+"Lab10-1",11,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",12,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab10-1",13,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",14,"EtOH Blank               ","Blank","Below_LOQ","Quantifiable",TRUE,NA,"Below_LOQ","Below_LOD",TRUE,FALSE,FALSE,TRUE
+"Lab10-1",15,"Lab10 P1 S NC            ","Sample","Below_LOQ","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",16,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab10-1",17,"Lab10 P1 S1              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",18,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab10-1",19,"Lab10 P1 S2              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",20,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",21,"Lab10 P1 S3              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",22,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",23,"Lab10 P1 S4              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",24,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab10-1",25,"Lab10 P1 S5              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",26,"EtOH Blank               ","Blank",NA,"Below_LOQ",TRUE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",27,"Lab10 P1 S6              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",28,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",29,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",30,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab10-1",31,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",32,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab10-1",33,"Lab10 P1 ABS-S NC        ","Sample",NA,NA,FALSE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",34,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",35,"Lab10 P1 ABS-S1          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",36,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",37,"Lab10 P1 ABS-S2          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",38,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab10-1",39,"Lab10 P1 ABS-S3          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",40,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",41,"Lab10 P1 ABS-S4          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",42,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab10-1",43,"Lab10 P1 ABS-S5          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",44,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab10-1",45,"Lab10 P1 ABS-S6          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",46,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",47,"0.2ng RDX PETN QC        ","QC","Below_LOQ","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",48,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",49,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",50,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ","Below_LOD",TRUE,FALSE,FALSE,TRUE
+"Lab10-1",51,"Lab10 P2 S NC            ","Sample",NA,NA,FALSE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",52,"EtOH Blank               ","Blank",NA,"Below_LOQ",TRUE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",53,"Lab10 P2 S1              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",54,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab10-1",55,"Lab10 P2 S2              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",56,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",57,"Lab10 P2 S3              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",58,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",59,"Lab10 P2 S4              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",60,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab10-1",61,"Lab10 P2 S5              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",62,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",63,"Lab10 P2 S6              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",64,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",65,"0.2ng RDX PETN QC        ","QC","Below_LOQ","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",66,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",67,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",68,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",69,"Lab10 P2 ABS-S NC        ","Sample",NA,NA,FALSE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",70,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",71,"Lab10 P2 ABS-S1          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",72,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",73,"Lab10 P2 ABS-S2          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",74,"EtOH Blank               ","Blank",NA,"Below_LOQ",TRUE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",75,"Lab10 P2 ABS-S3          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",76,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab10-1",77,"Lab10 P2 ABS-S4          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",78,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab10-1",79,"Lab10 P2 ABS-S5          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",80,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",81,"Lab10 P2 ABS-S6          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",82,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab10-1",83,"0.2ng RDX PETN QC        ","QC","Below_LOD","Below_LOQ",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",84,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab10-1",85,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab10-1",86,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab17-1",1,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab17-1",2,"0.2ng RDX PETN           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",3,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab17-1",4,"0.2ng RDX PETN           ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",5,"2ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",6,"4ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",7,"6ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",8,"8ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",9,"10ng RDX PETN            ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",10,"EtOH Blank               ","Blank","Quantifiable","Quantifiable",TRUE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",11,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",12,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",13,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",14,"EtOH Blank               ","Blank","Below_LOQ","Below_LOQ",TRUE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",15,"Lab17 P1 ABS-S NC        ","Sample",NA,NA,FALSE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",16,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",17,"Lab17 P1 ABS-S1          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",18,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab17-1",19,"Lab17 P1 ABS-S2          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",20,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab17-1",21,"Lab17 P1 ABS-S3          ","Sample","Below_LOQ","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",22,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",23,"Lab17 P1 ABS-S4          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",24,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",25,"Lab17 P1 ABS-S5          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",26,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",27,"Lab17 P1 ABS-S6          ","Sample","Below_LOQ","Below_LOQ",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",28,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab17-1",29,"0.2ng RDX PETN QC        ","QC","Below_LOQ","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",30,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab17-1",31,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",32,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",33,"Lab17 P2 ABS-S NC        ","Sample",NA,NA,FALSE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",34,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",35,"Lab17 P2 ABS-S1          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",36,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab17-1",37,"Lab17 P2 ABS-S2          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",38,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab17-1",39,"Lab17 P2 ABS-S3          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",40,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",41,"Lab17 P2 ABS-S4          ","Sample","Below_LOQ","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",42,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",43,"Lab17 P2 ABS-S5          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",44,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab17-1",45,"Lab17 P2 ABS-S6          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",46,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",47,"0.2ng RDX PETN QC        ","QC","Below_LOQ","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",48,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",49,"6ng RDX PETN QC          ","QC",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",50,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",51,"Lab14 P1 ABS-S NC        ","Sample",NA,NA,FALSE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",52,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab17-1",53,"Lab14 P1 ABS-S1          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",54,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",55,"Lab14 P1 ABS-S2          ","Sample","Quantifiable","Quantifiable",TRUE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",56,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",57,"Lab14 P1 ABS-S3          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",58,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",59,"Lab14 P1 ABS-S4          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",60,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",61,"Lab14 P1 ABS-S5          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",62,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",63,"Lab14 P1 ABS-S6          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",64,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",65,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",66,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",67,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",68,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",69,"Lab14 P2 ABS-S NC        ","Sample",NA,NA,FALSE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",70,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab17-1",71,"Lab14 P2 ABS-S1          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",72,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",73,"Lab14 P2 ABS-S2          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",74,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab17-1",75,"Lab14 P2 ABS-S3          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",76,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",77,"Lab14 P2 ABS-S4          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",78,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",79,"Lab14 P2 ABS-S5          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",80,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",81,"Lab14 P2 ABS-S6          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",82,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",83,"0.2ng RDX PETN QC        ","QC","Below_LOQ","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",84,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab17-1",85,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab17-1",86,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",1,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab29",2,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",3,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab29",4,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",5,"0.2ng RDX PETN           ","ResponseCheck","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",6,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,"Below_LOD",FALSE,FALSE,FALSE,FALSE
+"Lab29",7,"0.2ng RDX PETN           ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",8,"2ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",9,"4ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",10,"6ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",11,"8ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",12,"10ng RDX PETN            ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",13,"EtOH Blank               ","Blank","Quantifiable","Below_LOQ",TRUE,"Quantifiable","Quantifiable","Below_LOD",TRUE,FALSE,FALSE,TRUE
+"Lab29",14,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",15,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ","Below_LOD",TRUE,FALSE,FALSE,TRUE
+"Lab29",16,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",17,"EtOH Blank               ","Blank","Below_LOQ","Below_LOQ",TRUE,NA,"Below_LOQ","Below_LOD",TRUE,FALSE,FALSE,TRUE
+"Lab29",18,"Lab29 P1 ABS-S NC        ","Sample",NA,NA,FALSE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",19,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab29",20,"Lab29 P1 ABS-S1          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",21,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",22,"Lab29 P1 ABS-S2          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",23,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab29",24,"Lab29 P1 ABS-S3          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",25,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",26,"Lab29 P1 ABS-S4          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",27,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",28,"Lab29 P1 ABS-S5          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",29,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",30,"Lab29 P1 ABS-S6          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",31,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",32,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",33,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",34,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",35,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOD",FALSE,FALSE,FALSE,FALSE
+"Lab29",36,"Lab29 P2 ABS-S NC        ","Sample",NA,NA,FALSE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",37,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",38,"Lab29 P2 ABS-S1          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",39,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",40,"Lab29 P2 ABS-S2          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",41,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab29",42,"Lab29 P2 ABS-S3          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",43,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",44,"Lab29 P2 ABS-S4          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",45,"EtOH Blank               ","Blank","Below_LOQ",NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",46,"Lab29 P2 ABS-S5          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",47,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",48,"Lab29 P2 ABS-S6          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",49,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab29",50,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",51,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab29",52,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",53,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ","Below_LOD",TRUE,FALSE,FALSE,TRUE
+"Lab29",54,"Lab29 P1 S NC            ","Sample",NA,NA,FALSE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",55,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",56,"Lab29 P1 S1              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",57,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",58,"Lab29 P1 S2              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",59,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab29",60,"Lab29 P1 S3              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",61,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab29",62,"Lab29 P1 S4              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",63,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab29",64,"Lab29 P1 S5              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",65,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",66,"Lab29 P1 S6              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",67,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",68,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",69,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",70,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",71,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOD",FALSE,FALSE,FALSE,FALSE
+"Lab29",72,"Lab29 P2 S NC            ","Sample",NA,NA,FALSE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",73,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",74,"Lab29 P2 S1              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",75,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",76,"Lab29 P2 S2              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",77,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",78,"Lab29 P2 S3              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",79,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab29",80,"Lab29 P2 S4              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",81,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab29",82,"Lab29 P2 S5              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",83,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",84,"Lab29 P2 S6              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",85,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",86,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",87,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab29",88,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab29",89,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ","Below_LOD",TRUE,FALSE,FALSE,TRUE
+"Lab33",1,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ","Below_LOD",TRUE,FALSE,FALSE,TRUE
+"Lab33",2,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",3,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",4,"0.2ng RDX PETN           ","ResponseCheck","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",5,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,"Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Lab33",6,"0.2ng RDX PETN           ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",7,"2ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",8,"4ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",9,"6ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",10,"8ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",11,"10ng RDX PETN            ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",12,"EtOH Blank               ","Blank","Quantifiable","Below_LOQ",TRUE,NA,"Below_LOD","Quantifiable",FALSE,TRUE,FALSE,TRUE
+"Lab33",13,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",14,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Lab33",15,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",16,"EtOH Blank               ","Blank","Below_LOQ",NA,FALSE,NA,"Below_LOD","Quantifiable",FALSE,TRUE,FALSE,TRUE
+"Lab33",17,"Lab33 P1 S NC            ","Sample",NA,NA,FALSE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",18,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",19,"Lab33 P1 S1              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",20,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",21,"Lab33 P1 S2              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",22,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",23,"Lab33 P1 S3              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",24,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",25,"Lab33 P1 S4              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",26,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",27,"Lab33 P1 S5              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",28,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",29,"Lab33 P1 S6              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",30,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",31,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",32,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",33,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",34,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,"Quantifiable",FALSE,TRUE,FALSE,TRUE
+"Lab33",35,"Lab33 P1 ABS-S NC        ","Sample",NA,NA,FALSE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",36,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",37,"Lab33 P1 ABS-S1          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",38,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",39,"Lab33 P1 ABS-S2          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",40,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",41,"Lab33 P1 ABS-S3          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",42,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",43,"Lab33 P1 ABS-S4          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",44,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",45,"Lab33 P1 ABS-S5          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",46,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",47,"Lab33 P1 ABS-S6          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",48,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",49,"0.2ng RDX PETN QC        ","QC","Below_LOQ","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",50,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",51,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",52,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Lab33",53,"Lab33 P2 S NC            ","Sample",NA,NA,FALSE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",54,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",55,"Lab33 P2 S1              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",56,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",57,"Lab33 P2 S2              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",58,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",59,"Lab33 P2 S3              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",60,"EtOH Blank               ","Blank","Below_LOQ",NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",61,"Lab33 P2 S4              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",62,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",63,"Lab33 P2 S5              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",64,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",65,"Lab33 P2 S6              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",66,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",67,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",68,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",69,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",70,"EtOH Blank               ","Blank","Below_LOQ",NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",71,"Lab33 P2 ABS-S NC        ","Sample",NA,NA,FALSE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",72,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",73,"Lab33 P2 ABS-S1          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",74,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",75,"Lab33 P2 ABS-S2          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",76,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",77,"Lab33 P2 ABS-S3          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",78,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",79,"Lab33 P2 ABS-S4          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",80,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",81,"Lab33 P2 ABS-S5          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",82,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",83,"Lab33 P2 ABS-S6          ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",84,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",85,"0.2ng RDX PETN QC        ","QC","Below_LOQ","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",86,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab33",87,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab33",88,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",1,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Quantifiable",NA,TRUE,FALSE,FALSE,TRUE
+"Lab9",2,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,"Quantifiable",FALSE,TRUE,FALSE,TRUE
+"Lab9",3,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Lab9",4,"20260728 Neg Ctrl        ","Sample",NA,NA,FALSE,NA,"Below_LOQ","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",5,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab9",6,"0.2ng RDX PETN           ","ResponseCheck","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",7,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Lab9",8,"0.2ng RDX PETN           ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",9,"2ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",10,"4ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",11,"6ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",12,"8ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",13,"10ng RDX PETN            ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",14,"EtOH Blank               ","Blank","Quantifiable","Quantifiable",TRUE,"Quantifiable","Below_LOQ","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",15,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",16,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",17,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",18,"EtOH Blank               ","Blank","Below_LOQ","Quantifiable",TRUE,NA,"Below_LOQ","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",19,"Lab9 P1 ABS-S NC         ","Sample",NA,NA,FALSE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",20,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",21,"Lab9 P1 ABS-S1           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",22,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",23,"Lab9 P1 ABS-S2           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",24,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",25,"Lab9 P1 ABS-S3           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",26,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",27,"Lab9 P1 ABS-S4           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",28,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",29,"Lab9 P1 ABS-S5           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",30,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",31,"Lab9 P1 ABS-S6           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",32,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab9",33,"0.2ng RDX PETN QC        ","QC","Below_LOQ","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",34,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",35,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",36,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Lab9",37,"Lab9 P2 ABS-S NC         ","Sample",NA,NA,FALSE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",38,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",39,"Lab9 P2 ABS-S1           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",40,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",41,"Lab9 P2 ABS-S2           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",42,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab9",43,"Lab9 P2 ABS-S3           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",44,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",45,"Lab9 P2 ABS-S4           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",46,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",47,"Lab9 P2 ABS-S5           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",48,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab9",49,"Lab9 P2 ABS-S6           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",50,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",51,"0.2ng RDX PETN QC        ","QC","Below_LOQ","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",52,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",53,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",54,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Lab9",55,"Lab9 P1 S NC             ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",56,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",57,"Lab9 P1 S1               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",58,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",59,"Lab9 P1 S2               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",60,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",61,"Lab9 P1 S3               ","Sample",NA,NA,FALSE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",62,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",63,"Lab9 P1 S4               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",64,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",65,"Lab9 P1 S5               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",66,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",67,"Lab9 P1 S6               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",68,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",69,"0.2ng RDX PETN QC        ","QC",NA,NA,FALSE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",70,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Lab9",71,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",72,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ","Below_LOQ",TRUE,TRUE,TRUE,TRUE
+"Lab9",73,"Lab9 P2 S NC             ","Sample",NA,NA,FALSE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",74,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",75,"Lab9 P2 S1               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",76,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",77,"Lab9 P2 S2               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",78,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",79,"Lab9 P2 S3               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",80,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",81,"Lab9 P2 S4               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",82,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",83,"Lab9 P2 S5               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",84,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Lab9",85,"Lab9 P2 S6               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",86,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",87,"0.2ng RDX PETN QC        ","QC",NA,"Below_LOQ",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",88,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Lab9",89,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Lab9",90,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Steel-1",1,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",2,"0.2ng RDX PETN           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",3,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",4,"0.2ng RDX PETN           ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",5,"2ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",6,"4ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",7,"6ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",8,"8ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",9,"10ng RDX PETN            ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",10,"EtOH Blank               ","Blank","Below_LOQ","Below_LOQ",TRUE,NA,"Below_LOQ","Below_LOQ",TRUE,TRUE,TRUE,TRUE
+"Steel-1",11,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",12,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,"Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",13,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",14,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",15,"Lab17 P1 S NC            ","Sample",NA,NA,FALSE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",16,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",17,"Lab17 P1 S1              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",18,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",19,"Lab17 P1 S2              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",20,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",21,"Lab17 P1 S3              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",22,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",23,"Lab17 P1 S4              ","Sample",NA,NA,FALSE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",24,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",25,"Lab17 P1 S5              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",26,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",27,"Lab17 P1 S6              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",28,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",29,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",30,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",31,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",32,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",33,"Lab17 P2 S NC            ","Sample",NA,NA,FALSE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",34,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,"Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",35,"Lab17 P2 S1              ","Sample",NA,NA,FALSE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",36,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",37,"Lab17 P2 S2              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",38,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",39,"Lab17 P2 S3              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",40,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,"Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",41,"Lab17 P2 S4              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",42,"EtOH Blank               ","Blank","Below_LOQ",NA,FALSE,NA,NA,"Below_LOD",FALSE,FALSE,FALSE,FALSE
+"Steel-1",43,"Lab17 P2 S5              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",44,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",45,"Lab17 P2 S6              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",46,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOD",FALSE,FALSE,FALSE,FALSE
+"Steel-1",47,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",48,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,"Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",49,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",50,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",51,"Lab14 P1 S NC            ","Sample",NA,NA,FALSE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",52,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",53,"Lab14 P1 S1              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",54,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",55,"Lab14 P1 S2              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",56,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,"Below_LOD",FALSE,FALSE,FALSE,FALSE
+"Steel-1",57,"Lab14 P1 S3              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",58,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",59,"Lab14 P1 S4              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",60,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,"Below_LOD",FALSE,FALSE,FALSE,FALSE
+"Steel-1",61,"Lab14 P1 S5              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",62,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",63,"Lab14 P1 S6              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",64,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,"Below_LOD",FALSE,FALSE,FALSE,FALSE
+"Steel-1",65,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",66,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOD",FALSE,FALSE,FALSE,FALSE
+"Steel-1",67,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",68,"EtOH Blank               ","Blank","Below_LOQ",NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel-1",69,"Lab14 P2 S NC            ","Sample",NA,NA,FALSE,NA,"Below_LOQ","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",70,"EtOH Blank               ","Blank","Below_LOQ",NA,FALSE,NA,NA,"Below_LOD",FALSE,FALSE,FALSE,FALSE
+"Steel-1",71,"Lab14 P2 S1              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",72,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOD",FALSE,FALSE,FALSE,FALSE
+"Steel-1",73,"Lab14 P2 S2              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",74,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOD",FALSE,FALSE,FALSE,FALSE
+"Steel-1",75,"Lab14 P2 S3              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",76,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOD",FALSE,FALSE,FALSE,FALSE
+"Steel-1",77,"Lab14 P2 S4              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",78,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOD",FALSE,FALSE,FALSE,FALSE
+"Steel-1",79,"Lab14 P2 S5              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",80,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOD",FALSE,FALSE,FALSE,FALSE
+"Steel-1",81,"Lab14 P2 S6              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",82,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,"Below_LOD",FALSE,FALSE,FALSE,FALSE
+"Steel-1",83,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",84,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,"Below_LOD",FALSE,FALSE,FALSE,FALSE
+"Steel-1",85,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel-1",86,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOD",FALSE,FALSE,FALSE,FALSE
+"Steel 2",1,"EtOH Blank               ","Blank",NA,"Quantifiable",TRUE,"Below_LOQ","Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 2",2,"0.2ng RDX PETN           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",3,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Quantifiable",FALSE,TRUE,FALSE,TRUE
+"Steel 2",4,"0.2ng RDX PETN           ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",5,"2ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",6,"4ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",7,"6ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",8,"8ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",9,"10ng RDX PETN            ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",10,"EtOH Blank               ","Blank","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",11,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",12,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Quantifiable",FALSE,TRUE,FALSE,TRUE
+"Steel 2",13,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",14,"EtOH Blank               ","Blank","Below_LOQ","Quantifiable",TRUE,NA,"Below_LOQ","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",15,"Lab6 P1 S NC            ","Sample",NA,NA,FALSE,"Below_LOQ","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",16,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Quantifiable",FALSE,TRUE,FALSE,TRUE
+"Steel 2",17,"Lab6 P1 S1              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",18,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",19,"Lab6 P1 S2              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",20,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",21,"Lab6  P1 S3              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",22,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Quantifiable",FALSE,TRUE,FALSE,TRUE
+"Steel 2",23,"Lab6 P1 S4              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",24,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Quantifiable",FALSE,TRUE,FALSE,TRUE
+"Steel 2",25,"Lab6 P1 S5              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",26,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",27,"Lab6 P1 S6               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",28,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Quantifiable",FALSE,TRUE,FALSE,TRUE
+"Steel 2",29,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",30,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 2",31,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",32,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",33,"Lab6 P2 S NC            ","Sample",NA,NA,FALSE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",34,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,"Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 2",35,"Lab6 P2 S1              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",36,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 2",37,"Lab6 P2 S2              ","Sample",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 2",38,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 2",39,"Lab6 P2 S3              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",40,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Steel 2",41,"Lab6 P2 S4               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",42,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Quantifiable",FALSE,TRUE,FALSE,TRUE
+"Steel 2",43,"Lab6 P2 S5               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",44,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 2",45,"Lab6 P2 S6               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",46,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ","Below_LOQ",TRUE,TRUE,TRUE,TRUE
+"Steel 2",47,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",48,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 2",49,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",50,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Quantifiable",FALSE,TRUE,FALSE,TRUE
+"Steel 2",51,"Lab7 P1 S NC             ","Sample",NA,NA,FALSE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",52,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 2",53,"Lab7 P1 S1               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",54,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 2",55,"Lab7 P1 S2               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",56,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 2",57,"Lab7 P1 S3               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",58,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 2",59,"Lab7 P1 S4               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",60,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 2",61,"Lab7 P1 S5               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",62,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 2",63,"Lab7 P1 S6               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",64,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 2",65,"0.2ng RDX PETN QC        ","QC","Below_LOQ","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",66,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 2",67,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",68,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Quantifiable",FALSE,TRUE,FALSE,TRUE
+"Steel 2",69,"Lab32 P1 S NC            ","Sample",NA,NA,FALSE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",70,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 2",71,"Lab32 P1 S1              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",72,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 2",73,"Lab32 P1 S2              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",74,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 2",75,"Lab32 P1 S3              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",76,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 2",77,"Lab32 P1 S4              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",78,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 2",79,"Lab32 P1 S5              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",80,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 2",81,"Lab32 P1 S6              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",82,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Steel 2",83,"0.2ng RDX PETN QC        ","QC",NA,"Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",84,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 2",85,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 2",86,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Quantifiable",FALSE,TRUE,FALSE,TRUE
+"Steel 3",1,"EtOH Blank               ","Blank","Below_LOQ",NA,FALSE,"Below_LOQ",NA,"Below_LOD",FALSE,FALSE,FALSE,FALSE
+"Steel 3",2,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Steel 3",3,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 3",4,"0.2ng RDX PETN           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",5,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 3",6,"0.2ng RDX PETN           ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",7,"2ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",8,"4ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",9,"6ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",10,"8ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",11,"10ng RDX PETN            ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",12,"EtOH Blank               ","Blank","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",13,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",14,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 3",15,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",16,"EtOH Blank               ","Blank","Quantifiable","Quantifiable",TRUE,NA,"Below_LOQ","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",17,"Lab20 P1 S NC            ","Sample",NA,NA,FALSE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",18,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 3",19,"Lab20 P1 S1              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",20,"EtOH Blank               ","Blank","Below_LOQ",NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 3",21,"Lab20 P1 S2              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",22,"EtOH Blank               ","Blank",NA,"Quantifiable",TRUE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 3",23,"Lab20 P1 S3              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",24,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 3",25,"Lab20 P1 S4              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",26,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 3",27,"Lab20 P1 S5              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",28,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,"Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 3",29,"Lab20 P1 S6              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",30,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 3",31,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",32,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 3",33,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",34,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 3",35,"Lab20 P2 S NC            ","Sample",NA,NA,FALSE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",36,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 3",37,"Lab20 P2 S1              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",38,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Steel 3",39,"Lab20 P2 S2              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",40,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 3",41,"Lab20 P2 S3              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",42,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 3",43,"Lab20 P2 S4              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",44,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 3",45,"Lab20 P2 S5              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",46,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 3",47,"Lab20 P2 S6              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",48,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 3",49,"0.2ng RDX PETN QC        ","QC","Below_LOQ","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",50,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Steel 3",51,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",52,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 3",53,"Lab21 P1 S NC            ","Sample",NA,"Below_LOQ",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",54,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 3",55,"Lab21 P1 S1              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",56,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,"Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 3",57,"Lab21 P1 S2              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",58,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 3",59,"Lab21 P1 S3              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",60,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,"Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 3",61,"Lab21 P1 S4              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",62,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 3",63,"Lab21 P1 S5              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",64,"EtOH Blank               ","Blank",NA,"Below_LOQ",TRUE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 3",65,"Lab21 P1 S6              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",66,"EtOH Blank               ","Blank",NA,"Below_LOQ",TRUE,NA,"Below_LOQ","Below_LOQ",TRUE,TRUE,TRUE,TRUE
+"Steel 3",67,"0.2ng RDX PETN QC        ","QC","Below_LOQ","Below_LOQ",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",68,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 3",69,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",70,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 3",71,"Lab38 P1 S NC            ","Sample",NA,NA,FALSE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",72,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 3",73,"Lab38 P1 S1              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",74,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,"Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 3",75,"Lab38 P1 S2              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",76,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 3",77,"Lab38 P1 S3              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",78,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 3",79,"Lab38 P1 S4              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",80,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Steel 3",81,"Lab38 P1 S5              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",82,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 3",83,"Lab38 P1 S6              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",84,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Steel 3",85,"0.2ng RDX PETN QC        ","QC",NA,NA,FALSE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",86,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 3",87,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 3",88,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",1,"EtOH Blank               ","Blank",NA,NA,FALSE,"Below_LOQ",NA,NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",2,"EtOH Blank               ","Blank",NA,NA,FALSE,"Quantifiable","Quantifiable",NA,TRUE,FALSE,FALSE,TRUE
+"Steel 4",3,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Steel 4",4,"0.2ng RDX PETN           ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",5,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",6,"0.2ng RDX PETN           ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",7,"2ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",8,"4ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",9,"6ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",10,"8ng RDX PETN             ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",11,"10ng RDX PETN            ","Cal","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",12,"EtOH Blank               ","Blank","Quantifiable","Quantifiable",TRUE,NA,"Below_LOQ","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",13,"0.2ng RDX PETN QC        ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",14,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Steel 4",15,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",16,"EtOH Blank               ","Blank","Below_LOQ","Quantifiable",TRUE,NA,"Below_LOQ","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",17,"Lab3 P1 S NC             ","Sample",NA,NA,FALSE,"Below_LOQ","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",18,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",19,"Lab3 P1 S1               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",20,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",21,"Lab3 P1 S2               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",22,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",23,"Lab3 P1 S3               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",24,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",25,"Lab3 P1 S4               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",26,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",27,"Lab3 P1 S5               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",28,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",29,"Lab3 P1 S6               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",30,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",31,"0.2ng RDX PETN QC        ","QC","Below_LOQ","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",32,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",33,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",34,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD","Below_LOQ",FALSE,TRUE,FALSE,TRUE
+"Steel 4",35,"Lab3 P2 S NC             ","Sample",NA,NA,FALSE,"Below_LOQ","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",36,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",37,"Lab3 P2 S1               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",38,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",39,"Lab3 P2 S2               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",40,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Steel 4",41,"Lab3 P2 S3               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",42,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",43,"Lab3 P2 S4               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",44,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",45,"Lab3 P2 S5               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",46,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",47,"Lab3 P2 S6               ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",48,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",49,"0.2ng RDX PETN QC        ","QC","Below_LOQ","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",50,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",51,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",52,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",53,"Lab18 P1 S NC            ","Sample",NA,NA,FALSE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",54,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",55,"Lab18 P1 S1              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",56,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",57,"Lab18 P1 S2              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",58,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Steel 4",59,"Lab18 P1 S3              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",60,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",61,"Lab18 P1 S4              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",62,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",63,"Lab18 P1 S5              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",64,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",65,"Lab18 P1 S6              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",66,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Steel 4",67,"0.2ng RDX PETN QC        ","QC",NA,NA,FALSE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",68,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",69,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",70,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",71,"Lab38 P2 S NC            ","Sample",NA,NA,FALSE,NA,"Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",72,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Steel 4",73,"Lab38 P2 S1              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",74,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",75,"Lab38 P2 S2              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",76,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",77,"Lab38 P2 S3              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",78,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Steel 4",79,"Lab38 P2 S4              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",80,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
+"Steel 4",81,"Lab38 P2 S5              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",82,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",83,"Lab38 P2 S6              ","Sample","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",84,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOD",NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",85,"0.2ng RDX PETN QC        ","QC",NA,NA,FALSE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",86,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,NA,NA,FALSE,FALSE,FALSE,FALSE
+"Steel 4",87,"6ng RDX PETN QC          ","QC","Quantifiable","Quantifiable",TRUE,"Quantifiable","Quantifiable","Quantifiable",TRUE,TRUE,TRUE,TRUE
+"Steel 4",88,"EtOH Blank               ","Blank",NA,NA,FALSE,NA,"Below_LOQ",NA,TRUE,FALSE,FALSE,TRUE
