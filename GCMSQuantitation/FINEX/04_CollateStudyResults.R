@@ -27,6 +27,37 @@ suppressPackageStartupMessages({
 })
 
 # =========================================================
+# Load parameters from GlobalCode.R
+# =========================================================
+# Deliberately done FIRST, before any of this script's own config below --
+# GlobalCode.R unconditionally does rm(list = setdiff(ls(), ...)) internally
+# (to reset stale state between dataset runs), which would silently wipe out
+# any of THIS script's own variables (study_root_dir, qc_bracket_exclude,
+# expected_sample_totals, etc.) if they were defined first and this script
+# is ever run in a genuinely fresh session (e.g. a standalone `Rscript
+# 04_CollateStudyResults.R`, or as the final step of RunAllDatasets.R in a
+# fresh Rscript process with no prior interactive state) rather than an
+# already-warmed-up interactive session where SampleVol/DepositMass happen
+# to already exist. Confirmed by direct testing: this ordering previously
+# caused "object 'global_code_path' not found" (and would have caused the
+# same for every other variable below) whenever GlobalCode.R's reset
+# actually fired.
+global_code_path <- "C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/GCMSQuantitation/GlobalCode.R"
+
+if (!exists("SampleVol") || !exists("DepositMass")) {
+  source(global_code_path)
+}
+
+# Re-affirm global_code_path in case the source() call above actually fired:
+# GlobalCode.R's own rm(list=ls()), which runs INSIDE that call, wipes out
+# global_code_path itself (along with everything else in this script defined
+# so far) the moment it fires -- global_code_path is used again below (to
+# locate Code/InjectionAcceptance.R relative to GlobalCode.R), so it must be
+# guaranteed to still exist at that point regardless of whether the source()
+# call above ran or was skipped.
+global_code_path <- "C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/GCMSQuantitation/GlobalCode.R"
+
+# =========================================================
 # CONFIGURATION - set the study root folder
 # =========================================================
 study_root_dir <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/FINEX Swabbing Study/Accepted Analysis"
@@ -86,14 +117,6 @@ expected_sample_totals <- c(
 expected_nc_total <- 161
 
 
-# =========================================================
-# Load parameters from GlobalCode.R
-# =========================================================
-global_code_path <- "C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/GCMSQuantitation/GlobalCode.R"
-
-if (!exists("SampleVol") || !exists("DepositMass")) {
-  source(global_code_path)
-}
 
 # =========================================================
 # Load shared injection-acceptance logic (Sections A-D of
@@ -344,13 +367,22 @@ if (nrow(samples) == 0) {
 # =========================================================
 samples$SampleName_trimmed <- str_trim(samples$SampleName)
 
-sample_pattern <- "^Lab(\\d+)\\s*P(\\d+)\\s*(ABS-S|ABS-T|S|G)\\s*(NC|\\d+)$"
+# Surface code accepts both the canonical hyphenated form ("ABS-S"/"ABS-T")
+# and a bare-space variant ("ABS S"/"ABS T") -- found via UnparsedSampleNames.csv
+# that several labs (10, 17, 20, 33) typed the space form, silently excluding
+# ~21 real sample/NC rows from the whole study (see red-team review Section D /
+# CONTEXT.md). The captured value is normalised back to the hyphenated form
+# immediately below, since surface_map and later sheet-filtering both key on
+# the literal strings "ABS-S"/"ABS-T".
+sample_pattern <- "^Lab(\\d+)\\s*P(\\d+)\\s*(ABS[- ]S|ABS[- ]T|S|G)\\s*(NC|\\d+)$"
 
 parsed <- str_match(samples$SampleName_trimmed, sample_pattern)
 
 samples$Lab         <- as.integer(parsed[, 2])
 samples$Participant <- as.integer(parsed[, 3])
 samples$Surface     <- parsed[, 4]
+samples$Surface     <- gsub("ABS T", "ABS-T", samples$Surface, fixed = TRUE)
+samples$Surface     <- gsub("ABS S", "ABS-S", samples$Surface, fixed = TRUE)
 samples$RepeatRaw   <- parsed[, 5]
 
 samples$IsNegativeControl <- !is.na(samples$RepeatRaw) & samples$RepeatRaw == "NC"
