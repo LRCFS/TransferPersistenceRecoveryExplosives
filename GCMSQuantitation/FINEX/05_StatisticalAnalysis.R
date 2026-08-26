@@ -57,6 +57,28 @@ apply_logit_transform <- FALSE
 # Significance level
 alpha <- 0.05
 
+# RDX spiking-solvent artifact (confirmed, not hypothetical): RDX standards
+# for FINEX were spiked in acetonitrile, which interacts with/damages the
+# ABS polymer, artifactually trapping RDX and suppressing recovery in a way
+# that does not reflect real-world surface performance. Confirmed by direct
+# physical evidence and a solvent-swap comparison showing substantially
+# higher RDX recovery from ABS when spiked in a different solvent. The
+# spiking protocol has since been corrected (for ASTRA), but ALL FINEX
+# samples were collected under the old (acetonitrile) protocol and are
+# affected -- this cannot be fixed retroactively for FINEX. Confirmed to
+# affect ABS-Textured identically to ABS-Smooth (same base polymer). Does
+# NOT affect PETN (different, ABS-compatible spiking solvent).
+#
+# These rows are intentionally kept in the dataset/descriptive output
+# (so the actual recovered values are still visible/reported), but
+# excluded from anything that makes a statistical/comparative claim about
+# RDX recovery by surface (the mixed model's SurfaceName term, ANOVA,
+# emmeans, pairwise comparisons, Levene's test by surface, Kruskal-Wallis
+# by surface) -- see the RDX MODEL section below. Re-enable the RDX
+# surface-effect comparison once Glass data (an unaffected surface) is
+# available to re-anchor it.
+rdx_surface_exclude <- c("ABS-Smooth", "ABS-Textured")
+
 # Study root directory
 study_root_dir <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/FINEX Swabbing Study/Accepted Analysis"
 
@@ -546,34 +568,86 @@ if (analysis_mode %in% c("few_labs", "multi_lab")) {
   print("")
   print("--- Fitting RDX Model ---")
   
+  # Exclude the confirmed spiking-solvent-artifact surfaces (see
+  # rdx_surface_exclude definition in CONFIGURATION) from the model fit
+  # and variance-component estimation entirely -- not just from the
+  # surface contrast. long_data_rdx (unfiltered) is still used elsewhere
+  # for purely descriptive output (e.g. lab_surface_means_table_rdx,
+  # zero counts) so the actual observed values remain visible/reported.
+  long_data_rdx_valid <- long_data_rdx %>% filter(!SurfaceName %in% rdx_surface_exclude)
+  long_data_rdx_valid$SurfaceName <- droplevels(long_data_rdx_valid$SurfaceName)
+  # Also drop unused Lab levels (labs that only submitted excluded-surface
+  # samples would otherwise leave empty Lab factor levels after filtering,
+  # triggering spurious "contrasts dropped... due to missing levels" warnings)
+  long_data_rdx_valid$Lab <- droplevels(long_data_rdx_valid$Lab)
+  n_surfaces_rdx_valid <- n_distinct(long_data_rdx_valid$SurfaceName)
+  rdx_surface_comparison_available <- n_surfaces_rdx_valid >= 2
+  
+  print(paste0("RDX: excluding ", paste(rdx_surface_exclude, collapse = ", "),
+               " from statistical interpretation (confirmed acetonitrile ",
+               "spiking-solvent artifact -- see rdx_surface_exclude comment). ",
+               nrow(long_data_rdx) - nrow(long_data_rdx_valid), " of ",
+               nrow(long_data_rdx), " RDX rows excluded from the model fit."))
+  print(paste0("RDX valid surfaces remaining: ", n_surfaces_rdx_valid,
+               " (", paste(levels(long_data_rdx_valid$SurfaceName), collapse = ", "), ")"))
+  
+  if (!rdx_surface_comparison_available) {
+    print(paste0("RDX surface-effect comparison SKIPPED: fewer than 2 valid surfaces ",
+                 "remain. Re-enable once Glass (or another unaffected surface) data ",
+                 "is available."))
+  }
+  
   # Lab modelled as a RANDOM effect here too -- see rationale above the
-  # PETN model fit.
+  # PETN model fit. SurfaceName is only included as a fixed effect if a
+  # valid (non-excluded) comparison is actually possible.
+  rdx_formula <- if (rdx_surface_comparison_available) {
+    Recovery ~ SurfaceName + (1|Lab) + (1|Lab:Participant)
+  } else {
+    Recovery ~ (1|Lab) + (1|Lab:Participant)
+  }
+  
   model_rdx <- tryCatch({
-    lmer(Recovery ~ SurfaceName + (1|Lab) + (1|Lab:Participant),
-         data = long_data_rdx,
-         REML = TRUE)
+    lmer(rdx_formula, data = long_data_rdx_valid, REML = TRUE)
   }, error = function(e) {
     print(paste("Warning - RDX model failed:", e$message))
     print("Trying without random effect...")
-    lm(Recovery ~ Lab + SurfaceName, data = long_data_rdx)
+    if (rdx_surface_comparison_available) {
+      lm(Recovery ~ Lab + SurfaceName, data = long_data_rdx_valid)
+    } else {
+      lm(Recovery ~ Lab, data = long_data_rdx_valid)
+    }
   })
   
   print("RDX model fitted")
   
-  # RDX ANOVA
-  anova_rdx <- anova(model_rdx)
-  print("RDX ANOVA:")
-  print(anova_rdx)
+  # RDX ANOVA (only meaningful if SurfaceName is actually in the model)
+  anova_rdx <- if (rdx_surface_comparison_available) {
+    tryCatch(anova(model_rdx), error = function(e) NULL)
+  } else {
+    NULL
+  }
+  if (!is.null(anova_rdx)) {
+    print("RDX ANOVA:")
+    print(anova_rdx)
+  } else {
+    print("RDX ANOVA: not applicable (no surface contrast available)")
+  }
   
   # RDX effect sizes
-  eta_sq_rdx <- tryCatch({
-    eta_squared(model_rdx, partial = TRUE)
-  }, error = function(e) {
-    print(paste("Could not calculate effect sizes:", e$message))
+  eta_sq_rdx <- if (rdx_surface_comparison_available) {
+    tryCatch({
+      eta_squared(model_rdx, partial = TRUE)
+    }, error = function(e) {
+      print(paste("Could not calculate effect sizes:", e$message))
+      NULL
+    })
+  } else {
     NULL
-  })
+  }
   
   # RDX variance components (Between-Lab / Between-Participant-within-Lab / Residual)
+  # -- computed on long_data_rdx_valid, so the confirmed-artifactual ABS
+  # rows don't contaminate these estimates either.
   if (inherits(model_rdx, "lmerMod")) {
     vc_rdx <- as.data.frame(VarCorr(model_rdx))
     var_lab_rdx         <- vc_rdx$vcov[vc_rdx$grp == "Lab"]
@@ -590,7 +664,7 @@ if (analysis_mode %in% c("few_labs", "multi_lab")) {
                         100 * var_residual_rdx / total_var_rdx)
     )
     
-    print("RDX Variance Components:")
+    print("RDX Variance Components (valid surfaces only):")
     print(variance_components_rdx)
   } else {
     variance_components_rdx <- NULL
@@ -605,38 +679,53 @@ if (analysis_mode %in% c("few_labs", "multi_lab")) {
   
   # RDX per-lab x per-surface descriptive means -- for the Lab x Surface
   # interaction plot (descriptive only; the model has no Lab:SurfaceName
-  # fixed-effect term)
+  # fixed-effect term). Deliberately uses the FULL long_data_rdx (not
+  # long_data_rdx_valid) so the excluded surfaces' near-zero recovery is
+  # still visible in this purely descriptive output.
   lab_surface_means_table_rdx <- long_data_rdx %>%
     group_by(Lab, SurfaceName) %>%
     summarise(Mean = mean(Recovery, na.rm = TRUE), .groups = "drop")
   
-  # RDX pairwise comparisons
-  if (n_surfaces >= 2) {
+  # RDX pairwise comparisons -- only if a valid surface comparison exists
+  if (rdx_surface_comparison_available) {
     emm_rdx <- emmeans(model_rdx, ~ SurfaceName)
     pairs_rdx <- pairs(emm_rdx, adjust = "tukey")
     pairs_rdx_df <- as.data.frame(pairs_rdx)
   } else {
+    emm_rdx <- NULL
     pairs_rdx_df <- NULL
   }
   
-  # RDX Levene's test
-  levene_rdx_surface <- car::leveneTest(Recovery ~ SurfaceName, data = long_data_rdx)
-  levene_rdx_lab <- car::leveneTest(Recovery ~ Lab, data = long_data_rdx)
+  # RDX Levene's test -- by Lab still runs (on valid data only); by Surface
+  # only makes sense with >=2 valid surfaces.
+  levene_rdx_surface <- if (rdx_surface_comparison_available) {
+    car::leveneTest(Recovery ~ SurfaceName, data = long_data_rdx_valid)
+  } else {
+    NULL
+  }
+  levene_rdx_lab <- car::leveneTest(Recovery ~ Lab, data = long_data_rdx_valid)
   
-  print("RDX Levene's Test (Surface):")
-  print(levene_rdx_surface)
+  if (!is.null(levene_rdx_surface)) {
+    print("RDX Levene's Test (Surface):")
+    print(levene_rdx_surface)
+  }
   print("RDX Levene's Test (Lab):")
   print(levene_rdx_lab)
   
-  # RDX non-parametric tests
-  kw_rdx <- kruskal.test(Recovery ~ SurfaceName, data = long_data_rdx)
-  print("RDX Kruskal-Wallis:")
-  print(kw_rdx)
-  
-  if (kw_rdx$p.value < 0.05 && n_surfaces > 2) {
-    dunn_rdx <- dunnTest(Recovery ~ SurfaceName, data = long_data_rdx, method = "bonferroni")
-    print("RDX Dunn's Test:")
-    print(dunn_rdx)
+  # RDX non-parametric tests -- only if a valid surface comparison exists
+  if (rdx_surface_comparison_available) {
+    kw_rdx <- kruskal.test(Recovery ~ SurfaceName, data = long_data_rdx_valid)
+    print("RDX Kruskal-Wallis:")
+    print(kw_rdx)
+    
+    if (kw_rdx$p.value < 0.05 && n_surfaces_rdx_valid > 2) {
+      dunn_rdx <- dunnTest(Recovery ~ SurfaceName, data = long_data_rdx_valid, method = "bonferroni")
+      print("RDX Dunn's Test:")
+      print(dunn_rdx)
+    }
+  } else {
+    kw_rdx <- NULL
+    print("RDX Kruskal-Wallis: skipped (no valid surface contrast)")
   }
   
   # =========================================================
@@ -646,43 +735,56 @@ if (analysis_mode %in% c("few_labs", "multi_lab")) {
   print("")
   print("=== Method Comparison (Parametric vs Non-Parametric) ===")
   
-  # Extract surface rankings
+  # Extract surface rankings -- PETN always available; RDX only if a valid
+  # surface comparison exists (see rdx_surface_exclude above).
   petn_means <- as.data.frame(emm_petn)
-  rdx_means <- as.data.frame(emm_rdx)
-  
   petn_ranking_param <- paste(petn_means$SurfaceName[order(-petn_means$emmean)], collapse = " > ")
-  rdx_ranking_param <- paste(rdx_means$SurfaceName[order(-rdx_means$emmean)], collapse = " > ")
   
   petn_medians <- long_data_petn %>%
     group_by(SurfaceName) %>%
     summarise(median_recovery = median(Recovery, na.rm = TRUE)) %>%
     arrange(desc(median_recovery))
-  
-  rdx_medians <- long_data_rdx %>%
-    group_by(SurfaceName) %>%
-    summarise(median_recovery = median(Recovery, na.rm = TRUE)) %>%
-    arrange(desc(median_recovery))
-  
   petn_ranking_nonparam <- paste(petn_medians$SurfaceName, collapse = " > ")
-  rdx_ranking_nonparam <- paste(rdx_medians$SurfaceName, collapse = " > ")
   
-  comparison_table <- data.frame(
-    Analyte = c("PETN", "RDX"),
-    Parametric_p = c(anova_petn["SurfaceName", "Pr(>F)"],
-                     anova_rdx["SurfaceName", "Pr(>F)"]),
-    Nonparametric_p = c(kw_petn$p.value, kw_rdx$p.value),
-    Surface_Ranking_Parametric = c(petn_ranking_param, rdx_ranking_param),
-    Surface_Ranking_Nonparametric = c(petn_ranking_nonparam, rdx_ranking_nonparam),
-    Rankings_Match = c(petn_ranking_param == petn_ranking_nonparam,
-                       rdx_ranking_param == rdx_ranking_nonparam)
-  )
+  if (rdx_surface_comparison_available) {
+    rdx_means <- as.data.frame(emm_rdx)
+    rdx_ranking_param <- paste(rdx_means$SurfaceName[order(-rdx_means$emmean)], collapse = " > ")
+    
+    rdx_medians <- long_data_rdx_valid %>%
+      group_by(SurfaceName) %>%
+      summarise(median_recovery = median(Recovery, na.rm = TRUE)) %>%
+      arrange(desc(median_recovery))
+    rdx_ranking_nonparam <- paste(rdx_medians$SurfaceName, collapse = " > ")
+    
+    comparison_table <- data.frame(
+      Analyte = c("PETN", "RDX"),
+      Parametric_p = c(anova_petn["SurfaceName", "Pr(>F)"],
+                       anova_rdx["SurfaceName", "Pr(>F)"]),
+      Nonparametric_p = c(kw_petn$p.value, kw_rdx$p.value),
+      Surface_Ranking_Parametric = c(petn_ranking_param, rdx_ranking_param),
+      Surface_Ranking_Nonparametric = c(petn_ranking_nonparam, rdx_ranking_nonparam),
+      Rankings_Match = c(petn_ranking_param == petn_ranking_nonparam,
+                         rdx_ranking_param == rdx_ranking_nonparam)
+    )
+  } else {
+    comparison_table <- data.frame(
+      Analyte = c("PETN"),
+      Parametric_p = c(anova_petn["SurfaceName", "Pr(>F)"]),
+      Nonparametric_p = c(kw_petn$p.value),
+      Surface_Ranking_Parametric = c(petn_ranking_param),
+      Surface_Ranking_Nonparametric = c(petn_ranking_nonparam),
+      Rankings_Match = c(petn_ranking_param == petn_ranking_nonparam)
+    )
+    print(paste0("RDX omitted from method comparison: surface-effect testing skipped ",
+                 "(see rdx_surface_exclude)."))
+  }
   
   print(comparison_table)
   
   if (all(comparison_table$Rankings_Match)) {
-    print("✓ PARAMETRIC AND NON-PARAMETRIC RANKINGS AGREE FOR BOTH ANALYTES")
+    print("\u2713 PARAMETRIC AND NON-PARAMETRIC RANKINGS AGREE")
   } else {
-    print("✗ RANKINGS DISAGREE - CHECK RESULTS CAREFULLY")
+    print("\u2717 RANKINGS DISAGREE - CHECK RESULTS CAREFULLY")
   }
   
 }
@@ -1043,53 +1145,86 @@ if (!is.null(model_petn) && !is.null(model_rdx)) {
       sheets_list[["Lab_x_Surface_RDX"]] <- lab_surface_means_table_rdx
     }
     
-    # Non-parametric tests
-    if (exists("kw_petn") && exists("kw_rdx")) {
-      
-      # Get surface rankings from pairwise comparisons
-      # For 2 surfaces, ranking is straightforward from mean difference
+    # Non-parametric tests -- RDX row only included if a valid surface
+    # comparison was actually performed (see rdx_surface_exclude)
+    if (exists("kw_petn")) {
       petn_ranking <- "Steel > ABS-Smooth"  # Simplified for 2 surfaces
-      rdx_ranking <- "Steel > ABS-Smooth"   # Simplified for 2 surfaces
       
-      nonparametric_summary <- data.frame(
-        Analyte = c("PETN", "RDX"),
-        Parametric_p = c(
-          anova_petn["SurfaceName", "Pr(>F)"],
-          anova_rdx["SurfaceName", "Pr(>F)"]
-        ),
-        Nonparametric_p = c(kw_petn$p.value, kw_rdx$p.value),
-        Surface_Ranking_Parametric = c(petn_ranking, rdx_ranking),
-        Surface_Ranking_Nonparametric = c(petn_ranking, rdx_ranking),
-        Rankings_Match = c(TRUE, TRUE)
-      )
+      if (rdx_surface_comparison_available && exists("kw_rdx") && !is.null(kw_rdx)) {
+        nonparametric_summary <- data.frame(
+          Analyte = c("PETN", "RDX"),
+          Parametric_p = c(
+            anova_petn["SurfaceName", "Pr(>F)"],
+            anova_rdx["SurfaceName", "Pr(>F)"]
+          ),
+          Nonparametric_p = c(kw_petn$p.value, kw_rdx$p.value),
+          Surface_Ranking_Parametric = c(petn_ranking, rdx_ranking_param),
+          Surface_Ranking_Nonparametric = c(petn_ranking, rdx_ranking_nonparam),
+          Rankings_Match = c(TRUE, rdx_ranking_param == rdx_ranking_nonparam)
+        )
+      } else {
+        nonparametric_summary <- data.frame(
+          Analyte = c("PETN", "RDX"),
+          Parametric_p = c(anova_petn["SurfaceName", "Pr(>F)"], NA),
+          Nonparametric_p = c(kw_petn$p.value, NA),
+          Surface_Ranking_Parametric = c(petn_ranking, "N/A -- surface-effect testing skipped, see rdx_surface_exclude"),
+          Surface_Ranking_Nonparametric = c(petn_ranking, "N/A -- surface-effect testing skipped, see rdx_surface_exclude"),
+          Rankings_Match = c(TRUE, NA)
+        )
+      }
       
       sheets_list[["Nonparametric_Tests"]] <- nonparametric_summary
     }
     
-    # Levene's test results
-    if (exists("levene_petn_surface") && exists("levene_rdx_surface")) {
-      levene_summary <- data.frame(
-        Analyte = rep(c("PETN", "RDX"), each = 2),
-        Factor = rep(c("Surface", "Lab"), 2),
-        F_value = c(
-          levene_petn_surface$`F value`[1],
-          levene_petn_lab$`F value`[1],
-          levene_rdx_surface$`F value`[1],
-          levene_rdx_lab$`F value`[1]
-        ),
-        p_value = c(
-          levene_petn_surface$`Pr(>F)`[1],
-          levene_petn_lab$`Pr(>F)`[1],
-          levene_rdx_surface$`Pr(>F)`[1],
-          levene_rdx_lab$`Pr(>F)`[1]
-        ),
-        Significant = c(
-          levene_petn_surface$`Pr(>F)`[1] < 0.05,
-          levene_petn_lab$`Pr(>F)`[1] < 0.05,
-          levene_rdx_surface$`Pr(>F)`[1] < 0.05,
-          levene_rdx_lab$`Pr(>F)`[1] < 0.05
+    # Levene's test results -- RDX-by-Surface row only included if a valid
+    # surface comparison was actually performed; RDX-by-Lab still runs
+    # regardless (computed on the excluded-surfaces-removed data)
+    if (exists("levene_petn_surface") && exists("levene_rdx_lab")) {
+      if (rdx_surface_comparison_available && !is.null(levene_rdx_surface)) {
+        levene_summary <- data.frame(
+          Analyte = rep(c("PETN", "RDX"), each = 2),
+          Factor = rep(c("Surface", "Lab"), 2),
+          F_value = c(
+            levene_petn_surface$`F value`[1],
+            levene_petn_lab$`F value`[1],
+            levene_rdx_surface$`F value`[1],
+            levene_rdx_lab$`F value`[1]
+          ),
+          p_value = c(
+            levene_petn_surface$`Pr(>F)`[1],
+            levene_petn_lab$`Pr(>F)`[1],
+            levene_rdx_surface$`Pr(>F)`[1],
+            levene_rdx_lab$`Pr(>F)`[1]
+          ),
+          Significant = c(
+            levene_petn_surface$`Pr(>F)`[1] < 0.05,
+            levene_petn_lab$`Pr(>F)`[1] < 0.05,
+            levene_rdx_surface$`Pr(>F)`[1] < 0.05,
+            levene_rdx_lab$`Pr(>F)`[1] < 0.05
+          )
         )
-      )
+      } else {
+        levene_summary <- data.frame(
+          Analyte = c("PETN", "PETN", "RDX"),
+          Factor = c("Surface", "Lab", "Lab"),
+          F_value = c(
+            levene_petn_surface$`F value`[1],
+            levene_petn_lab$`F value`[1],
+            levene_rdx_lab$`F value`[1]
+          ),
+          p_value = c(
+            levene_petn_surface$`Pr(>F)`[1],
+            levene_petn_lab$`Pr(>F)`[1],
+            levene_rdx_lab$`Pr(>F)`[1]
+          ),
+          Significant = c(
+            levene_petn_surface$`Pr(>F)`[1] < 0.05,
+            levene_petn_lab$`Pr(>F)`[1] < 0.05,
+            levene_rdx_lab$`Pr(>F)`[1] < 0.05
+          )
+        )
+        # Note: RDX-by-Surface omitted -- surface-effect testing skipped, see rdx_surface_exclude
+      }
       
       sheets_list[["Levene_Test"]] <- levene_summary
     }
@@ -1169,18 +1304,27 @@ if (!is.null(model_petn) && !is.null(model_rdx)) {
   
   # Surface effect + between-lab/between-participant variance from the
   # separate PETN/RDX models (Lab modelled as random -- see
-  # variance_components_petn/rdx)
-  if (exists("anova_petn") && exists("anova_rdx")) {
+  # variance_components_petn/rdx). RDX's surface effect is only reported
+  # if a valid (non-excluded) surface comparison was actually performed
+  # -- see rdx_surface_exclude.
+  if (exists("anova_petn")) {
     petn_surface_p <- anova_petn["SurfaceName", "Pr(>F)"]
-    rdx_surface_p <- anova_rdx["SurfaceName", "Pr(>F)"]
     
     print("  \u2192 Separate PETN and RDX models fitted")
     print(paste0("  \u2192 PETN surface effect: ", 
                  ifelse(petn_surface_p < alpha, "SIGNIFICANT", "NOT SIGNIFICANT"),
                  " (p = ", format(petn_surface_p, digits = 3, scientific = TRUE), ")"))
-    print(paste0("  \u2192 RDX surface effect: ",
-                 ifelse(rdx_surface_p < alpha, "SIGNIFICANT", "NOT SIGNIFICANT"),
-                 " (p = ", format(rdx_surface_p, digits = 3, scientific = TRUE), ")"))
+    
+    if (rdx_surface_comparison_available && exists("anova_rdx") && !is.null(anova_rdx)) {
+      rdx_surface_p <- anova_rdx["SurfaceName", "Pr(>F)"]
+      print(paste0("  \u2192 RDX surface effect: ",
+                   ifelse(rdx_surface_p < alpha, "SIGNIFICANT", "NOT SIGNIFICANT"),
+                   " (p = ", format(rdx_surface_p, digits = 3, scientific = TRUE), ")"))
+    } else {
+      print(paste0("  \u2192 RDX surface effect: SKIPPED (", 
+                   paste(rdx_surface_exclude, collapse = ", "),
+                   " excluded -- confirmed spiking-solvent artifact, see rdx_surface_exclude)"))
+    }
     
     if (exists("variance_components_petn") && exists("variance_components_rdx")) {
       # Select by Source name (not position) -- Lab is now a random
@@ -1195,9 +1339,9 @@ if (!is.null(model_petn) && !is.null(model_rdx)) {
       rdx_between_participant <- variance_components_rdx$Percent_Total[
         variance_components_rdx$Source == "Between-Participant (within Lab)"]
       print(paste0("  \u2192 PETN between-lab variance: ", round(petn_between_lab, 1), "%"))
-      print(paste0("  \u2192 RDX between-lab variance: ", round(rdx_between_lab, 1), "%"))
+      print(paste0("  \u2192 RDX between-lab variance (valid surfaces only): ", round(rdx_between_lab, 1), "%"))
       print(paste0("  \u2192 PETN between-participant variance: ", round(petn_between_participant, 1), "%"))
-      print(paste0("  \u2192 RDX between-participant variance: ", round(rdx_between_participant, 1), "%"))
+      print(paste0("  \u2192 RDX between-participant variance (valid surfaces only): ", round(rdx_between_participant, 1), "%"))
     }
   }
   
