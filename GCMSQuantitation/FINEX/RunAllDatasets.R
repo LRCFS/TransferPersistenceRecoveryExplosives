@@ -170,14 +170,19 @@ process_dataset <- function(dataset_path, dataset_name) {
   dataset_env$study_type <- "FINEX"
   
   tryCatch({
-    # Source GlobalCode.R in isolated environment
-    # This will set up all directories, analytes, etc. for THIS dataset
+    # Source GlobalCode.R in isolated environment. GlobalCode.R's own
+    # bottom-of-file chain (01 -> 02 -> 03) now uses source(..., local = TRUE),
+    # which resolves to "whatever environment is currently running GlobalCode.R"
+    # -- i.e. this dataset_env, since we're sourcing GlobalCode.R itself with
+    # local = dataset_env below. Previously that inner chain had no local=
+    # argument, which defaults to source()'s local = FALSE (.GlobalEnv) --
+    # meaning it ran 01/02/03 in the WRONG environment regardless of how
+    # GlobalCode.R itself was sourced, causing "object '...' not found"
+    # errors for anything GlobalCode.R had just set up in dataset_env. Do NOT
+    # re-source 01/02/03 explicitly here as well -- GlobalCode.R's own chain
+    # already does this correctly now; doing it again would just redundantly
+    # reprocess every dataset twice.
     source("GlobalCode.R", local = dataset_env)
-    
-    # Source pipeline scripts in same isolated environment
-    source("Code/01_MsFilesReorganiser.R", local = dataset_env)
-    source("Code/02_PeakDetection.R", local = dataset_env)
-    source("Code/03_Quantification.R", local = dataset_env)
     
     message("\n✓ SUCCESS: ", dataset_name)
     return(list(success = TRUE, error = NULL, skipped = FALSE))

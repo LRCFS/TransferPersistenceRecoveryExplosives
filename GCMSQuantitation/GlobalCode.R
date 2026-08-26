@@ -784,9 +784,9 @@ source("Code/ModPeaks.R")
 #   2. source("Code/02_PeakDetection.R")       -- Peak detection and integration
 #   3. source("Code/03_Quantification.R")      -- Calibration and quantification
 
-source("Code/01_MsFilesReorganiser.R")
-source("Code/02_PeakDetection.R")
-source("Code/03_Quantification.R")
+source("Code/01_MsFilesReorganiser.R", local = TRUE)
+source("Code/02_PeakDetection.R", local = TRUE)
+source("Code/03_Quantification.R", local = TRUE)
 #source("FINEX/RunAllDatasets.R")
 
 # Write reproducibility log after successful pipeline completion
