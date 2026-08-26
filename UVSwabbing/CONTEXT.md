@@ -74,7 +74,7 @@
 ## Analysis Pipeline
 
 ### Scripts
-1. `00-GlobalCode.R` through `08-PatternComparison.R` - Original analysis pipeline
+1. `00-GlobalCode.R` through `07-PatternComparison.R` - Original analysis pipeline
 2. `UV_Analyte_Diagnostic.R` - Comprehensive correlation testing (original method + alternatives)
 3. `UV_Recovery_Reprocessing.R` - Alternative metric testing (5 methods, 26 parameter combinations, no alignment)
 4. `UV_Calibration_Analysis.R` - Powder loading calibration experiment processing
@@ -146,8 +146,8 @@
 - `087 Analysis/DataProcessing/AverageRecoveries.csv` - PETN recovery by participant
 - `087 Analysis/Analysis 1/` and `Analysis 2/` - Raw LC-MS data
 
-### Scripts (in ClaudeSpace/UVSwabbing/)
-- `00-GlobalCode.R` through `08-PatternComparison.R` - Original analysis pipeline
+### Scripts (in TransferPersistenceRecoveryExplosives/UVSwabbing/)
+- `00-GlobalCode.R` through `07-PatternComparison.R` - Original analysis pipeline
 - `UV_Analyte_Diagnostic.R` - Original diagnostic script
 - `UV_Recovery_Reprocessing.R` - Alternative metric testing (5 methods, standalone)
 - `UV_Calibration_Analysis.R` - Calibration experiment processing (standalone)
