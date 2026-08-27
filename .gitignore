@@ -7,3 +7,7 @@
 ScopusOutputs/
 GCMSQuantitation/Test Data/
 /Reports/
+
+# Ad-hoc/investigatory analysis scripts (not part of the maintained pipeline;
+# see RedTeam_Findings.md for the findings/results, not the script itself)
+GCMSQuantitation/FINEX/06_RDXCalendarDrift.R
