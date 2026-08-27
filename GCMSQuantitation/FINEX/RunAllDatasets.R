@@ -294,8 +294,34 @@ message("========================================\n")
 
 collation_start <- Sys.time()
 
+# Source into an isolated environment, NOT this script's own top-level
+# (.GlobalEnv) scope -- mirrors process_dataset()'s dataset_env pattern
+# above, for the identical reason (see item 3 in RedTeam_Findings.md).
+# 04_CollateStudyResults.R conditionally re-sources GlobalCode.R whenever
+# SampleVol/DepositMass aren't already defined in whatever environment it's
+# running in -- which is always true here, since process_dataset() only
+# ever defines those inside each dataset's own throwaway dataset_env, never
+# in .GlobalEnv. GlobalCode.R's own rm(list=ls())-style reset would then
+# fire directly in .GlobalEnv if 04 were sourced there (the previous
+# behaviour, `source("FINEX/04_CollateStudyResults.R")` with no local=),
+# silently wiping out this script's own `collation_start`/`start_time`
+# bookkeeping variables -- collation itself completes and writes correct
+# output, but the subsequent `collation_end - collation_start` and (at the
+# very end of this script) `Sys.time() - start_time` lines then throw
+# "object not found", the second of which is NOT inside any tryCatch and
+# so aborts the whole script with a non-zero exit code and no final
+# summary -- despite the actual data processing having fully succeeded.
+# Confirmed via a real 19-dataset run (18 succeeded, 1 correctly
+# validation-skipped, 0 failed; collation wrote a verified-correct
+# FINEX_StudyResults.csv/.xlsx) that this was purely a post-collation
+# reporting-layer crash, not a data-correctness issue -- but still a real
+# bug worth fixing, since a non-zero exit code / "Collation FAILED"
+# message is actively misleading for anyone (or any script) checking this
+# run's success programmatically.
+collation_env <- new.env(parent = .GlobalEnv)
+
 tryCatch({
-  source("FINEX/04_CollateStudyResults.R")
+  source("FINEX/04_CollateStudyResults.R", local = collation_env)
   collation_end <- Sys.time()
   collation_time <- difftime(collation_end, collation_start, units = "mins")
   message("\n✓ Collation complete (", round(collation_time, 1), " minutes)")

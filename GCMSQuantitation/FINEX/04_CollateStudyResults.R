@@ -45,7 +45,21 @@ suppressPackageStartupMessages({
 global_code_path <- "C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/GCMSQuantitation/GlobalCode.R"
 
 if (!exists("SampleVol") || !exists("DepositMass")) {
-  source(global_code_path)
+  # local = TRUE: same fix as GlobalCode.R's own internal 01->02->03 chain
+  # (item 3) -- resolves to "whatever environment is currently running this
+  # script", not always .GlobalEnv. Identical behaviour for a normal
+  # standalone run (source()'s default calling environment IS .GlobalEnv
+  # there), but correctly resolves to an isolated child environment when
+  # this script is itself sourced into one (e.g. RunAllDatasets.R's
+  # collation_env, added alongside this fix -- see RunAllDatasets.R
+  # comments). Without this, GlobalCode.R's own rm(list=ls())-style reset
+  # (which runs from inside this source() call) would always fire in
+  # .GlobalEnv regardless, silently wiping out RunAllDatasets.R's own
+  # collation_start/start_time bookkeeping variables and crashing it with a
+  # misleading "Collation FAILED" + non-zero exit code, despite collation
+  # itself completing correctly. Confirmed via a real 19-dataset
+  # RunAllDatasets.R run.
+  source(global_code_path, local = TRUE)
 }
 
 # Re-affirm global_code_path in case the source() call above actually fired:
