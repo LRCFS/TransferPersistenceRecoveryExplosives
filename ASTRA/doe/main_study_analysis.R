@@ -950,7 +950,14 @@ generate_preliminary_plot <- function(data) {
 
   long_data$Analyte <- factor(long_data$Analyte, levels = c("PETN", "RDX"))
   long_data$Study   <- factor(long_data$Study, levels = c("Pilot", "Main"))
-  long_data$Pressure_g <- factor(long_data$Pressure_g, levels = sort(unique(long_data$Pressure_g)))
+  # Pressure_g stays NUMERIC (not factor) so the x-axis reflects true spacing
+  # between levels (10->50 = 40g, 50->100 = 50g, 100->200 and 200->300 = 100g
+  # each) rather than forcing all 5 nominal levels to equal categorical
+  # spacing, which visually distorts the shape of the pressure-recovery
+  # relationship (e.g. can make the curve look like it peaks further right
+  # than the real data supports). geom_boxplot/geom_jitter below use an
+  # explicit `group` aesthetic and g-scale widths to work correctly with a
+  # continuous x.
 
   n_labels <- long_data %>%
     group_by(Surface_type, Analyte, Pressure_g) %>%
@@ -966,14 +973,15 @@ generate_preliminary_plot <- function(data) {
     "Box = IQR/median; red diamond = mean (main-study samples only -- pilot data not found to pool)"
   }
 
-  p <- ggplot(long_data, aes(x = Pressure_g, y = Recovery)) +
-    geom_boxplot(outlier.shape = NA, width = 0.6) +
-    geom_jitter(aes(colour = Study), width = 0.1, height = 0, size = 1.6, alpha = 0.75) +
+  p <- ggplot(long_data, aes(x = Pressure_g, y = Recovery, group = Pressure_g)) +
+    geom_boxplot(outlier.shape = NA, width = 15) +
+    geom_jitter(aes(colour = Study), width = 5, height = 0, size = 1.6, alpha = 0.75) +
     scale_colour_manual(values = c(Pilot = "darkorange", Main = "steelblue"), drop = FALSE) +
     stat_summary(fun = mean, geom = "point", shape = 18, size = 3.5, colour = "red") +
     geom_text(data = n_labels, aes(x = Pressure_g, y = label_y, label = paste0("n=", n)),
               size = 3, vjust = 0, inherit.aes = FALSE) +
     coord_cartesian(ylim = c(0, y_max * 1.15)) +
+    scale_x_continuous(breaks = c(10, 50, 100, 200, 300)) +
     facet_grid(Surface_type ~ Analyte,
                labeller = labeller(Surface_type = c("steel" = "Steel", "abs" = "ABS"))) +
     labs(title = paste0("Recovery by Pressure -- Pilot + Main Study (Preliminary, n=", nrow(long_data), ")"),
