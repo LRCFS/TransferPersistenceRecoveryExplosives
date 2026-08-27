@@ -79,7 +79,7 @@ DataFolder <- if (!is.null(.preset_DataFolder)) {
 } else {
   "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/ASTRA Swabbing/Main Study/GC Data/Analysis2"
 }
-#DataFolder <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/FINEX Swabbing Study/Accepted Analysis/Outstanding samples 2"
+#DataFolder <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/FINEX Swabbing Study/Accepted Analysis/G and T 1"
 rm(.preset_DataFolder, .preset_study_type)
 ParentFolder <- sub(".*/", "", DataFolder)
 
@@ -514,12 +514,25 @@ drift_correction_min_qc <- if (study_type == "ASTRA") 2 else 3
 # single flat value that has to be remembered and hand-edited per run.
 # Add entries here as further silent QC-injection failures are identified.
 drift_correction_exclude_qc_lines_by_dataset <- list(
-  "Steel 4" = c(33)  # 2nd 6ng PETN QC: petn_pa drops from 96584 to 8757
+  "Steel 4" = c(33),  # 2nd 6ng PETN QC: petn_pa drops from 96584 to 8757
                       # then recovers to 28321 on the very next QC --
                       # classic failed-injection pattern, not real drift.
                       # Confirmed (Aug 2026) as the only dataset with this
                       # pattern across all 17 FINEX datasets processed to
                       # date -- checked exhaustively, not just assumed.
+  "Analysis2" = c(39) # 6ng PETN QC: petn_pa = 267 (SNR 4.87, Below_LOQ),
+                      # vs. 79553 (Line 27) and 40715 (Line 51) either
+                      # side -- same dip-then-recover pattern. rdx_pa also
+                      # collapses in lockstep (107 vs ~13045/6607), but
+                      # rdx_is_pa stays right on the general declining
+                      # trend (10747, consistent with interpolating
+                      # 28813->11717) -- both analyte peaks failed to
+                      # integrate correctly on this one injection while the
+                      # IS did not, not a whole-injection failure. Without
+                      # this exclusion, this single point collapsed the
+                      # power-law fit entirely (R^2 = -1.40, amplitude
+                      # forced to ~0) -- found investigating a user report
+                      # of "drift correction power law is completely off".
 )
 drift_correction_exclude_qc_lines <- if (ParentFolder %in% names(drift_correction_exclude_qc_lines_by_dataset)) {
   drift_correction_exclude_qc_lines_by_dataset[[ParentFolder]]
