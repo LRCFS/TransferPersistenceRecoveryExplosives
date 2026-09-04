@@ -56,6 +56,13 @@ library(baseline)
 library(writexl)
 library(yaml)
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo. See
+# thesis_palette.R's own header for the full rationale. Covers Code/02_
+# PeakDetection.R, Code/03_Quantification.R, Code/ModPeaks.R (all sourced
+# below, after this).
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 #############################################################
 #####                Folder & Files                     #####
 #############################################################
@@ -540,6 +547,43 @@ drift_correction_exclude_qc_lines <- if (ParentFolder %in% names(drift_correctio
   c(0)
 }
 
+# Sequence Line number(s) of CALIBRATION STANDARD injections to exclude from
+# the quadratic calibration curve FIT itself (e.g. a single bad/contaminated/
+# mislabelled Cal standard whose response doesn't match the rest of that
+# dataset's own trend at the same nominal level -- see the ASTRA Analysis1
+# investigation below). An excluded Cal row is NOT removed from
+# Combined/CalData/CalSets or from CalibrationSet tagging -- it remains
+# visible in the output, just not used to fit the curve. Deliberately NOT
+# analyte-specific (excludes the Line from BOTH PETN's and RDX's calibration
+# fits, even if only one analyte's response at that injection looks
+# anomalous) -- matches the existing whole-injection-exclusion convention
+# used by qc_bracket_exclude/drift_correction_exclude_qc_lines_by_dataset
+# above, rather than adding a second axis of per-analyte complexity.
+#
+# Per-dataset lookup, same pattern as drift_correction_exclude_qc_lines_by_dataset
+# above. Add entries here as further bad calibration standards are identified.
+cal_exclude_lines_by_dataset <- list(
+  # "Analysis1" = c(6) was tested (01/09/2026 investigation, see ASTRA/doe/CONTEXT.md)
+  # and REJECTED: excluding this Cal point made the RDX 0.2ng-level flooring
+  # problem WORSE, not better -- with only Cal levels 2/4/6/8/10ng left to fit,
+  # the quadratic curve no longer extrapolates down to a 0.2ng-equivalent
+  # response at all, and EVERY 0.2ng QC (including Line 13, which correctly
+  # resolved to ~0.20ng before this was tried) now floors to a computed
+  # concentration of exactly 0 (rdx_extrapolated = TRUE). Confirmed by directly
+  # re-running 03_Quantification.R with the exclusion applied and comparing
+  # before/after per-QC concentrations. This means Cal Line 6, whatever its
+  # own merits, is functioning as this dataset's only usable low-end anchor --
+  # discarding it is not a fix. Root cause of the RDX 0.2ng-level flooring
+  # remains open; do not re-add this entry without first finding a way to
+  # replace the low-end anchor (e.g. a different/additional low-level
+  # standard), not just remove it.
+)
+cal_exclude_lines <- if (ParentFolder %in% names(cal_exclude_lines_by_dataset)) {
+  cal_exclude_lines_by_dataset[[ParentFolder]]
+} else {
+  integer(0)
+}
+
 # Path to the long-term QC monitoring master file
 
 # QC results are appended here after each run for instrument tracking
@@ -675,6 +719,12 @@ validate_setup <- function() {
          class(drift_correction_exclude_qc_lines))
   }
   
+  # --- Calibration excluded lines ---
+  if (!is.numeric(cal_exclude_lines)) {
+    stop("cal_exclude_lines must be a numeric vector (Line numbers), got class: ",
+         class(cal_exclude_lines))
+  }
+  
   # --- Dilution factor ---
 
   if (!is.numeric(Dilution) || Dilution <= 0 || Dilution > 1) {
@@ -713,6 +763,7 @@ log_reproducibility <- function() {
     drift_correction_method = drift_correction_method,
     drift_correction_min_qc = drift_correction_min_qc,
     drift_correction_exclude_qc_lines = drift_correction_exclude_qc_lines,
+    cal_exclude_lines = cal_exclude_lines,
     snr_detect = snr_detect,
 
     snr_quant = snr_quant,

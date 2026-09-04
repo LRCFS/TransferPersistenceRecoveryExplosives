@@ -43,6 +43,10 @@ suppressPackageStartupMessages({
   library(FSA)  # For Dunn's test (non-parametric post-hoc)
 })
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 # =========================================================
 # CONFIGURATION
 # =========================================================
@@ -832,6 +836,7 @@ if (!is.null(model_petn) && !is.null(model_rdx)) {
   # 5. Box plot by surface (always available)
   p_boxplot <- ggplot(long_data, aes(x = SurfaceName, y = Recovery, fill = SurfaceName)) +
     geom_boxplot(outlier.shape = 1) +
+    scale_fill_manual(values = pal_surface_gcms) +
     stat_summary(fun = mean, geom = "point", shape = 23, size = 2, 
                  fill = "red", color = "black") +
     facet_wrap(~ Analyte, scales = "free_y") +
@@ -857,8 +862,8 @@ if (!is.null(model_petn) && !is.null(model_rdx)) {
           geom_point(aes(color = Significant), size = 3) +
           geom_errorbar(aes(ymin = CI_lower, ymax = CI_upper, color = Significant),
                         width = 0.2) +
+          scale_color_manual(values = pal_significant) +
           coord_flip() +
-          scale_color_manual(values = c("No" = "gray50", "Yes" = "red")) +
           labs(title = paste0(analyte_name, ": Lab Effects (Random-Effect BLUPs)"),
                subtitle = paste0(round(100 * (1 - alpha)), "% CI, alpha = ", alpha),
                x = "Lab",
@@ -883,9 +888,10 @@ if (!is.null(model_petn) && !is.null(model_rdx)) {
     if (!is.null(tbl) && n_labs > 1) {
       tryCatch({
         p_lab_surf <- ggplot(tbl,
-                             aes(x = SurfaceName, y = Mean, group = Lab, color = Lab)) +
+                              aes(x = SurfaceName, y = Mean, group = Lab, color = Lab)) +
           geom_line(alpha = 0.6) +
           geom_point(size = 2) +
+          scale_color_viridis_d() +
           labs(title = paste0(analyte_name, ": Lab x Surface Interaction"),
                subtitle = "Does surface ranking differ by lab?",
                x = "Surface",

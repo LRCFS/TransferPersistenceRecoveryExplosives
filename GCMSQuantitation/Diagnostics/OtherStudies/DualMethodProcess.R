@@ -19,6 +19,10 @@ library(tidyr)
 library(ggplot2)
 library(gridExtra)
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 # ============================================================
 # CONFIGURATION
 # ============================================================
@@ -67,8 +71,17 @@ cal_model_type <- "quadratic"  # "quadratic" or "linear"
 
 message("=== Dual Method Processing: 20260428 Cal Check ===")
 
-# Source ModPeaks.R for signal processing functions
-source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/GCMSQuantitation/v2-NG/Code/ModPeaks.R")
+# Source ModPeaks.R for signal processing functions.
+# NOTE: previously pointed at "v2-NG/Code/ModPeaks.R", which no longer exists
+# (that code moved to Archive/v2-NG_Deprecated/ at some point). Repointed at
+# the current, maintained Code/ModPeaks.R instead of the archived copy --
+# the archived version is missing the Aug 2026 "floor at zero before
+# integration" fix in extract_peak_area() (see that function's own comment
+# in Code/ModPeaks.R), and this script performs real quantification
+# (calibration curves + QC bias), so using the stale/buggy copy would
+# silently reintroduce a known small-peak PA distortion. Function
+# signatures are identical between the two versions -- drop-in compatible.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/GCMSQuantitation/Code/ModPeaks.R")
 
 # Paths
 sim_dir <- file.path(data_dir, "GcDataConvertedRcode", "SIM")
@@ -532,6 +545,7 @@ qc_data <- Results_all %>%
 if (nrow(qc_data) > 0) {
   p_qc <- ggplot(qc_data, aes(x = Line, y = Bias, colour = MethodGroup, shape = factor(CalLevel))) +
     geom_point(size = 3) +
+    scale_colour_manual(values = pal_method_group) +
     geom_hline(yintercept = 0, colour = "grey50") +
     geom_hline(yintercept = c(-20, 20), linetype = "dashed", colour = "red") +
     facet_wrap(~Metric, ncol = 1, scales = "free_y") +
@@ -568,6 +582,7 @@ qc_pa <- Results_all %>%
 if (nrow(qc_pa) > 0) {
   p_pa <- ggplot(qc_pa, aes(x = Line, y = PA, colour = MethodGroup, shape = factor(CalLevel))) +
     geom_point(size = 3) +
+    scale_colour_manual(values = pal_method_group) +
     geom_line(aes(group = interaction(MethodGroup, CalLevel)), alpha = 0.4) +
     facet_wrap(~Analyte, ncol = 1, scales = "free_y") +
     expand_limits(y = 0) +

@@ -2,6 +2,10 @@
 library(ggplot2)
 library(dplyr)
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 ms1_dir <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/Method Development/20260522 Filter Test/GcDataConverterMs/"
 output_dir <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/Method Development/20260522 Filter Test/TIC_Diagnostics/"
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
@@ -88,7 +92,7 @@ p <- ggplot(plot_data, aes(x = conc, y = norm_intensity, color = ion)) +
   geom_point(size = 3) +
   geom_line() +
   geom_hline(yintercept = 1, linetype = "dashed", color = "gray50") +
-  scale_color_manual(values = c("m/z 52" = "darkgreen", "m/z 122" = "red")) +
+  scale_color_manual(values = pal_ion_candidate) +
   labs(
     title = "m/z 52 (Alternative IS Candidate) vs m/z 122 (Current IS)",
     subtitle = sprintf("m/z 52: CV=%.1f%%, r=%.2f | m/z 122: CV=%.1f%%, r=%.2f",

@@ -105,7 +105,8 @@ for (file in filenameGcData) {
   
   p <- ggplot(Combined.bc.fillPeakTIC, aes(x=RetentionTime)) +
     geom_line(aes(y = TIC, colour = "GC trace")) +
-    geom_line(aes(y = BaselineTrend, colour = "baseline")) +   
+    geom_line(aes(y = BaselineTrend, colour = "baseline")) +
+    scale_colour_manual(values = pal_trace_baseline) +
     labs(
       x = "Retention Time (s)",
       y = "TIC")

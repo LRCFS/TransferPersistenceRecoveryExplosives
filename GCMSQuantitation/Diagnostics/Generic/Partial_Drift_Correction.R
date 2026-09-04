@@ -56,6 +56,10 @@ library(dplyr)
 library(ggplot2)
 library(gridExtra)
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 # =========================================================
 # Helper Functions
 # =========================================================
@@ -400,7 +404,7 @@ p2 <- ggplot(qc_comparison, aes(x = Method, y = PercentBias, fill = Method)) +
     x = "",
     y = "%Bias"
   ) +
-  scale_fill_manual(values = c("Before Correction" = "grey60", "After Correction" = "steelblue"))
+  scale_fill_manual(values = pal_method)
 
 # Combine plots
 p_combined <- grid.arrange(p1, p2, nrow = 2, heights = c(1.2, 0.8))

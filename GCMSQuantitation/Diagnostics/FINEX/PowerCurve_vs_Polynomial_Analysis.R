@@ -5,6 +5,10 @@
 library(ggplot2)
 library(dplyr)
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 # Define datasets
 base_path <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/FINEX Swabbing Study/Accepted Analysis"
 
@@ -263,6 +267,7 @@ r2_comparison <- results_summary %>%
 p3 <- ggplot(r2_comparison, aes(x = Dataset, y = R2, fill = Method)) +
   geom_bar(stat = "identity", position = "dodge") +
   geom_hline(yintercept = 0.95, linetype = "dashed", colour = "darkgreen") +
+  scale_fill_manual(values = pal_method) +
   theme_bw() +
   labs(
     title = "Drift Correction Model Fit Quality: R² Comparison",

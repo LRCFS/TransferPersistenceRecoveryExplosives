@@ -11,6 +11,10 @@ library(ggplot2)
 library(dplyr)
 library(tidyr)
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 message("=== TIC All Ions Scan for IS Candidates ===")
 
 # ============================================================
@@ -366,15 +370,7 @@ ggsave(file.path(output_dir, "TIC_CV_vs_SignalBlank.png"), p1,
 # Plot 2: Correlation vs CV
 p2 <- ggplot(ion_stats, aes(x = cor_vs_conc, y = cv_cal)) +
   geom_point(aes(color = classification), alpha = 0.7, size = 2) +
-  scale_color_manual(values = c(
-    "Excellent IS candidate" = "darkgreen",
-    "Good IS candidate" = "green3",
-    "RDX-dependent (problem)" = "red",
-    "Ion enhancement effect" = "orange",
-    "Matrix effect warning" = "purple",
-    "Background only" = "gray50",
-    "Other" = "gray70"
-  )) +
+  scale_color_manual(values = pal_ion_classification) +
   geom_hline(yintercept = 25, linetype = "dashed", color = "gray50") +
   geom_vline(xintercept = 0.5, linetype = "dashed", color = "gray50") +
   geom_vline(xintercept = -0.5, linetype = "dashed", color = "gray50") +
@@ -455,7 +451,7 @@ if (nrow(is_candidates) > 0) {
       geom_point(aes(color = type, shape = type), size = 2.5) +
       geom_line(aes(group = mz), alpha = 0.3) +
       facet_wrap(~ paste0("m/z ", mz), scales = "free_y") +
-      scale_color_manual(values = c("Calibrant" = "blue", "Blank" = "gray50", "QC Sample" = "orange")) +
+      scale_color_manual(values = pal_sample_role) +
       scale_shape_manual(values = c("Calibrant" = 16, "Blank" = 1, "QC Sample" = 17)) +
       labs(
         title = "IS Candidates: Intensity vs Concentration",
@@ -510,7 +506,7 @@ if (nrow(mz122_stats) > 0) {
     geom_point(aes(color = type, shape = type), size = 3) +
     geom_smooth(data = subset(mz122_plot_data, type == "Calibrant"),
                 method = "lm", se = FALSE, color = "red", alpha = 0.5) +
-    scale_color_manual(values = c("Calibrant" = "blue", "Blank" = "gray50", "QC Sample" = "orange")) +
+    scale_color_manual(values = pal_sample_role) +
     scale_shape_manual(values = c("Calibrant" = 16, "Blank" = 1, "QC Sample" = 17)) +
     labs(
       title = "Current IS (m/z 122) Analysis",

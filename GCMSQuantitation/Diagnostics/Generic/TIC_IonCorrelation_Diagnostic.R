@@ -13,6 +13,10 @@
 library(ggplot2)
 library(dplyr)
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 message("=== TIC Ion Correlation Diagnostic for RDX ===")
 
 # ============================================================
@@ -271,6 +275,7 @@ results_long <- merge(results_long, cor_table[, c("mz", "interpretation")], by =
 p1 <- ggplot(results_long, aes(x = conc_ng, y = intensity, color = interpretation)) +
   geom_point(size = 2) +
   geom_line(aes(group = mz_label), alpha = 0.5) +
+  scale_color_manual(values = pal_ion_interpretation) +
   facet_wrap(~ paste0("m/z ", mz), scales = "free_y") +
   scale_y_log10() +
   labs(
@@ -284,6 +289,7 @@ p1 <- ggplot(results_long, aes(x = conc_ng, y = intensity, color = interpretatio
 
 p2 <- ggplot(cor_table, aes(x = reorder(ion, -cor_vs_rdx), y = cor_vs_rdx)) +
   geom_bar(stat = "identity", aes(fill = interpretation)) +
+  scale_fill_manual(values = pal_ion_interpretation) +
   geom_hline(yintercept = 0.95, linetype = "dashed", color = "red") +
   geom_hline(yintercept = 0.5, linetype = "dotted", color = "gray50") +
   labs(
@@ -301,6 +307,7 @@ scatter_data <- results_long %>%
 
 p3 <- ggplot(scatter_data, aes(x = rdx_intensity, y = intensity)) +
   geom_point(aes(color = interpretation)) +
+  scale_color_manual(values = pal_ion_interpretation) +
   geom_smooth(method = "lm", se = FALSE, color = "gray50") +
   facet_wrap(~ paste0("m/z ", mz), scales = "free") +
   labs(

@@ -5,6 +5,10 @@
 library(ggplot2)
 library(dplyr)
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 # Load Phase 1 results
 results_summary <- read.csv("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/GCMSQuantitation/Diagnostics/FINEX/PowerCurve_Comparison_Summary.csv")
 
@@ -245,6 +249,7 @@ bias_comparison <- results_summary %>%
 p_bias <- ggplot(bias_comparison, aes(x = Dataset, y = Mean_Abs_Bias, fill = Method)) +
   geom_bar(stat = "identity", position = "dodge") +
   geom_hline(yintercept = 15, linetype = "dashed", colour = "red") +
+  scale_fill_manual(values = pal_method) +
   theme_bw() +
   labs(
     title = "QC Mean Absolute Bias: Polynomial vs Power Law Drift Correction",
@@ -276,6 +281,7 @@ for (dataset_name in datasets) {
     geom_hline(yintercept = 0, colour = "grey50") +
     geom_point(size = 3) +
     geom_line(alpha = 0.6) +
+    scale_color_manual(values = pal_method) +
     theme_bw() +
     labs(
       title = paste(dataset_name, "- QC Bias Trajectories"),

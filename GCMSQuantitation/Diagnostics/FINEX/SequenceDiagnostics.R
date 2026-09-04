@@ -14,6 +14,10 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 message("=== FINEX Sequence Diagnostics ===")
 
 # --- Configuration ---
@@ -146,6 +150,7 @@ if (nrow(samples_valid) > 0) {
 
   p_box <- ggplot(box_data, aes(x = SurfaceName, y = Concentration, fill = SurfaceName)) +
     geom_boxplot() +
+    scale_fill_manual(values = pal_surface_gcms) +
     stat_summary(fun = mean, geom = "point", shape = 18, size = 3, colour = "black") +
     facet_wrap(~Analyte, scales = "free_y") +
     theme_bw() +
@@ -188,6 +193,7 @@ if (nrow(samples_valid) > 0 &&
 
   p_box_dc <- ggplot(box_data_dc, aes(x = SurfaceName, y = Concentration, fill = SurfaceName)) +
     geom_boxplot() +
+    scale_fill_manual(values = pal_surface_gcms) +
     stat_summary(fun = mean, geom = "point", shape = 18, size = 3, colour = "black") +
     facet_wrap(~Analyte, scales = "free_y") +
     theme_bw() +

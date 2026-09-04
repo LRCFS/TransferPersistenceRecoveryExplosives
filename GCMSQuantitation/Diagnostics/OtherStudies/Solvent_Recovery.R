@@ -11,6 +11,10 @@
 # === LOAD LIBRARIES ===
 library(tidyverse)
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 # === PARAMETERS ===
 # File path to GC-MS results
 file_path <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/Solvents/RDX_ACN_Test/Results/RDX_ACN_Test_GCMSResults.csv"
@@ -80,7 +84,7 @@ cat("Creating RDX recovery plot...\n")
 
 rdx_plot <- ggplot(samples, aes(x = Condition, y = RDX_Recovery_pct)) +
   geom_hline(yintercept = 100, linetype = "dashed", color = "gray50", linewidth = 0.8) +
-  geom_point(size = 4, color = "#2166ac") +
+  geom_point(size = 4, color = pal_analyte[["RDX"]]) +
   labs(
     title = "RDX Recovery from 50,000 ng Spike",
     x = "Condition",
@@ -104,7 +108,7 @@ cat("Creating PETN recovery plot...\n")
 
 petn_plot <- ggplot(samples, aes(x = Condition, y = PETN_Recovery_pct)) +
   geom_hline(yintercept = 100, linetype = "dashed", color = "gray50", linewidth = 0.8) +
-  geom_point(size = 4, color = "#b2182b") +
+  geom_point(size = 4, color = pal_analyte[["PETN"]]) +
   labs(
     title = "PETN Recovery from 50,000 ng Spike",
     x = "Condition",

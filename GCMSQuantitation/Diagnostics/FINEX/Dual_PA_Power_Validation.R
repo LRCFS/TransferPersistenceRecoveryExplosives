@@ -7,6 +7,10 @@
 library(ggplot2)
 library(dplyr)
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 # Define datasets
 base_path <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/FINEX Swabbing Study/Accepted Analysis"
 datasets <- c("ABS-S-1", "ABS-S-2", "Lab10-1", "Lab17-1")
@@ -367,7 +371,7 @@ if (nrow(all_qc_combined) > 0) {
     geom_line(aes(y = Predicted_PA, color = Analyte), linewidth = 1, alpha = 0.7) +
     facet_wrap(~Dataset, scales = "free_y") +
     theme_bw() +
-    scale_color_manual(values = c("PETN_PA" = "blue", "IS_PA" = "red"),
+    scale_color_manual(values = pal_analyte_vs_is,
                       labels = c("PETN PA", "15N-RDX IS PA")) +
     labs(
       title = "Dual Power Curve Fits: PETN PA and IS PA",
@@ -389,7 +393,7 @@ p2 <- ggplot(results_summary, aes(x = Dataset)) +
   geom_point(aes(y = IS_Power_b, color = "IS"), size = 4) +
   geom_hline(yintercept = -1.0, linetype = "dashed", color = "grey50") +
   theme_bw() +
-  scale_color_manual(values = c("PETN" = "blue", "IS" = "red")) +
+  scale_color_manual(values = pal_analyte_vs_is) +
   labs(
     title = "Power Law Decay Exponents: PETN vs IS",
     subtitle = "More negative = faster signal loss | Dashed line = -1.0 (inverse proportional)",
@@ -422,9 +426,7 @@ p3 <- ggplot(bias_comparison, aes(x = Dataset, y = Mean_Abs_Bias, fill = Method)
     y = "Mean Absolute % Bias",
     fill = "Drift Correction Method"
   ) +
-  scale_fill_manual(values = c("Current (Ratio Poly)" = "grey70",
-                               "PA Power (No IS)" = "steelblue",
-                               "Dual PA Power" = "darkgreen")) +
+  scale_fill_manual(values = pal_method) +
   theme(legend.position = "bottom")
 
 ggsave(file.path(output_dir, "Three_Method_Bias_Comparison.png"),
@@ -447,8 +449,7 @@ for (dataset_name in names(detailed_results)) {
     geom_point(size = 4) +
     geom_line(alpha = 0.6, linewidth = 1) +
     theme_bw() +
-    scale_color_manual(values = c("Current (Ratio Poly)" = "grey50",
-                                  "Dual PA Power" = "darkgreen")) +
+    scale_color_manual(values = pal_method) +
     labs(
       title = paste(dataset_name, "- QC Bias Trajectories: Current vs Dual PA Power"),
       subtitle = "Red lines = ±15% acceptance limits",

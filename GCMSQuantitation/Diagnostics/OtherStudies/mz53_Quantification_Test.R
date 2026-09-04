@@ -10,6 +10,10 @@ library(ggplot2)
 library(dplyr)
 library(tidyr)
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 message("=== m/z 53 Quantification Test (RDX) ===")
 
 # ============================================================
@@ -365,6 +369,7 @@ cal_plot_data <- cal_data %>%
 
 p1 <- ggplot(cal_plot_data, aes(x = conc_ng, y = ratio, color = IS)) +
   geom_point(size = 3) +
+  scale_color_manual(values = pal_ion_candidate) +
   stat_smooth(method = "lm", formula = y ~ x + I(x^2), se = FALSE) +
   facet_wrap(~ IS, scales = "free_y") +
   labs(
@@ -392,6 +397,7 @@ is_stability <- cal_data %>%
 p2 <- ggplot(is_stability, aes(x = conc_ng, y = intensity, color = IS)) +
   geom_point(size = 3) +
   geom_line(alpha = 0.5) +
+  scale_color_manual(values = pal_ion_candidate) +
   geom_hline(data = is_stability %>% group_by(IS) %>% summarise(mean_int = mean(intensity)),
              aes(yintercept = mean_int, color = IS), linetype = "dashed") +
   labs(
@@ -418,6 +424,7 @@ accuracy_plot <- cal_results %>%
 
 p3 <- ggplot(accuracy_plot, aes(x = factor(conc_ng), y = accuracy, fill = IS)) +
   geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
+  scale_fill_manual(values = pal_ion_candidate) +
   geom_hline(yintercept = 0, color = "gray50") +
   geom_hline(yintercept = c(-15, 15), linetype = "dotted", color = "red") +
   labs(

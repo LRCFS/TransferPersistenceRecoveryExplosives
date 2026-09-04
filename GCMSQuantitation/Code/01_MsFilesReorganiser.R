@@ -101,11 +101,27 @@ for(i in 1:nrow(ConvertedData)) { # for-loop over rows
   }
   i <- i+1
 }
+# Strip out non-data metadata lines from the raw MS1 text format (H/S/I are
+# literal line-type codes MSConvert writes: H = file Header, S = Scan header,
+# I = Info/instrument description; D/data lines carry the actual numeric
+# mass/intensity values this pipeline needs). "H"/"NativeID"/"BPI"/"BPM"/"TIC"
+# lines were already stripped above for the same reason.
+#
+# NOTE (red-team review, Section D): this uses a SUBSTRING match
+# (str_detect(V1, 'S')) rather than an exact line-type match (e.g. V1 == "S"),
+# so it is a fragile, undocumented assumption about vendor output formatting
+# -- harmless today only because real mass/intensity values are always
+# numeric text and can never contain the literal letters "S"/"I" as a
+# substring. Left as a substring match deliberately (not tightened to an
+# exact match) to avoid changing already-validated filtering behaviour that
+# underlies every published FINEX/ASTRA quantitation number in this repo --
+# if MSConvert's text output format ever changes, re-verify this assumption
+# before trusting new data through this script.
 # remove rows containing "S"
 ConvertedData <- ConvertedData %>% 
   filter(!str_detect(V1, 'S'))
 
-# remove rows containing "S"
+# remove rows containing "I"
 ConvertedData <- ConvertedData %>% 
   filter(!str_detect(V1, 'I'))
 

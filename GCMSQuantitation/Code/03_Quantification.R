@@ -61,6 +61,27 @@ if (!exists("drift_correction_min_qc")) {
 }
 
 # -----------------------------
+# Configuration toggle: cal_exclude_lines
+# -----------------------------
+# Sequence Line number(s) of calibration standard injections to exclude from
+# the QUADRATIC CALIBRATION FIT itself (e.g. a single bad/contaminated/
+# mislabelled Cal standard whose response doesn't match the rest of that
+# level's/dataset's trend -- see the ASTRA Analysis1 0.2ng RDX Cal investigation,
+# RedTeam_Findings.md item 20 follow-up / ASTRA CONTEXT.md). Deliberately NOT
+# analyte-specific (applies identically to both PETN's and RDX's calibration
+# fits for the matched Line, even if only one analyte's response at that
+# injection looks anomalous) -- matches the existing convention elsewhere in
+# this codebase (qc_bracket_exclude, drift_correction_exclude_qc_lines_by_dataset)
+# of excluding the whole injection rather than a single analyte's reading of
+# it. An excluded Cal row is NOT removed from Combined/CalData/CalSets or from
+# CalibrationSet tagging -- it is still visible in the output, just not used
+# to FIT the quadratic curve. Fallback here only for standalone runs of this
+# script without GlobalCode.R having set it.
+if (!exists("cal_exclude_lines")) {
+  cal_exclude_lines <- integer(0)
+}
+
+# -----------------------------
 # Required user-defined globals
 # -----------------------------
 required_globals <- c(
@@ -259,6 +280,7 @@ if (nrow(rdx_is_plot_data) > 0) {
   p_rdx_is <- ggplot(rdx_is_plot_data, aes(x = Row, y = rdx_is_pa, colour = Group)) +
     geom_point(size = 2) +
     geom_line(alpha = 0.5) +
+    scale_colour_manual(values = pal_injection_role) +
     theme_bw() +
     labs(
       title = "RDX IS (15N-RDX) Peak Area Across Sequence",
@@ -447,9 +469,28 @@ for (analyte_name in names(analytes)) {
       cal_fit <- cal
     }
 
+    # Manual exclusion of specific Cal Line(s) from the fit itself (see
+    # cal_exclude_lines comment near the top of this script) -- e.g. a single
+    # bad/contaminated calibration standard whose response doesn't match the
+    # rest of that level's/dataset's trend. Applied identically for both
+    # analytes (not analyte-specific by design), and after the Below_LOD
+    # filter above so both exclusion counts stay distinguishable in cal_stats.
+    n_excluded_manual <- 0
+    if (length(cal_exclude_lines) > 0) {
+      manually_excluded <- cal_fit$Line %in% cal_exclude_lines
+      n_excluded_manual <- sum(manually_excluded)
+      if (n_excluded_manual > 0) {
+        message("  ", analyte_name, " calibration set ", i, ": excluding ",
+                n_excluded_manual, " Cal point(s) from the fit (Line ",
+                paste(cal_fit$Line[manually_excluded], collapse = ", "),
+                ") per cal_exclude_lines.")
+        cal_fit <- cal_fit[!manually_excluded, ]
+      }
+    }
+
     if (nrow(cal_fit) == 0 || all(is.na(cal_fit[[resp_col]]))) {
       warning(analyte_name, " calibration set ", i,
-              ": all response values NA (or Below_LOD) -- skipping.")
+              ": all response values NA (or Below_LOD/manually excluded) -- skipping.")
       next
     }
 
@@ -465,7 +506,8 @@ for (analyte_name in names(analytes)) {
       CalibrationSet = i,
       Method         = y_label,
       N_Standards    = nrow(cal_fit),
-      N_Excluded_LOD = nrow(cal) - nrow(cal_fit),
+      N_Excluded_LOD = nrow(cal) - nrow(cal_fit) - n_excluded_manual,
+      N_Excluded_Manual = n_excluded_manual,
       R2             = quad_smry$r.squared,
       AdjR2          = quad_smry$adj.r.squared,
       stringsAsFactors = FALSE
@@ -557,6 +599,7 @@ for (analyte_name in names(analytes)) {
           values = c("Quantifiable" = 16, "Below_LOQ" = 17, "Below_LOD" = 4),
           na.value = 1
         ) +
+        scale_colour_manual(values = pal_injection_role) +
         geom_line(
           data = curve_df,
           aes(Xplot, Fitted),
@@ -598,6 +641,7 @@ for (analyte_name in names(analytes)) {
           size = 3
         ) +
         scale_shape_manual(values = c("Cal" = 16, "QC" = 17)) +
+        scale_colour_viridis_d() +
         geom_line(
           data = all_curves,
           aes(Xplot, Fitted, color = factor(CalibrationSet)),
@@ -685,6 +729,7 @@ if (single_level_cal) {
         values = c("Quantifiable" = 16, "Below_LOQ" = 17, "Below_LOD" = 4),
         na.value = 1
       ) +
+      scale_colour_manual(values = pal_injection_role) +
       geom_hline(
         data = ref_plot_data %>%
           filter(Group == "Standard") %>%
@@ -723,7 +768,7 @@ if (nrow(cal_stats_df) > 0) {
     tidyr::pivot_wider(
       id_cols = CalibrationSet,
       names_from = c(Analyte, Method),
-      values_from = c(N_Standards, N_Excluded_LOD, R2, AdjR2),
+      values_from = c(N_Standards, N_Excluded_LOD, N_Excluded_Manual, R2, AdjR2),
       names_sep = "_"
     )
 
@@ -1276,6 +1321,7 @@ if (apply_petn_drift_correction &&
             values = c("Quantifiable" = 16, "Below_LOQ" = 17, "Below_LOD" = 4),
             na.value = 1
           ) +
+          scale_color_manual(values = pal_injection_role) +
           theme_bw() +
           labs(
             title = paste("PETN - Calibration", model_idx, "(Drift-Corrected)"),
@@ -2087,7 +2133,7 @@ if ("QC" %in% Combined$Type && has_calibration) {
             p_02ng <- ggplot(qc_02ng_long, aes(x = SequenceNumber, y = PA)) +
               geom_line(color = "black", size = 0.8) +
               geom_point(aes(color = IsFirstOfSequence), size = 3) +
-              scale_color_manual(values = c("FALSE" = "black", "TRUE" = "red"),
+              scale_color_manual(values = pal_sequence_flag,
                                  labels = c("FALSE" = "Within sequence", "TRUE" = "First of new sequence"),
                                  name = NULL) +
               geom_hline(data = mean_lines_02ng, 
@@ -2161,7 +2207,7 @@ if ("QC" %in% Combined$Type && has_calibration) {
             p_6ng <- ggplot(qc_6ng_long, aes(x = SequenceNumber, y = PA)) +
               geom_line(color = "black", size = 0.8) +
               geom_point(aes(color = IsFirstOfSequence), size = 3) +
-              scale_color_manual(values = c("FALSE" = "black", "TRUE" = "red"),
+              scale_color_manual(values = pal_sequence_flag,
                                  labels = c("FALSE" = "Within sequence", "TRUE" = "First of new sequence"),
                                  name = NULL) +
               geom_hline(data = mean_lines_6ng, 
@@ -2249,7 +2295,7 @@ if ("QC" %in% Combined$Type && has_calibration) {
               geom_hline(yintercept = 0.27, linetype = "dotdash", color = "darkblue", size = 0.5) +  # +50% line
               geom_line(color = "black", size = 0.8) +
               geom_point(aes(color = IsFirstOfSequence), size = 3) +
-              scale_color_manual(values = c("FALSE" = "black", "TRUE" = "red"),
+              scale_color_manual(values = pal_sequence_flag,
                                  labels = c("FALSE" = "Within sequence", "TRUE" = "First of new sequence"),
                                  name = NULL) +
               geom_hline(data = mean_lines_02ng_conc, 
@@ -2333,7 +2379,7 @@ if ("QC" %in% Combined$Type && has_calibration) {
               geom_hline(yintercept = 8.1, linetype = "dotdash", color = "darkblue", size = 0.5) +  # +50% line
               geom_line(color = "black", size = 0.8) +
               geom_point(aes(color = IsFirstOfSequence), size = 3) +
-              scale_color_manual(values = c("FALSE" = "black", "TRUE" = "red"),
+              scale_color_manual(values = pal_sequence_flag,
                                  labels = c("FALSE" = "Within sequence", "TRUE" = "First of new sequence"),
                                  name = NULL) +
               geom_hline(data = mean_lines_6ng_conc, 

@@ -9,6 +9,10 @@
 library(ggplot2)
 library(dplyr)
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 # Define datasets
 base_path <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/FINEX Swabbing Study/Accepted Analysis"
 datasets <- c("ABS-S-1", "ABS-S-2", "Lab10-1", "Lab17-1")
@@ -270,10 +274,7 @@ p <- ggplot(bias_long, aes(x = Dataset, y = Mean_Abs_Bias, fill = Method)) +
     y = "Mean Absolute % Bias",
     fill = "Drift Correction Method"
   ) +
-  scale_fill_manual(values = c("Current\n(Ratio Poly)" = "grey70",
-                               "PA Power\n(No IS)" = "steelblue",
-                               "Dual Power\n(PETN+IS)" = "darkgreen",
-                               "PETN Power +\nRaw IS" = "orange")) +
+  scale_fill_manual(values = pal_method) +
   theme(legend.position = "bottom")
 
 ggsave(file.path(output_dir, "Four_Method_Comparison.png"),

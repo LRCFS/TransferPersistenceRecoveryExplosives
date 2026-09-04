@@ -1,5 +1,165 @@
 # GCMSQuantitation - Project Context
 
+## Session Summary (September 4, 2026, continued) — Red-Team Review Section D (Low-Priority Tidying) Closed Out
+
+### Motivation
+
+Follow-on from the same day's earlier sessions (colour-palette bug investigation, RDX calendar-drift closure). User asked to complete the remaining "Section D" (low-priority, tidy-before-submission) items from `RedTeam_Findings.md` (in `Documents\ClaudeSpace\Red Teaming\`, not this repo).
+
+### `01_MsFilesReorganiser.R` — documented, deliberately not behaviour-changed
+
+The flagged `str_detect(V1, 'S')`/`str_detect(V1, 'I')` substring filter turned out to be a legitimate (if crude) removal of MS1-text-format line-type codes (H/S/I = Header/Scan-header/Info lines), consistent with the other line-type filters already in the same script. Added an explanatory comment (and fixed a copy-paste typo in the second filter's own comment, which incorrectly said `"S"` when it meant `"I"`) documenting this -- **the actual filter logic was deliberately left unchanged**, since it underlies every published FINEX/ASTRA quantitation number in the repo, and the real risk (substring vs. exact match) only matters if MSConvert's text output format changes in future, which hasn't happened for any data processed to date.
+
+### `04_CollateStudyResults.R` — `"0.2ng RDX PETN"` unparsed-name noise fixed; `"20260728 Neg Ctrl"` deliberately left unfixed
+
+Investigated the 2 sample names still listed in `UnparsedSampleNames.csv` after the earlier "ABS S"/"ABS-S" fix:
+
+- **`"0.2ng RDX PETN"`**: traced `Type` all the way back to `Code/03_Quantification.R`'s `parse_line()` -- confirmed this is read verbatim from the raw sequence log's own literal `Type` field, not an R-code classification bug. Found it recurs at Line 4 of 15 injections across 6 datasets (`Outstanding samples 4/5`, `Steel 2/3/4/5`, `Steel-1`) as the first response-check injection of each run, consistently typed `"Sample"` in the sequence table (a sequence-template convention -- the study does have a genuine, distinct `"ResponseCheck"` `Type` elsewhere, just not used for this specific injection). It was already being excluded from `FINEX_StudyResults.csv` either way (never matches `sample_pattern` -- no Lab/Participant/Surface encoded in the name), so this was purely a diagnostic-noise problem, not a data-loss one. **Fixed**: added an explicit `known_non_sample_names` exclusion list (mirroring the existing `qc_bracket_exclude` config pattern) that drops it before the parsing step, with a clear console message instead of an ambiguous "unparsed" warning.
+- **`"20260728 Neg Ctrl"`** (Lab9, Line 4): confirmed via its own raw data pattern (`NOT_DETECTED` PETN, `Below_LOQ` RDX) that this is a genuine negative control, just under a legacy date-based naming scheme rather than the modern `LabN PN <Surface> NC` convention. **Deliberately left unfixed** -- recovering it into the structured Lab/Participant/Surface/NC framework would require guessing which Participant/Surface it belongs to, information the name doesn't encode and Lab9's own results file doesn't disambiguate. Documented as a known, permanent gap (1 legacy-named NC excluded from the study total) rather than force-fit with an assumption.
+
+### Verification
+
+Backed up pre-change `FINEX_StudyResults.csv`/`.xlsx`/`UnparsedSampleNames.csv`/`TIC_OtherPeak_*.csv` (`%TEMP%\opencode\SectionD_PreCollation_Backup\`). Re-ran the full 19-dataset collation end-to-end (`setwd()` to `GCMSQuantitation/`, genuinely fresh `Rscript` session -- letting `GlobalCode.R` re-source normally rather than trying to shortcut it, since its own `01->02->03` chain no-ops quickly for already-cached datasets regardless of which `DataFolder` is currently configured). Confirmed: console printed "15 known non-sample response-check row(s) excluded (0.2ng RDX PETN)"; `FINEX_StudyResults.csv` came out **byte-for-byte identical** to the pre-change backup (319 lines, zero diff) -- confirming the fix changed zero reported study numbers; `UnparsedSampleNames.csv` no longer lists `"0.2ng RDX PETN"`, leaving only `"20260728 Neg Ctrl"` and the expected ASTRA `MAIN_###` rows.
+
+### Other Section D items -- found already fixed, no action needed
+
+Checked the two remaining flagged `GlobalCode.R` items directly against the live file: `dir.create(...RawData/...)` already has `recursive = TRUE` (matching every other `dir.create()` call in the file), and `apply_rdx_drift_correction`'s dead-flag risk already has the recommended runtime `message()` warning immediately below its definition. Both were evidently fixed in an earlier session not reflected in `RedTeam_Findings.md` at the time -- the red-team doc has been updated to record the current, accurate status of every Section D item.
+
+### Files Modified
+
+`Code/01_MsFilesReorganiser.R` (comment-only: documented the S/I line-type filter, fixed a copy-paste comment typo). `FINEX/04_CollateStudyResults.R` (`known_non_sample_names` exclusion added before sample-name parsing). Regenerated `FINEX_StudyResults.csv`/`.xlsx`, `UnparsedSampleNames.csv`, `TIC_OtherPeak_Log.csv`/`_RecurringPeaks.csv`, and all `Plots/` outputs (byte-identical to the pre-change backup where content didn't depend on the fix). `Documents\ClaudeSpace\Red Teaming\RedTeam_Findings.md` (Section D fully updated to reflect current status; not part of this repo). `CONTEXT.md` (this entry).
+
+---
+
+## Session Summary (September 4, 2026) — Investigating Pre-Existing Bugs Found During the Colour-Palette Verification Pass
+
+### Motivation
+
+Follow-on from the September 3, 2026 colour-palette session below, which disclosed (but deliberately did not fix) several pre-existing, unrelated bugs discovered while trying to execute every edited file. User asked to investigate and, where genuinely fixable, fix `Dual_PA_Power_Validation.R`, `Partial_Drift_Correction.R`, `mz52_Diagnostic.R`, and `DualMethodProcess.R`'s stale `source()` path -- with an explicit instruction NOT to run any FINEX-related scripts this session, since the user was concurrently running the full `FINEX/RunAllDatasets.R` batch. Only `DualMethodProcess.R` (`source()` path) and `UVSwabbing/UV_Analyte_Diagnostic.R` (a `left_join()` type mismatch, tracked in that project's own `CONTEXT.md`) were tackled this pass, since `Dual_PA_Power_Validation.R`/`mz52_Diagnostic.R` are both FINEX-adjacent and deferred until after the concurrent batch run finishes; `Partial_Drift_Correction.R` was investigated but turned out not to be a code bug at all.
+
+### `DualMethodProcess.R` -- stale `source()` path fixed, but a second, deeper blocker found and left unresolved (by user's own choice)
+
+**Fix applied**: line 75's `source()` pointed at `GCMSQuantitation/v2-NG/Code/ModPeaks.R`, which no longer exists (moved to `Archive/v2-NG_Deprecated/` at some point). Repointed at the current, maintained `Code/ModPeaks.R` instead of restoring the archived copy -- confirmed the archived version is **missing** the August 2026 "floor at zero before integration" fix in `extract_peak_area()` (see that function's own comment in `Code/ModPeaks.R`), a real fix for small-peak PA distortion. Since `DualMethodProcess.R` performs genuine quantification (calibration curves + QC bias), pointing it at the stale archived copy would have silently reintroduced a known numerical bug rather than just restoring "the old comparison method" -- the script's own "dual method" framing refers to the two GC methods (V8/V4) in the sequence, not to old-vs-new pipeline code. Function signatures are identical between the two `ModPeaks.R` versions, so this is a drop-in fix. `parse()`-checked, no syntax errors.
+
+**Second, independent blocker found while attempting to verify by execution (NOT fixed -- disclosed and left for the user)**: the script's hardcoded `data_dir` (`"...Method Development/20260428 Cal Check"`) no longer exists as a single folder either. The real data is split into `20260428 Cal Check-1st half` (raw SIM files 001-018) and `-2nd half` (019-033) -- together the complete sequence the script expects (`v8_lines`/`v4_lines` span 1-33), but with no single path the script can read from as configured. Both halves also carry a duplicate copy of the same two Sequence Log files (`1443`/`1449`, confirmed via file listing), consistent with the raw data having been split after the fact rather than genuinely being two separate acquisitions. On top of that, at least one Sequence Log file checked was confirmed to be a OneDrive Files-On-Demand cloud-only placeholder (`Get-Item` `.Attributes` = `4199968`, decoding to `Offline + RecallOnDataAccess + ReparsePoint` -- not actually downloaded locally), which is very likely the same underlying cause as the UVSwabbing project's already-documented "`Shared with Oliver` folders are empty in this local OneDrive checkout" issue.
+
+Given the user was mid-way through the concurrent FINEX batch run, this was surfaced as an explicit decision point (merge the script's own folder-reading logic across both halves vs. have the user re-merge the folders in OneDrive vs. skip) rather than silently restructuring OneDrive folders or forcing a cloud download. **User's decision: skip for now** -- `DualMethodProcess.R` remains unverified by execution this session (colours still only verified by code review/exact-key-matching, as in the original September 3 pass), but the `source()` path bug itself is fixed regardless.
+
+### `Partial_Drift_Correction.R` -- investigated, confirmed to be a genuine data limitation, NOT a code bug; no fix applied
+
+The original disclosure said this script fails with `"Need at least 3 QC points... Found: 2"` against the real `20260602 Filter Test` dataset. Checked the actual `_GCMSResults.csv`: 6ng QC checks occur at Lines **15, 31, 45, 61, 75** (a structural ~14-16-line cadence baked into the sequence design, not a data-entry mistake). The script's configured drift region is `Lines 47-75`, which only spans 2 of those (61, 75) -- Line 45 sits just 2 lines outside the boundary.
+
+Considered whether widening the region to include Line 45 would fix it, and rejected this: the script's own documented design explicitly states **Lines 1-46 = "No drift, QCs stable"** (see the file's own header comment), so Line 45 is a pre-drift, stable-baseline reading by design, not part of the decline curve. Confirmed this against the real PA values -- Line 45's PA (284,750) is essentially flat relative to Lines 15/31 (262,815/285,263), with the real decline only visible from Line 61 (205,220) onward. Folding a "no drift" point into a fit whose entire premise is "the region where drift is present" would bias the fitted decay curve and would be a genuine scientific error, not a bug fix.
+
+**Conclusion**: the `stop()` is working exactly as designed -- this specific dataset's declared drift window structurally contains only 2 same-level QC brackets, which is a real limitation of the underlying experimental sequence (not enough QC checks were run within that specific line range), not a script defect. No code change made. If a drift correction for this exact dataset/region is ever wanted, it would need either a deliberate (and scientifically weaker) 2-point linear correction, or genuinely new QC data -- both are decisions for the user, not something to silently force through.
+
+### Files Modified
+
+`Diagnostics/OtherStudies/DualMethodProcess.R` (`source()` path: `v2-NG/Code/ModPeaks.R` -> `Code/ModPeaks.R`, with a comment explaining why the current version was chosen over restoring the archived one). No changes to `Diagnostics/Generic/Partial_Drift_Correction.R` (investigated, confirmed not a bug). `CONTEXT.md` (this entry).
+
+### Remaining from the September 3 disclosure list, deferred (not started this session)
+
+- `Diagnostics/FINEX/Dual_PA_Power_Validation.R` (`Column 'predicted_petn_pa' doesn't exist`) -- FINEX-adjacent, deferred until after the user's concurrent `FINEX/RunAllDatasets.R` batch run completes, per explicit instruction not to run any FINEX-related scripts this session.
+- `Diagnostics/OtherStudies/mz52_Diagnostic.R` (data-shape mismatch, `differing number of rows: 1, 0`) -- same reason, deferred.
+
+---
+
+## Session Summary (September 3, 2026) — Thesis-wide Colour Palette Extended Into GCMSQuantitation
+
+### Motivation
+
+Follow-on from the ASTRA repo's own colour-palette work (Okabe-Ito colourblind-safe qualitative palette, `pal_*` named vectors, viridis for ordinal/high-cardinality data -- see `ASTRA/doe/CONTEXT.md` for the original design rationale/discussion with the user). User asked for the same shared palette extended to **all** plotting across the whole `TransferPersistenceRecoveryExplosives` repo, not just ASTRA. `thesis_palette.R` moved from `ASTRA/` to the repo root (`TransferPersistenceRecoveryExplosives/thesis_palette.R`) so every subproject can source the exact same file.
+
+### Audit findings (before any edits)
+
+Read all 24 live (non-archived) plotting files in this repo. Found real, pre-existing inconsistencies -- not just missing colours:
+- The **same "Surface" factor** (Glass/Steel/ABS-Smooth/ABS-Textured) had hardcoded near-Dark2 hex in `FINEX/04_CollateStudyResults.R` but plain ggplot defaults in `Diagnostics/FINEX/SequenceDiagnostics.R` and `FINEX/05_StatisticalAnalysis.R` -- three different renderings of the same factor.
+- `Lab` (15-30+ levels) and `Dataset` (17 levels, confirmed via the script's own comment) both relied on ggplot's default hue wheel, already visually indistinguishable at that cardinality and not colourblind-safe.
+- Several "Method" drift-correction comparison factors (`AllMethods_Comprehensive_Comparison.R`, `Dual_PA_Power_Validation.R`, the three `PowerCurve_*.R` scripts, `Partial_Drift_Correction.R`) each independently hand-picked overlapping but not-quite-identical label text (`"Current(Ratio Poly)"` / `"Current (Ratio Poly)"` / `"Current Polynomial"` / `"Current"` / `"Before Correction"` -- five different strings for the literal same baseline method) with inconsistent colours between scripts.
+- One file, `Diagnostics/OtherStudies/DualMethodProcess.R`, was found to have an **unrelated pre-existing bug**: it `source()`s `GCMSQuantitation/v2-NG/Code/ModPeaks.R`, a path that no longer exists (the code moved to `Archive/v2-NG_Deprecated/` at some point). Colour palette applied anyway (for whenever the path is fixed); the bug itself was left as -is, out of scope for this session, and flagged here for visibility.
+
+### New `thesis_palette.R` sections added for this repo
+
+- `pal_surface_gcms` (Steel/Glass/ABS-Smooth/ABS-Textured -- the FINEX multi-lab study's 4 swabbed surface materials, distinct from ASTRA's own 2-level `Surface_type`)
+- `pal_injection_role` (Standard/Cal -> same colour, QC, Sample, Blank -- consolidates `Code/03_Quantification.R`'s "Group" and `FINEX/04_CollateStudyResults.R`'s "Type", confirmed to be the same underlying concept under different label text)
+- `pal_method` (drift-correction method comparison -- consolidates every distinct label string found across 6 files into one vector, so the same method always gets the same colour regardless of which chart's own short-name convention is used)
+- `pal_analyte_vs_is` (PETN vs its own internal standard signal -- NOT the same as `pal_analyte`'s PETN-vs-RDX)
+- `pal_significant` (No/Yes statistical-significance flag)
+- `pal_sample_role` (Calibrant/Blank/QC Sample)
+- `pal_ion_interpretation` (5-level ion-correlation category)
+- `pal_ion_candidate` (m/z 52/122/120/53 alternative-IS candidates, all label variants aliased together)
+- `pal_ion_classification` (7-level IS-candidate classification, "Other" kept neutral grey as a deliberate catch-all)
+- `pal_method_group` (V8/V4 GC method variant)
+- `pal_sequence_flag` (boolean sequence-boundary flag)
+- `pal_trace_baseline` (2-line TIC/baseline legend)
+
+`Lab`, `Dataset`, and `factor(CalibrationSet)` switched to `scale_colour_viridis_c()`/`_d()` instead of a qualitative palette (too many levels for any small fixed set to stay distinguishable; `Lab` specifically uses `_c()` since it's mapped as a raw numeric column, not an explicit factor, in `05_StatisticalAnalysis.R`'s `p_lab_surf`).
+
+### Files modified
+
+`GlobalCode.R` (added `source()` of the shared palette, right after its own `library()` calls -- covers `Code/02_PeakDetection.R`, `Code/03_Quantification.R`, `Code/ModPeaks.R`, which are always `source()`'d by it and have no `library()` calls of their own). All 6 `Diagnostics/FINEX/*.R` files, 3 of 5 `Diagnostics/Generic/*.R` files (`DriftCorrectionComparison.R`/`DriftCorrectionDiagram.R` have no colour-mapped factors at all, left untouched), all 6 `Diagnostics/OtherStudies/*.R` files, and `FINEX/04_CollateStudyResults.R`/`05_StatisticalAnalysis.R`/`06_RDXCalendarDrift.R` -- each: added `source()` of the shared palette (or relied on `GlobalCode.R`'s), replaced hardcoded/default colours with the matching `pal_*` vector or `scale_*_viridis_*()`. `Diagnostics/ASTRA/ASTRA_PETN_QC_RawPA_Comparison.R` deliberately left untouched (already uses `scale_colour_brewer(palette="Dark2")`, already colourblind-conscious and internally consistent -- no inconsistency to fix, so left as-is rather than churned for its own sake).
+
+### Verification
+
+All 21 edited files (plus `GlobalCode.R`) `parse()`-checked -- zero syntax errors. One representative diagnostic script actually executed end-to-end against real data (`Diagnostics/OtherStudies/mz52_Analysis.R`, exit code 0) and its output PNG visually confirmed: `pal_ion_candidate`'s m/z 52 = bluish-green / m/z 122 = vermillion rendered exactly as intended. The remaining 20 edited files were not individually executed this session (many require specific real experimental datasets and/or would overwrite this study's own "authoritative" result files, e.g. `05_StatisticalAnalysis.R`'s own header explicitly says it "should be used to (re)produce any reported results" -- re-running every file was judged out of scope for a colour-only change without checking with the user first); correctness for those was instead verified by exact string-for-string comparison of every `pal_*` key against the real label text/levels found in each script (and, for several, against actual column values in real data files).
+
+### Update (same day, continued) -- user confirmed running everything; two real bugs found and fixed via actual execution
+
+User asked to go ahead and run the remaining scripts after all. Ran `GlobalCode.R`-dependent scripts from the correct working directory (`GlobalCode.R`/`04_CollateStudyResults.R` use RELATIVE `source()` paths, e.g. `source("Code/02_PeakDetection.R")` -- must be run with the R working directory set to `GCMSQuantitation/` itself, not just referenced by absolute script path). This actually mattered: a colour-only change is easy to convince yourself is "obviously safe," but two real, functional bugs were only caught by actually rendering the outputs and looking at them, not by parse-checking or by reading the code:
+
+1. **`FINEX/05_StatisticalAnalysis.R`'s `p_lab_forest` (PETN/RDX Lab Effects Forest Plot)**: adding `scale_color_manual(values = pal_significant)` missed a **pre-existing** `scale_color_manual(values = c("No" = "gray50", "Yes" = "red"))` further down the SAME plot's layer chain (positioned, unusually, *after* `coord_flip()`) -- ggplot2 silently uses whichever scale for a given aesthetic is added last, so the old hardcoded red was still winning and the new colour was never actually taking effect, despite the edit itself being "correct" in isolation. Caught only by rendering `Lab_Effects_ForestPlot_PETN.png` and noticing "Yes" was pure red, not vermillion. **Triggered a full re-audit** of every other edited file in the whole cross-project effort for this same "added a scale without checking for a pre-existing one further down the chain" pattern (systematic `ggplot(` boundary check between every pair of same-aesthetic scale calls within 40 lines of each other, across all ~30 edited files in GCMSQuantitation/UVSwabbing/Data Analysis/Extraction) -- confirmed this was the ONLY real instance; every other nearby pair belonged to genuinely different plot objects.
+2. **`FINEX/05_StatisticalAnalysis.R`'s `p_lab_surf` (Lab x Surface Interaction plot)**: `scale_color_viridis_c()` (continuous) was the wrong choice -- `Lab` in this specific plot's data (`lab_surface_means_table_petn`/`_rdx`) turned out to already be a factor (confirmed via its use in `car::leveneTest(Recovery ~ Lab, ...)` immediately above), not the raw numeric column assumed when picking `_c()` vs `_d()` from the code alone. Caught by the `tryCatch` around this plot printing `"Warning: Could not generate ... interaction plot: Discrete value supplied to a continuous scale"` -- the plot silently failed to save (old/blank file left on disk) rather than erroring the whole script. Fixed to `scale_color_viridis_d()`; re-ran, confirmed both PETN and RDX versions now render correctly (15 labs, all visually distinct).
+
+**Pre-existing, unrelated bugs found while attempting to execute other edited files (none fixed -- genuine data/logic issues requiring investigation beyond a colour change, not one-line typos)**:
+- `Diagnostics/FINEX/Dual_PA_Power_Validation.R`: `Error in select(): Column 'predicted_petn_pa' doesn't exist` -- fails before reaching any of its 3 edited plots.
+- `Diagnostics/FINEX/SequenceDiagnostics.R`: `Error: object 'Combined' not found` -- NOT a bug, this is by the script's own documented design ("Source AFTER running the main pipeline") -- it and `Code/02_PeakDetection.R`/`Code/03_Quantification.R` can only be tested via the full `FINEX/RunAllDatasets.R` batch pipeline, which was deliberately NOT run this session (see below).
+- `Diagnostics/Generic/Partial_Drift_Correction.R`: `Error: Need at least 3 QC points for drift correction... Found: 2` -- the specific dataset it's pointed at doesn't have enough QC points.
+- `Diagnostics/OtherStudies/mz52_Diagnostic.R`: `Error in data.frame(...): arguments imply differing number of rows: 1, 0` -- a real data-shape mismatch for one of its inputs.
+
+**Decision: did NOT run `FINEX/RunAllDatasets.R`** (the only way to actually exercise `Code/02_PeakDetection.R`/`Code/03_Quantification.R`'s edited plots, and to get `Combined` for `SequenceDiagnostics.R`). Two independent reasons found while investigating: (1) it reprocesses raw MS data for all 20 datasets, and `Code/02_PeakDetection.R`'s own comments document a **real past incident** of this exhausting disk space (~10GB/dataset); (2) its default `reprocess_tic <- FALSE`/`reprocess_sim <- FALSE` flags mean it would just skip every already-processed dataset without ever reaching the edited plotting code anyway, unless reprocessing is explicitly forced -- at which point it becomes the heavy, slow, disk-intensive operation from reason (1). Judged disproportionate to verify a 2-line legend colour and a handful of QC-plot colours; left verified by code review/exact-key-matching only, disclosed here explicitly rather than silently skipped.
+
+**Final tally**: of the 21 edited files, 12 executed successfully end-to-end with colours visually confirmed correct (`AllMethods_Comprehensive_Comparison.R`, `PowerCurve_Bias_Comparison.R`, `PowerCurve_Ratio_Validation.R`, `PowerCurve_vs_Polynomial_Analysis.R`, `TIC_AllIons_Scan.R`, `TIC_IonCorrelation_Diagnostic.R`, `mz52_Analysis.R`, `mz52_Quantification_Test.R`, `mz53_Quantification_Test.R`, `Solvent_Recovery.R`, `04_CollateStudyResults.R`, `05_StatisticalAnalysis.R` (after the 2 fixes above), `06_RDXCalendarDrift.R` -- 13 total), 4 blocked by genuine pre-existing unrelated bugs (disclosed above, not fixed), 1 blocked by design (`SequenceDiagnostics.R`, needs the full pipeline), 2 (`Code/02`/`03`) deliberately not executed (heavy pipeline, disproportionate), and 1 (`DualMethodProcess.R`) already known broken from the original audit.
+
+
+
+## Session Summary (August 27, 2026) — Full FINEX Batch Run, Two New `RunAllDatasets.R`/Drift-Correction Bugs Found and Fixed, Mixed FINEX/ASTRA Raw Dataset Resolved
+
+### Motivation
+
+Continuation of an ongoing red-team review (see `RedTeam_Findings.md` in the Red Teaming folder for the full numbered-item tracking). A new dataset (`Outstanding samples 5`) had been added and processed; asked to run the full `RunAllDatasets.R` batch — the first genuine full-batch run since item 3's environment-isolation fix, and the first time this session's various fixes (item 5, 19, 20, 21) all ran together across the complete 17+ dataset study.
+
+### 1. Full batch run: 18/18 succeeded, 1 correctly skipped, but a new bug surfaced in the collation step
+
+19 folders discovered under `Accepted Analysis`; `G and T 1` correctly validation-skipped (raw `.D` data not yet MS1-converted at the time); the other 18 all processed successfully (01→03), and `04_CollateStudyResults.R` ran automatically at the end. Data was fully correct — verified `FINEX_StudyResults.csv` unchanged/consistent in content — but `RunAllDatasets.R` itself reported `"✗ Collation FAILED"` and exited non-zero.
+
+**Root cause (same pattern as item 3, one level deeper)**: `RunAllDatasets.R` sourced `04_CollateStudyResults.R` with no `local=`, so it ran in `.GlobalEnv`. `04_CollateStudyResults.R:48`'s own conditional re-source of `GlobalCode.R` (`if (!exists("SampleVol") ...) source(global_code_path)`) *also* had no `local=`. Since `process_dataset()`'s per-dataset loop always keeps `SampleVol`/`DepositMass` confined to each dataset's own throwaway `dataset_env`, never `.GlobalEnv`, the conditional always fired — running `GlobalCode.R`'s own `rm(list=ls())`-style reset directly in `.GlobalEnv`, silently wiping `RunAllDatasets.R`'s own `collation_start`/`start_time` bookkeeping. This crashed the script at the very end (`Sys.time() - start_time`, not inside any `tryCatch`) with a misleading non-zero exit — despite the actual data processing and collation having fully succeeded.
+
+**Fixed in both files together** (neither alone was sufficient): `RunAllDatasets.R` now sources `04_CollateStudyResults.R` into its own isolated `collation_env` (mirroring `process_dataset()`'s pattern); `04_CollateStudyResults.R`'s own `source(global_code_path, local = TRUE)` now resolves to whatever environment is currently running it, identical fix pattern to item 3. Verified with two clean re-runs post-fix: exit code 0, full `"ALL PROCESSING COMPLETE"` summary printed, `FINEX_StudyResults.csv` byte-identical to the pre-fix (already independently verified-correct) output. Committed (`0cf52ee`).
+
+### 2. `Outstanding samples 5` turned out to be a genuinely mixed FINEX/ASTRA raw sequence
+
+Investigation (prompted by a separate request to plan processing a raw dataset then sitting under `ASTRA Swabbing\Main Study\GC Data\`) found this exact physical GC-MS sequence had previously also sat, unprocessed, under FINEX's own `Accepted Analysis\` — it had been *moved*, not copied, between the two study trees at some point mid-session. The sequence log confirmed it genuinely mixes both studies' samples: 14 FINEX-named rows (`Lab3/6/9/14/20 P# ...`), 9 ASTRA `MAIN_###`-named rows, plus the recurring `0.2ng RDX PETN` response-check mislabel (a known quirk, not a new bug). Recommended approach: copy the raw sequence into *both* trees and process each independently under its own `study_type` config, letting each side's own sample-name regex naturally keep its own rows and report the other's as expected non-matches. User implemented this themselves; the FINEX-side copy (`Outstanding samples 5`, correctly spelled) was already fully processed by the time of the full batch run above. All 13 of its FINEX-relevant "Sample" rows turned out to be re-analyses of pre-existing Lab3/6/9/14/20 samples (not new), correctly deduplicated by `select_best_attempt()`.
+
+### 3. `G and T 1` (Glass + ABS-Textured, new surface types) — severe PETN-specific QC failure investigated, found to be a real, system-wide instrument sensitivity issue
+
+Once its raw data was MS1-converted and it passed validation, `G and T 1` processed successfully but **all 24 samples failed on "PETN 6ng QC bracket FAILED"** — RDX unaffected. Traced to a real, severe raw-PA decline across the sequence (6ng PETN QC: 130,302 → 55,312 → 42,028 → 30,063 → 34,434 PA, i.e. down to ~23% of starting response) — but critically, **RDX's own raw PA and its 15N-RDX internal standard's PA declined in the same proportion** (RDX/IS ratio stayed at 0.55-0.58 throughout), confirming this was a general, system-wide instrument sensitivity loss (ion source/inlet), not PETN-specific chemistry. RDX's IS-ratio quantification cancelled this out automatically; PETN, having no internal standard (item 8), was fully exposed, and even the power-law drift correction (item 19) couldn't bring 2 of 5 QC points back within the ±20% tolerance after correction. A real-world, concrete confirmation of item 8's concern.
+
+Separately: all 12 Glass samples' PETN readings came back `petn_extrapolated_dc = TRUE` (item 5's flag correctly firing) — Glass showed dramatically higher raw PA for *both* PETN and RDX than ABS-Textured, proportionally consistent between the two analytes (likely a genuine surface effect — glass retaining/releasing far more residue to a swab than textured plastic — not an artifact), but this pushes PETN's apparent concentration (10-30ng) above the calibration curve's top standard (10ng). Flagged as worth extending the PETN calibration range upward if more Glass data is collected, and worth re-checking whether this same QC-decline pattern recurs on a second run of these surfaces (would confirm surface/matrix as the driver rather than a one-off instrument event on that specific day).
+
+Timing note: the largest single QC decline (130,302→55,312) happened between the *first* two QC checkpoints, before any Glass sample was injected — only the ABS-Textured block preceded it — so if a new-surface matrix is the trigger, ABS-Textured looks like the primary driver of the *onset*, with Glass's later block contributing a further (smaller) decline. Both surfaces being new in this exact sequence, their individual contributions can't be cleanly separated from this one dataset alone.
+
+### 4. Self-inflicted `DataFolder` regression, found and fixed (cautionary note for future manual single-dataset runs)
+
+While manually processing a single dataset interactively, `GlobalCode.R`'s `DataFolder <- if (!is.null(.preset_DataFolder)) ... else ...` conditional (the item-3 fix that lets `RunAllDatasets.R`'s per-dataset override take precedence) got replaced with an unconditional hardcoded literal. This silently broke `RunAllDatasets.R`'s per-dataset override for *every* dataset in the next batch run — each iteration was redirected to reprocess whatever the hardcoded path was, doing nothing for its own actual folder (though only `G and T 1`, which hadn't been processed by this run before, showed a visible symptom — the other 18 datasets already had correct cached results and weren't visibly affected). Restored the conditional; re-ran and confirmed `G and T 1` processed correctly. **Lesson**: when editing `GlobalCode.R` for a one-off interactive single-dataset run, only change the value inside the `else` branch — never replace the `if (!is.null(.preset_DataFolder))` structure itself, or the next `RunAllDatasets.R` batch run will silently ignore its own per-dataset overrides.
+
+### 5. Analysis2 (ASTRA) drift-correction fit "completely off" — same failed-injection pattern as item 19, new dataset
+
+Reported: Analysis2's PETN power-law drift-correction fit had collapsed (R² = -1.40, fitted curve flat near zero). Traced to Line 39's 6ng PETN QC: PA = 267 (SNR 4.87, `Below_LOQ`) vs. 79,553 (Line 27) and 40,715 (Line 51) either side — the identical dip-then-recover failed-injection pattern as item 19's Steel 4/Line 33. RDX's own PA also collapsed at Line 39 (107 vs ~13,045/6,607), but its internal standard did not (10,747, right on the declining trend) — both analyte peaks failed to integrate correctly on this one injection while the IS did not; not a whole-injection failure. Added `"Analysis2" = c(39)` to `drift_correction_exclude_qc_lines_by_dataset` (same mechanism as the existing Steel 4 entry). Re-ran: R² improved to 0.9972, fit now a clean `PA ~ 1,629,077 × Row^-0.927` decay curve. Committed (`32663d1`).
+
+**Files modified**: `GlobalCode.R` (items 4, 5 above), `FINEX/RunAllDatasets.R`, `FINEX/04_CollateStudyResults.R` (item 1 above). `RedTeam_Findings.md` updated with items 22/23 for the two new bugs found.
+
+---
+
 ## Session Summary (August 19, 2026, continued further) — RDX 6ng QC "Step-Then-Plateau" Bias Investigated: Real Instrument/Standard Phenomenon, But No Sample-Level Correction Warranted
 
 ### Motivation

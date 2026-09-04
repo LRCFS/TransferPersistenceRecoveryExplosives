@@ -5,6 +5,10 @@
 library(ggplot2)
 library(dplyr)
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 # Define datasets
 base_path <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/FINEX Swabbing Study/Accepted Analysis"
 datasets <- c("ABS-S-1", "ABS-S-2", "Lab10-1", "Lab17-1")
@@ -404,6 +408,7 @@ r2_comparison <- results_summary %>%
 p2 <- ggplot(r2_comparison, aes(x = Dataset, y = R2, fill = Method)) +
   geom_bar(stat = "identity", position = "dodge") +
   geom_hline(yintercept = 0.95, linetype = "dashed", colour = "darkgreen") +
+  scale_fill_manual(values = pal_method) +
   theme_bw() +
   labs(
     title = "Drift Correction Model Fit Quality: R² Comparison (RATIO-BASED)",
@@ -430,6 +435,7 @@ bias_comparison <- results_summary %>%
 p3 <- ggplot(bias_comparison, aes(x = Dataset, y = Mean_Abs_Bias, fill = Method)) +
   geom_bar(stat = "identity", position = "dodge") +
   geom_hline(yintercept = 15, linetype = "dashed", colour = "red") +
+  scale_fill_manual(values = pal_method) +
   theme_bw() +
   labs(
     title = "QC Mean Absolute Bias: Polynomial vs Power Law (RATIO-BASED)",
@@ -463,6 +469,7 @@ for (dataset_name in datasets) {
     geom_hline(yintercept = 0, colour = "grey50") +
     geom_point(size = 3) +
     geom_line(alpha = 0.6) +
+    scale_color_manual(values = pal_method) +
     theme_bw() +
     labs(
       title = paste(dataset_name, "- QC Bias Trajectories (RATIO-BASED)"),

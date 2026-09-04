@@ -6,6 +6,10 @@
 library(ggplot2)
 library(dplyr)
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 message("=== m/z 52 Alternative IS Diagnostic ===")
 
 # ============================================================
@@ -294,7 +298,7 @@ p1 <- ggplot(comparison_data, aes(x = conc, y = mz52)) +
   annotate("text", x = 0.5, y = mz52_mean_blank + 50, 
            label = sprintf("Mean blank: %.0f", mz52_mean_blank), color = "gray50") +
   geom_smooth(data = cal_data, method = "lm", se = FALSE, color = "blue", alpha = 0.5) +
-  scale_color_manual(values = c("Calibrant" = "blue", "Blank" = "gray50", "QC Sample" = "orange")) +
+  scale_color_manual(values = pal_sample_role) +
   scale_shape_manual(values = c("Calibrant" = 16, "Blank" = 1, "QC Sample" = 17)) +
   labs(
     title = "m/z 52 as Alternative IS Candidate",
@@ -318,7 +322,7 @@ p2 <- ggplot(comparison_long, aes(x = conc, y = intensity)) +
   geom_smooth(data = subset(comparison_long, type == "Calibrant"),
               method = "lm", se = FALSE, alpha = 0.5) +
   facet_wrap(~ ion, scales = "free_y") +
-  scale_color_manual(values = c("Calibrant" = "blue", "Blank" = "gray50", "QC Sample" = "orange")) +
+  scale_color_manual(values = pal_sample_role) +
   scale_shape_manual(values = c("Calibrant" = 16, "Blank" = 1, "QC Sample" = 17)) +
   labs(
     title = "Comparison: m/z 52 (Potential Alternative) vs m/z 122 (Current IS)",
@@ -349,7 +353,7 @@ p3 <- ggplot(ratios_long, aes(x = conc, y = normalized_intensity, color = ion)) 
   geom_point(size = 2.5) +
   geom_line(alpha = 0.5) +
   geom_hline(yintercept = 1, linetype = "dashed", color = "gray50") +
-  scale_color_manual(values = c("mz52" = "darkgreen", "mz122" = "red", "mz120" = "black")) +
+  scale_color_manual(values = pal_ion_candidate) +
   labs(
     title = "Normalized Ion Intensity vs Concentration",
     subtitle = "Flat line = independent of RDX (ideal IS behavior)",

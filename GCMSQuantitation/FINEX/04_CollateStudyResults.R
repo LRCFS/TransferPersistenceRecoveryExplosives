@@ -141,6 +141,10 @@ expected_nc_total <- 161
 # =========================================================
 source(file.path(dirname(global_code_path), "Code", "InjectionAcceptance.R"))
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 # =========================================================
 # Surface code mapping
 # =========================================================
@@ -380,6 +384,31 @@ if (nrow(samples) == 0) {
 # 5. Parse SampleName into structured columns
 # =========================================================
 samples$SampleName_trimmed <- str_trim(samples$SampleName)
+
+# Known non-sample instrument response-check rows, typed "Sample" in the raw
+# sequence log itself -- NOT an R-code classification bug (confirmed by
+# tracing Type all the way back to Code/03_Quantification.R's parse_line(),
+# which reads it verbatim from the sequence log's own literal Type field).
+# "0.2ng RDX PETN" recurs at Line 4 of many datasets' sequences (Outstanding
+# samples 4/5, Steel 2/3/4/5, Steel-1) as the very first response-check
+# injection of the run, always literally typed "Sample" in the sequence
+# table -- a sequence-template convention, not a per-dataset typo. It was
+# already being correctly excluded from FINEX_StudyResults.csv either way
+# (it can never match sample_pattern below -- no Lab/Participant/Surface is
+# encoded in the name), but previously showed up as a false-positive entry
+# in UnparsedSampleNames.csv, indistinguishable there from genuine data
+# loss. Explicitly recognising and dropping it here (a) has zero effect on
+# any reported study number (already excluded either way) and (b) keeps
+# UnparsedSampleNames.csv meaningful for spotting *real* parsing failures --
+# see red-team review (RedTeam_Findings.md) Section D.
+known_non_sample_names <- c("0.2ng RDX PETN")
+n_known_non_sample <- sum(samples$SampleName_trimmed %in% known_non_sample_names)
+if (n_known_non_sample > 0) {
+  message(n_known_non_sample, " known non-sample response-check row(s) excluded (",
+          paste(known_non_sample_names, collapse = ", "), ") -- typed 'Sample' ",
+          "in the raw sequence log but not a real swab sample.")
+  samples <- samples %>% filter(!SampleName_trimmed %in% known_non_sample_names)
+}
 
 # Surface code accepts both the canonical hyphenated form ("ABS-S"/"ABS-T")
 # and a bare-space variant ("ABS S"/"ABS T") -- found via UnparsedSampleNames.csv
@@ -1541,7 +1570,8 @@ if (length(peak_indices_all) == 0) {
       if (!all(is.na(plot_data_rt$DateParsed))) {
         p_rt <- ggplot(plot_data_rt, aes(x = DateParsed, y = rt))
         if (has_type) {
-          p_rt <- p_rt + geom_point(aes(colour = Type, size = height), alpha = 0.8)
+          p_rt <- p_rt + geom_point(aes(colour = Type, size = height), alpha = 0.8) +
+            scale_colour_manual(values = pal_injection_role)
         } else {
           p_rt <- p_rt + geom_point(aes(size = height), alpha = 0.8)
         }
@@ -1575,7 +1605,8 @@ if (length(peak_indices_all) == 0) {
 
     p_instr <- ggplot(plot_data_height, aes(x = EventIndex, y = height))
     if (has_type) {
-      p_instr <- p_instr + geom_point(aes(colour = Type), size = 2.5)
+      p_instr <- p_instr + geom_point(aes(colour = Type), size = 2.5) +
+        scale_colour_manual(values = pal_injection_role)
     } else {
       p_instr <- p_instr + geom_point(colour = "steelblue", size = 2.5)
     }
@@ -1771,12 +1802,13 @@ print("Overall study plots generated.")
 # for that surface, with error bars showing the standard error of the mean
 # (SEM = SD / sqrt(n)) (recovery_data already has NA -> 0 and is restricted
 # to Outcome == "Complete" samples, matching the box plots above).
-surface_colors <- c(
-  "Glass"        = "#1b9e77",
-  "Steel"        = "#d95f02",
-  "ABS-Smooth"   = "#7570b3",
-  "ABS-Textured" = "#e7298a"
-)
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo. Previously
+# this was its own hand-picked near-Dark2 hex set, inconsistent with
+# SequenceDiagnostics.R/05_StatisticalAnalysis.R's own ggplot-default colours
+# for the SAME Surface factor -- now aliased directly to pal_surface_gcms so
+# every FINEX script uses identical Surface colours.
+surface_colors <- pal_surface_gcms
 
 participant_bar_data <- recovery_data %>%
   filter(!is.na(Lab) & !is.na(Participant)) %>%
