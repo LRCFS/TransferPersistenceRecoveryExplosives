@@ -7,6 +7,10 @@ library(dplyr)
 library(ggplot2)
 library(tidyverse)
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 # Set directories
 ThresholdResults.dir <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/UV Powder Swabbing/ASTRA Testing/ThresholdResults/"
 Output.dir <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/UV Powder Swabbing/ASTRA Testing/Diagnostic_Plots/"
@@ -96,7 +100,7 @@ Uncorrected_long <- pivot_longer(Uncorrected,
 
 p1 <- ggplot(Uncorrected_long, aes(x = Threshold, y = Area, color = Image)) +
   geom_line(linewidth = 1) +
-  scale_color_manual(values = c("Blank" = "blue", "Before" = "green", "After" = "red")) +
+  scale_color_manual(values = pal_image_stage) +
   labs(title = paste0(sample_name, " - UNCORRECTED Threshold Curves"),
        x = "Threshold",
        y = "% Area",
@@ -189,7 +193,7 @@ Aligned90_long <- pivot_longer(Aligned90$data,
 
 p2 <- ggplot(Aligned90_long, aes(x = Threshold, y = Area, color = Image)) +
   geom_line(linewidth = 1) +
-  scale_color_manual(values = c("Blank" = "blue", "Before" = "green", "After" = "red")) +
+  scale_color_manual(values = pal_image_stage) +
   labs(title = paste0(sample_name, " - After 90% Alignment"),
        x = "Threshold",
        y = "% Area",
@@ -341,7 +345,7 @@ Corrected_long <- pivot_longer(Corrected$data,
 
 p3 <- ggplot(Corrected_long, aes(x = Threshold, y = Area, color = Image)) +
   geom_line(linewidth = 1) +
-  scale_color_manual(values = c("Blank" = "blue", "Before" = "green", "After" = "red")) +
+  scale_color_manual(values = pal_image_stage) +
   labs(title = paste0(sample_name, " - FINAL Corrected Threshold Curves"),
        x = "Threshold",
        y = "% Area",
@@ -430,7 +434,7 @@ print(summary_table)
 cat("\n")
 cat(paste(rep("=", 60), collapse=""), "\n", sep="")
 cat("=== DIAGNOSTIC COMPLETE ===\n")
-cat("=".join(rep("=", 60)), "\n", sep="")
+cat(paste(rep("=", 60), collapse=""), "\n", sep="")
 cat(sprintf("Plots saved to: %s\n\n", Output.dir))
 
 cat("ALIGNMENT SUMMARY:\n")

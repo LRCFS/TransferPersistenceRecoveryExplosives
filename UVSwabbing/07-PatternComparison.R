@@ -179,9 +179,7 @@ if (n_patterns_for_anova >= 2) {
 cat("\n=== CREATING VISUALIZATION ===\n")
 
 # Define colors for patterns
-pattern_colors <- c("50g_BackandForth" = "#377EB8", 
-                    "50g_Snake" = "#E41A1C", 
-                    "50g_Ratchet" = "#4DAF4A")
+pattern_colors <- pal_pattern
 
 # Calculate mean recovery per pattern for diamond overlay
 pattern_means <- recovery_filtered %>%

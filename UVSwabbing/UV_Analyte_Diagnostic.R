@@ -18,6 +18,10 @@ library(tidyr)
 library(stringr)
 library(readxl)
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 rm(list = ls())
 
 ###############################
@@ -38,6 +42,17 @@ dir.create(Output.dir, recursive = TRUE, showWarnings = FALSE)
 cat("=== LOADING ANALYTE RECOVERY DATA ===\n")
 
 analyte_data <- read.csv(paste0(Analyte.dir, "AverageRecoveries.csv"))
+
+# BUG FIX: AverageRecoveries.csv has 2 trailing blank rows plus a final
+# "average" summary row (ParticipantNumber = "", "", "average") after the
+# 10 real per-participant rows. read.csv() reads the whole ParticipantNumber
+# column as character because of this, which later made left_join() fail
+# with an "incompatible types" error against uv_valid$Participant (integer).
+# Drop the non-numeric rows and coerce back to integer here, once, so every
+# downstream use (the left_join(), the %in% check, the == comparisons in
+# the alternative-metrics loop) sees a clean integer column.
+analyte_data <- analyte_data[!is.na(suppressWarnings(as.numeric(analyte_data$ParticipantNumber))), ]
+analyte_data$ParticipantNumber <- as.integer(analyte_data$ParticipantNumber)
 
 cat(sprintf("Loaded %d participants with analyte data\n", nrow(analyte_data)))
 print(analyte_data)
@@ -124,6 +139,7 @@ cat(sprintf("\nBlank variability at k=50: Mean=%.3f, SD=%.3f, CV=%.1f%%\n",
 blank_plot_data <- bind_rows(blank_data, .id = "Sample")
 p <- ggplot(blank_plot_data, aes(x = Threshold, y = Area, color = Sample)) +
   geom_line() +
+  scale_color_viridis_d() +
   labs(title = "Blank Curves - All Samples",
        subtitle = "Should be identical if camera/lighting controlled",
        x = "Threshold",
@@ -160,6 +176,7 @@ print(before_summary)
 before_plot_data <- bind_rows(before_data, .id = "Sample")
 p <- ggplot(before_plot_data, aes(x = Threshold, y = Area, color = Sample)) +
   geom_line() +
+  scale_color_viridis_d() +
   labs(title = "Before Curves - All Samples",
        subtitle = "Should vary with powder deposition amount",
        x = "Threshold",
@@ -502,10 +519,12 @@ if (nrow(correlation_data) > 3) {
   # Combined plot
   cor_long <- correlation_data %>%
     select(File, mean, High, Normal, Low) %>%
-    pivot_longer(cols = c(High, Normal, Low), names_to = "Pressure", values_to = "Analyte")
-  
+    pivot_longer(cols = c(High, Normal, Low), names_to = "Pressure", values_to = "Analyte") %>%
+    mutate(Pressure = factor(Pressure, levels = c("High", "Normal", "Low")))  # genuinely ordered -- viridis below
+
   p_all <- ggplot(cor_long, aes(x = mean, y = Analyte, color = Pressure)) +
     geom_point(size = 3) +
+    scale_color_viridis_d() +
     geom_smooth(method = "lm", se = FALSE) +
     labs(title = "UV Recovery vs Analyte Recovery (All Pressures)",
          x = "UV Recovery (%)",

@@ -299,9 +299,7 @@ AverageRecovery_removed <- AverageRecovery %>%
   filter(RSD > 10)
 
 # Define pattern colors (3 patterns)
-pattern_colors <- c("50g_BackandForth" = "#377EB8",
-                    "50g_Snake" = "#E41A1C",
-                    "50g_Ratchet" = "#4DAF4A")
+pattern_colors <- pal_pattern
 
 # Create the plot with side-by-side bars for each replicate
 p <- ggplot(AverageRecovery_filtered, 

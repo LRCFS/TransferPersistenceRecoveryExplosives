@@ -22,6 +22,10 @@ library(ggplot2)
 library(tidyr)
 library(stringr)
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 ###############################################################################
 ###                         CONFIGURATION                                   ###
 ###############################################################################
@@ -607,9 +611,7 @@ p1 <- ggplot(threshold_data, aes(x = Threshold, y = PercentArea,
                                   color = Condition, linetype = Surface)) +
   geom_line(alpha = 0.8) +
   facet_wrap(~Concentration, ncol = 1) +
-  scale_color_manual(values = c("Blank" = "grey50", "Before" = "red",
-                                "1_swipe" = "orange", "2_swipes" = "green3",
-                                "3_swipes" = "blue")) +
+  scale_color_manual(values = pal_condition) +
   labs(title = "Threshold Curves by Powder Concentration",
        subtitle = "Each concentration shows Blank, Before, and 1-3 swipe conditions",
        x = "Threshold (k)",
@@ -630,6 +632,8 @@ sat_plot_data <- threshold_data %>%
 
 p2 <- ggplot(sat_plot_data, aes(x = Threshold, y = Mean, color = Concentration)) +
   geom_line(linewidth = 1) +
+  scale_color_viridis_d() +
+  scale_fill_viridis_d() +
   geom_ribbon(aes(ymin = Mean - SD, ymax = Mean + SD, fill = Concentration),
               alpha = 0.15, colour = NA) +
   geom_hline(yintercept = c(20, 60), linetype = "dashed", color = "grey50") +
@@ -667,6 +671,7 @@ for (conc in CONCENTRATIONS) {
 if (nrow(recovery_at_optimal) > 0) {
   p3 <- ggplot(recovery_at_optimal, aes(x = Swipes, y = Recovery, color = Surface)) +
     geom_point(size = 3, alpha = 0.7) +
+    scale_color_manual(values = pal_surface_uv) +
     geom_smooth(aes(group = 1), method = "lm", se = TRUE, color = "black",
                 linetype = "dashed", alpha = 0.3) +
     facet_wrap(~Concentration, ncol = 3) +
@@ -687,6 +692,7 @@ if (nrow(recovery_at_optimal) > 0) {
 if (nrow(linearity_results) > 0) {
   p4 <- ggplot(linearity_results, aes(x = Threshold, y = R_squared, color = Concentration)) +
     geom_line(linewidth = 0.8) +
+    scale_color_viridis_d() +
     geom_hline(yintercept = 0.9, linetype = "dashed", color = "grey50") +
     annotate("text", x = 80, y = 0.92, label = "R² = 0.9", color = "grey40", size = 3) +
     labs(title = "Linearity of Recovery vs Swipes Across All Thresholds",
@@ -707,6 +713,7 @@ if (nrow(optimal_scores) > 0) {
   p5 <- ggplot(optimal_scores %>% filter(Composite_Score > 0),
                aes(x = Threshold, y = Composite_Score, color = Concentration)) +
     geom_line(linewidth = 0.8) +
+    scale_color_viridis_d() +
     geom_point(data = optimal_per_conc, 
                aes(x = Threshold, y = Composite_Score),
                size = 4, shape = 18) +

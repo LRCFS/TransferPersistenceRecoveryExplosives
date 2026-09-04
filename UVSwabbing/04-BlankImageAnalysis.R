@@ -49,6 +49,7 @@ BlankResultsPlot <- pivot_longer(BlankThresholdResults,
 # Create the plot
 p <- ggplot(BlankResultsPlot, aes(x = Threshold, y = value, color = factor(source, levels = sorted_files))) +
   geom_line() +
+  scale_colour_manual(values = pal_source_surface_rep) +
   labs(title = "Uncorrected Threshold vs Area for Each Blank",
        x = "Threshold",
        y = "% Area",
@@ -133,6 +134,7 @@ BlankResultsCorrectedPlot <- pivot_longer(BlankThresholdResultsCorrected,
 # Create the plot
 p <- ggplot(BlankResultsCorrectedPlot, aes(x = Threshold, y = value, color = factor(source, levels = sorted_files))) +
   geom_line() +
+  scale_colour_manual(values = pal_source_surface_rep) +
   labs(title = "Corrected Threshold vs Area for Each Blank",
        x = "Threshold",
        y = "% Area",

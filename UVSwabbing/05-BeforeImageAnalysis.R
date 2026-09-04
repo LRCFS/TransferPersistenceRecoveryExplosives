@@ -49,6 +49,7 @@ BeforeResultsPlot <- pivot_longer(BeforeThresholdResults,
 # Create the plot
 p <- ggplot(BeforeResultsPlot, aes(x = Threshold, y = value, color = factor(source, levels = sorted_files))) +
   geom_line() +
+  scale_colour_manual(values = pal_source_surface_rep) +
   labs(title = "Uncorrected Threshold vs Area for Each Before",
        x = "Threshold",
        y = "% Area",
@@ -133,6 +134,7 @@ BeforeResultsCorrectedPlot <- pivot_longer(BeforeThresholdResultsCorrected,
 # Create the plot
 p <- ggplot(BeforeResultsCorrectedPlot, aes(x = Threshold, y = value, color = factor(source, levels = sorted_files))) +
   geom_line() +
+  scale_colour_manual(values = pal_source_surface_rep) +
   labs(title = "Corrected Threshold vs Area for Each Before",
        x = "Threshold",
        y = "% Area",

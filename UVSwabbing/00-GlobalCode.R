@@ -11,9 +11,23 @@ library(tidyverse)
 library(reshape2)
 library(stringr)
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 # === COLOUR PALETTE ===
+# ColourPalette: legacy, no longer referenced anywhere in this study -- left
+# defined (not deleted) in case any old/archived script still expects it.
 ColourPalette <- c("red", "orange", "yellow2", "limegreen", "darkgreen", "skyblue", "blue", "violet", "darkmagenta", "lightpink", "hotpink")
-ColourPalette2 <- c("red", "limegreen", "blue")
+# ColourPalette2: used by 06-RecoveryAnalysis.R for the Blank/Before/After
+# area comparison. Previously an UNNAMED/positional vector (c("red",
+# "limegreen","blue")), relying on the factor's alphabetical level order
+# (AfterArea, BeforeArea, BlankArea) to line up correctly with the colours --
+# fragile if the data or factor order ever changed. Now a proper NAMED
+# vector aliased directly to pal_image_stage, which already covers both the
+# "AfterArea"/"BeforeArea"/"BlankArea" and the plain "After"/"Before"/"Blank"
+# naming conventions used elsewhere in this study.
+ColourPalette2 <- pal_image_stage
 
 # === DIRECTORY PATHS ===
 # Base directory

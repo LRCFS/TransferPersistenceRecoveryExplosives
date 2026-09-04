@@ -272,5 +272,51 @@ At 10% powder loading:
 
 ---
 
-*Last updated: June 2026*
+## Colour Palette (September 2026)
+
+All plotting scripts in this folder now source a shared, thesis-wide colour palette (`TransferPersistenceRecoveryExplosives/thesis_palette.R`, Okabe-Ito colourblind-safe qualitative palette + viridis for ordinal/high-cardinality data), added via `00-GlobalCode.R`'s own `source()` call (inherited by every script that requires `00-GlobalCode.R` first) or, for the standalone scripts that don't, their own `source()` near the top.
+
+Fixed two real cross-file colour inconsistencies found during this work: the Blank/Before/After factor previously had DIFFERENT colours in `Diagnostic_ThresholdPlots.R` (blue/green/red) vs `UV_Recovery_Reprocessing.R` (blue/red/green3) for the exact same three categories -- both now use the shared `pal_image_stage` (Blue/Orange/Bluish-Green). `06-RecoveryAnalysis.R`'s `ColourPalette2` (previously an unnamed/positional 3-colour vector relying on alphabetical factor-level order to line up correctly) is now a proper named alias of `pal_image_stage`.
+
+The 17-level `Sample` factor (`UV_Analyte_Diagnostic.R`) and the genuinely-ordered `Pressure` (High/Normal/Low) and `Concentration` (50%/25%/10%) factors now use `scale_colour_viridis_d()` instead of ggplot's default hue wheel or a hand-picked qualitative set -- neither fits a small fixed qualitative palette well (too many levels; or genuinely ordered data, which a qualitative palette isn't designed for).
+
+**Bug found and fixed in `Diagnostic_ThresholdPlots.R` (unrelated to colour, pre-existing)**: line 437 contained `cat("=".join(rep("=", 60)), ...)` -- Python's `.join()` method syntax, invalid in R. This causes the ENTIRE script to fail to parse, meaning none of its code (including its own plots) can currently run at all. Left unfixed (out of scope for a colour-only change) but flagged here explicitly since it blocks even verifying this script's own palette colours by execution.
+
+**Bug found and fixed in `UV_Recovery_Reprocessing.R`**: its `Diagnostic_RawCurves.png` plot had a subtitle caption ("Blue=Blank, Red=Before swab, Green=After swab") that would have gone stale/wrong the moment the underlying colours changed (Before is now Orange, After is now Bluish-Green, not Red/Green) -- caught by actually rendering the plot and visually comparing the legend against the caption text, not just by reading the code. Fixed to match the new colours.
+
+**Verified**: `UV_Recovery_Reprocessing.R` executed end-to-end against real data (exit code 0); all 5 output PNGs regenerated; visually confirmed `pal_image_stage` (Diagnostic_RawCurves.png) and `pal_method_uv` (Comparison_Boxplot.png) both render with the correct new colours and the corrected caption. The other 7 files in this folder were parse-checked (all pass) and had their `pal_*` key strings verified by direct comparison against real column values, but were not individually executed this session (`UV_Calibration_Analysis.R`'s own input folder isn't currently populated in this OneDrive checkout; the remaining scripts require `00-GlobalCode.R` to be run first in the same interactive session, which wasn't done for all of them here).
+
+### Update (same day, continued) -- user confirmed running everything
+
+- **`Diagnostic_ThresholdPlots.R`'s pre-existing Python-syntax bug (documented above) was fixed** (`cat("=".join(rep("=", 60)), ...)` -> `cat(paste(rep("=", 60), collapse=""), ...)`, mirroring the identical working line immediately above it). Executed end-to-end afterward (exit code 0); visually confirmed `pal_image_stage` renders correctly (Blue/Orange/Bluish-Green for Blank/Before/After) in `Surface1_Rep1_01_Uncorrected.png`.
+- **Attempted the full `00`->`04`->`07` numbered pipeline** (source `00-GlobalCode.R`, then `04`/`05`/`06`/`07` in sequence): failed at `04-BlankImageAnalysis.R` with `no applicable method for 'pivot_longer' applied to an object of class "NULL"`. Root cause: `BlankThresholdResults.dir`/`Unswabbed Threshold Analysis`/`ThresholdResults`/`Analysis` under `Shared with Oliver/` are all **empty in this local OneDrive checkout** -- the upstream `01`-`03` data-prep scripts (not touched by this session, not part of the colour work) have never been run/synced here. This is the same root cause as `UV_Calibration_Analysis.R`'s already-documented missing-data issue above, now confirmed to affect `04`-`07` too. Not fixable from within this session (would require re-running the raw ImageJ/image-organisation pipeline against original images, well outside a colour-palette change) -- these 4 files' colours remain verified by code review/exact-key-matching only, not by execution.
+- **`UV_Analyte_Diagnostic.R`**: found a genuine pre-existing, unrelated bug while attempting to run it -- `Error in left_join(): Can't join x$Participant with y$ParticipantNumber due to incompatible types` (`x$Participant` is `<integer>`, `y$ParticipantNumber`'s actual type depends on the real `AverageRecoveries.csv` contents). Occurs well before this session's edited plot code is reached. Not a one-line typo like the `Diagnostic_ThresholdPlots.R`/`SwabMountAngles.R` fixes -- left uninvestigated/unfixed, disclosed here rather than guess-fixed.
+
+**Final tally for this folder**: 2 of 8 files executed successfully with colours visually confirmed (`Diagnostic_ThresholdPlots.R`, `UV_Recovery_Reprocessing.R`); 5 blocked by the missing upstream pipeline data (`04`-`07`, `UV_Calibration_Analysis.R`); 1 blocked by a genuine pre-existing unrelated bug (`UV_Analyte_Diagnostic.R`).
+
+---
+
+## Session Summary (September 4, 2026) — `UV_Analyte_Diagnostic.R`'s `left_join()` Bug Fixed and Verified
+
+### Root cause
+
+The previously-disclosed `Error in left_join(): Can't join x$Participant with y$ParticipantNumber due to incompatible types` was traced to `087 Analysis/DataProcessing/AverageRecoveries.csv` itself: after the 10 real per-participant data rows, the file has 2 fully-blank trailing rows followed by a final `average` summary row (`ParticipantNumber = "average"`). `read.csv()` reads the whole `ParticipantNumber` column as character because of this one non-numeric value, while `uv_valid$Participant` (derived from parsing UV sample filenames) is integer -- `dplyr::left_join()` refuses to join columns of mismatched type.
+
+### Fix
+
+Immediately after `analyte_data <- read.csv(...)`, drop any row where `ParticipantNumber` isn't numeric (catches both the blank rows and the `"average"` row) and coerce the column back to integer, so every downstream use (`left_join()`, the `%in%` check, and the `==` comparisons in the alternative-metrics loop) sees a clean, consistently-typed column. The `AverageRecoveries.csv` file itself was left untouched -- this is a real experimental-results export from another process, not something to hand-edit.
+
+### Verification
+
+Ran the full script end-to-end (exit code 0, previously impossible). Confirmed correct behaviour: correlation analysis now runs (`vs Normal Pressure: r = -0.779`, consistent with the already-known negative-correlation finding elsewhere in this file), and the participant-7 gap is now handled gracefully (`Skipping 7_Original - no analyte data for participant 7`) rather than crashing. All 15 output PNGs + `07_Metric_Correlations.csv` regenerated (confirmed by timestamp). Visually confirmed `01_Blank_Curves_All.png` (17-level `Sample` factor, `scale_colour_viridis_d()`) and `06_Correlation_All.png` (ordered `Pressure` factor High/Normal/Low, viridis) both render with correct, properly-ordered colours.
+
+**Updated tally for this folder**: 3 of 8 files now executed successfully with colours visually confirmed (`Diagnostic_ThresholdPlots.R`, `UV_Recovery_Reprocessing.R`, `UV_Analyte_Diagnostic.R`); 5 still blocked by the missing upstream pipeline data (`04`-`07`, `UV_Calibration_Analysis.R`) -- unchanged, not investigated this session.
+
+### Files Modified
+
+`UV_Analyte_Diagnostic.R` (added a filter + `as.integer()` coercion on `analyte_data$ParticipantNumber` right after loading). `CONTEXT.md` (this entry).
+
+---
+
+*Last updated: September 2026 (colour palette section added)*
 *Key scripts: UV_Recovery_Reprocessing.R, UV_Calibration_Analysis.R*

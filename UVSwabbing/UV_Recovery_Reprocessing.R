@@ -20,6 +20,10 @@ library(ggplot2)
 library(tidyr)
 library(stringr)
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 ###############################################################################
 ###                         CONFIGURATION                                   ###
 ###############################################################################
@@ -743,9 +747,9 @@ for (key in names(all_samples)) {
 p1 <- ggplot(raw_plot_data, aes(x = Threshold, y = Area, color = Curve)) +
   geom_line() +
   facet_wrap(~Sample, scales = "free_y") +
-  scale_color_manual(values = c("Blank" = "blue", "Before" = "red", "After" = "green3")) +
+  scale_color_manual(values = pal_image_stage) +
   labs(title = "Raw Threshold Curves - All Samples (No Alignment)",
-       subtitle = "Blue=Blank, Red=Before swab, Green=After swab",
+       subtitle = "Blue=Blank, Orange=Before swab, Teal=After swab",
        x = "Threshold (k)",
        y = "% Area") +
   theme_minimal() +
@@ -831,6 +835,7 @@ comparison_data <- all_results %>%
 if (nrow(comparison_data) > 0) {
   p4 <- ggplot(comparison_data, aes(x = MethodID, y = Recovery, fill = Method)) +
     geom_boxplot(alpha = 0.7, outlier.shape = 1) +
+    scale_fill_manual(values = pal_method_uv) +
     geom_hline(yintercept = c(0, 100), linetype = "dashed", color = "grey50") +
     labs(title = "Recovery Distribution by Method",
          subtitle = "Dashed lines = physically valid range (0-100%)",
