@@ -1,5 +1,31 @@
 # Design of Experiments: Trace Explosives Recovery
 
+## Session Summary (September 4, 2026) — Extraction Efficiency Measured from a New 12-Replicate Dataset (New Script; Not Yet Applied to GlobalCode.R)
+
+### Motivation
+
+Follow-on from the red-team review's item #6 (`Documents/ClaudeSpace/Red Teaming/RedTeam_Findings.md`): `GCMSQuantitation/GlobalCode.R`'s `petn_extraction_efficiency`/`rdx_extraction_efficiency` have always been hardcoded placeholders (`1`, i.e. 100%), with an explicit `TODO: Determine experimentally`. User collected a 12-replicate single-extraction dataset specifically to fill this in and asked whether the existing `Extraction/` scripts could analyse it.
+
+### Investigation: neither existing script fit
+
+`Extraction/InitialExtractionTest.R` (matches `"Test Std [1-3] - 10ng"`, compares no-swab/wet-swab/dry-swab recovery) and `Extraction/PlotExtractionRecovery.R` (matches `"Swab N Ext N"`, measures sequential-extraction exhaustion across 5 passes) both answer different questions and neither's sample-name regex matches the new data (`"Extracted Swab 1"`-`"Extracted Swab 12"`, dataset `GC Data/Extraction/20260903ExtractionTest`, already run through the main GCMSQuantitation pipeline). Confirmed the known spiked mass (40 uL x 50 ng/uL = 2000 ng PETN/RDX per swab) with the user directly -- it isn't recorded in any sequence log or metadata file.
+
+### New script: `Extraction/ExtractionEfficiency.R`
+
+Computes `(concentration x SampleVol) / spike_amount` per swab (PETN drift-corrected, RDX raw -- matching the pipeline's own PETN-PA-only-with-drift-correction / RDX-IS-ratio convention), floors negatives at 0, and reports mean/SD/SE per analyte -- exactly the fraction `GlobalCode.R`'s `petn_extraction_efficiency`/`rdx_extraction_efficiency` expect. Prints ready-to-paste `GlobalCode.R` lines directly to console. Uses `pal_analyte` from the shared `thesis_palette.R`.
+
+**Result** (verified by running against the real data): **PETN = 49.3% (SD 9.8%, n=11/12 -- Swab 11 had no quantifiable result); RDX = 72.4% (SD 6.2%, n=11/12).** RDX extracts noticeably better than PETN, consistent with PETN's known thermal/adsorptive lability.
+
+### Deliberately not applied
+
+Offered to update `GlobalCode.R`'s constants directly; user chose to hold off pending more replicates/review, since this constant retroactively rescales every recovery figure the pipeline has ever produced (FINEX and ASTRA both). `filtration_efficiency` remains completely separate and unmeasured -- this script only addresses the extraction step. See `RedTeam_Findings.md` item #6 for the full record.
+
+### Files Modified
+
+`Extraction/ExtractionEfficiency.R` (new). Regenerated `ExtractionEfficiency_BarChart.png`/`_Summary.xlsx`/`_Summary.csv`/`_PerSwabDetail.csv` in the `20260903ExtractionTest/Results/` folder. `Documents/ClaudeSpace/Red Teaming/RedTeam_Findings.md` item #6 updated (not part of this repo). `CONTEXT.md` (this entry).
+
+---
+
 ## Session Summary (September 3, 2026) — Thesis Colour Palette Extended to Every Subproject in the Repo (GCMSQuantitation, UVSwabbing, Data Analysis, Extraction)
 
 ### Motivation
