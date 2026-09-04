@@ -195,6 +195,14 @@ for (pkg in required_packages) {
 source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/GCMSQuantitation/Code/InjectionAcceptance.R")
 
 #===============================================================================
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot in this repo. See thesis_palette.R's own
+# header for the full rationale (each recurring factor gets a fixed,
+# dedicated colour pair, never reused for a different factor's meaning).
+#===============================================================================
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
+#===============================================================================
 # DATA COLLATION FROM GC-MS RESULTS
 #
 # Auto-discovers all Analysis*/Results/*_GCMSResults.csv files produced by
@@ -1866,13 +1874,14 @@ analyze_analyte <- function(data, analyte_name, recovery_col) {
               SE = sd(.data[[recovery_col]], na.rm = TRUE) / sqrt(n()),
               .groups = "drop")
 
-  # Interaction plot: Surface x Pressure
+  # Interaction plot: Surface x Applied Mass
   p4 <- ggplot(means_data %>% group_by(Surface_type, Pressure_level) %>% summarise(Mean = mean(Mean), .groups="drop"),
                aes(x = Surface_type, y = Mean, color = Pressure_level, group = Pressure_level)) +
     geom_point(size = 4) +
     geom_line(linewidth = 1.2) +
-    labs(title = paste(analyte_name, "- Surface x Pressure"),
-         y = "Mean Recovery (%)", color = "Pressure") +
+    scale_color_manual(values = pal_mass_level) +
+    labs(title = paste(analyte_name, "- Surface x Applied Mass"),
+         y = "Mean Recovery (%)", color = "Applied Mass") +
     theme_bw()
 
   # Interaction plot: Surface x Solvent
@@ -1880,17 +1889,19 @@ analyze_analyte <- function(data, analyte_name, recovery_col) {
                aes(x = Surface_type, y = Mean, color = Solvent_level, group = Solvent_level)) +
     geom_point(size = 4) +
     geom_line(linewidth = 1.2) +
+    scale_color_manual(values = pal_solvent) +
     labs(title = paste(analyte_name, "- Surface x Solvent"),
          y = "Mean Recovery (%)", color = "Solvent") +
     theme_bw()
 
-  # Interaction plot: Pressure x Solvent
+  # Interaction plot: Applied Mass x Solvent
   p6 <- ggplot(means_data %>% group_by(Pressure_level, Solvent_level) %>% summarise(Mean = mean(Mean), .groups="drop"),
                aes(x = Pressure_level, y = Mean, color = Solvent_level, group = Solvent_level)) +
     geom_point(size = 4) +
     geom_line(linewidth = 1.2) +
-    labs(title = paste(analyte_name, "- Pressure x Solvent"),
-         y = "Mean Recovery (%)", color = "Solvent") +
+    scale_color_manual(values = pal_solvent) +
+    labs(title = paste(analyte_name, "- Applied Mass x Solvent"),
+         x = "Applied Mass", y = "Mean Recovery (%)", color = "Solvent") +
     theme_bw()
 
   # Diagnostic plots

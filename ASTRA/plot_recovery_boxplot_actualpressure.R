@@ -19,16 +19,28 @@
 #      Pressure group, pooling both studies) are drawn as hollow circles
 #      (colored border, no fill) instead of solid, so they remain visually
 #      distinct without needing a separate legend entry.
+#   4. Samples with a recovery value but NO matching pressure-trace record
+#      (added 2026-09-02 -- previously these were silently DROPPED from this
+#      plot entirely) are now INCLUDED, positioned at their nominal pressure's
+#      box centre (no real-position information to place them by) and drawn
+#      as a hollow TRIANGLE instead of a circle, so they remain visually
+#      distinct from -- not confused with -- the real-position points.
+#      Currently 2 such samples (both PILOT_ ABS at 200g) -- see the
+#      console summary this script prints for the current, authoritative
+#      list. The nominal pressure itself comes from Pressure_g in each
+#      study's own recovery data file directly (always present), NOT from
+#      the pressure-trace join's own Target column (which is NA exactly
+#      when Mean_Pressure is NA, since both come from the same join).
 #
-# Data sources: same as plot_main_study_recovery_vs_pressure.R (this script
-# is self-contained and does not depend on it having been run first, per
-# the ASTRA repo convention of single-file, non-sourcing scripts).
+# Data sources: same as the archived plot_main_study_recovery_vs_pressure.R
+# (this script is self-contained and does not depend on it having been run
+# first, per the ASTRA repo convention of single-file, non-sourcing scripts).
 #
 # Output:
 #   - Main Study/Recovery_Boxplot_ActualPressure_PilotMain.png
 #
 # Author: OpenCode
-# Date: 2026-08-25
+# Date: 2026-08-25 (updated 2026-09-02 -- see item 4 above)
 
 suppressPackageStartupMessages({
   library(dplyr)
@@ -36,6 +48,11 @@ suppressPackageStartupMessages({
   library(tidyr)
   library(scales)
 })
+
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot in this repo. See thesis_palette.R's own
+# header for the full rationale.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
 
 # ===============================================================================
 # CONFIGURATION
@@ -100,7 +117,7 @@ joined_pilot <- recovery_pilot %>%
   ) %>%
   mutate(Study = "Pilot")
 
-common_cols <- c("RunID", "Surface_type", "Study", "Target", "Mean_Pressure",
+common_cols <- c("RunID", "Surface_type", "Study", "Pressure_g", "Target", "Mean_Pressure",
                   "PETN_Recovery_pct", "RDX_Recovery_pct")
 
 joined <- bind_rows(
@@ -112,33 +129,50 @@ cat(sprintf("Combined Main + Pilot joined dataset: %d rows (%d Main, %d Pilot)\n
             nrow(joined), sum(joined$Study == "Main"), sum(joined$Study == "Pilot")))
 
 # ===============================================================================
-# RESHAPE TO LONG FORMAT AND DROP UNMATCHED / MISSING ROWS
+# RESHAPE TO LONG FORMAT
 # ===============================================================================
+# NOTE (2026-09-02): previously also dropped !is.na(Mean_Pressure) here,
+# silently excluding any sample lacking a pressure-trace match entirely.
+# Now kept (see item 4 in the header comment) -- only a genuinely missing
+# recovery value drops a row.
 
 plot_data <- joined %>%
-  select(RunID, Surface_type, Study, Target, Mean_Pressure, PETN_Recovery_pct, RDX_Recovery_pct) %>%
+  select(RunID, Surface_type, Study, Pressure_g, Mean_Pressure, PETN_Recovery_pct, RDX_Recovery_pct) %>%
   pivot_longer(
     cols = c(PETN_Recovery_pct, RDX_Recovery_pct),
     names_to = "Analyte",
     values_to = "Recovery_pct"
   ) %>%
-  mutate(Analyte = recode(Analyte, PETN_Recovery_pct = "PETN", RDX_Recovery_pct = "RDX")) %>%
-  filter(!is.na(Mean_Pressure), !is.na(Recovery_pct))
+  mutate(
+    Analyte = recode(Analyte, PETN_Recovery_pct = "PETN", RDX_Recovery_pct = "RDX"),
+    has_actual_pressure = !is.na(Mean_Pressure)
+  ) %>%
+  filter(!is.na(Recovery_pct))
 
 cat(sprintf("Total sample x analyte points available for plotting: %d\n", nrow(plot_data)))
+n_missing_pressure <- sum(!plot_data$has_actual_pressure)
+if (n_missing_pressure > 0) {
+  cat(sprintf("  Of which %d point(s) have NO pressure-trace match -- ",
+              n_missing_pressure))
+  cat("plotted at nominal-pressure box centre, hollow TRIANGLE marker (see console summary below).\n")
+}
 
 # ===============================================================================
 # FACTOR ORDERING (Surface rows: Steel top, ABS bottom; Analyte cols: PETN, RDX;
 # Pressure: ascending nominal levels, evenly spaced categorical positions)
 # ===============================================================================
+# Uses Pressure_g (each study's own recovery-data column, always present)
+# rather than Target (which comes from the pressure-trace join and is NA
+# exactly when Mean_Pressure is NA -- i.e. useless for the samples this
+# script now needs to still place on the x-axis).
 
-target_levels <- sort(unique(plot_data$Target))
+target_levels <- sort(unique(plot_data$Pressure_g))
 
 plot_data <- plot_data %>%
   mutate(
     Surface_label = factor(ifelse(Surface_type == "steel", "Steel", "ABS"), levels = c("Steel", "ABS")),
     Analyte = factor(Analyte, levels = c("PETN", "RDX")),
-    Target_factor = factor(Target, levels = target_levels),
+    Target_factor = factor(Pressure_g, levels = target_levels),
     Target_pos = as.numeric(Target_factor)   # integer box-center position (1..5)
   )
 
@@ -147,13 +181,26 @@ plot_data <- plot_data %>%
 # x-offset within each Surface x Analyte x nominal-Pressure group
 # ===============================================================================
 # Outlier rule matches ggplot2's own default boxplot outlier definition
-# (below Q1 - 1.5*IQR or above Q3 + 1.5*IQR, using type-7 quantiles).
+# (below Q1 - 1.5*IQR or above Q3 + 1.5*IQR, using type-7 quantiles) --
+# computed over ALL points in the group (with or without an actual-pressure
+# match; a missing pressure record says nothing about whether the recovery
+# value itself is an outlier).
+#
 # x-offset: linearly rescales each point's own Mean_Pressure into
 # [-POINT_SPREAD_HALFWIDTH, +POINT_SPREAD_HALFWIDTH] using the min/max
 # Mean_Pressure actually observed *within that group* - so the point
 # ordering left-to-right always reflects real achieved pressure ordering,
-# not a random draw. Groups with only 1 point, or where every point in the
-# group achieved identical pressure (range = 0), get offset 0 (centered).
+# not a random draw. Groups with only 1 point with a real pressure value,
+# or where every such point achieved identical pressure (range = 0), get
+# offset 0 (centered) for those points.
+#
+# Points with NO actual-pressure match (has_actual_pressure == FALSE) always
+# get offset 0 (box centre) -- there is no real position to place them at.
+# If more than one such point falls in the same group (rare -- currently 2,
+# both PILOT_ ABS at 200g), a small fixed nudge (+/- 0.08, well inside the
+# box) spreads them apart so they don't render as a single overlapping
+# point; this nudge carries NO pressure information, it exists purely so
+# both points remain visible.
 
 plot_data <- plot_data %>%
   group_by(Surface_label, Analyte, Target_factor) %>%
@@ -162,21 +209,39 @@ plot_data <- plot_data %>%
     q3 = quantile(Recovery_pct, 0.75, type = 7),
     iqr = q3 - q1,
     is_outlier = Recovery_pct < (q1 - 1.5 * iqr) | Recovery_pct > (q3 + 1.5 * iqr),
-    pressure_range = max(Mean_Pressure) - min(Mean_Pressure),
-    x_offset = ifelse(
-      n() > 1 & pressure_range > 0,
-      as.numeric(scales::rescale(Mean_Pressure, to = c(-POINT_SPREAD_HALFWIDTH, POINT_SPREAD_HALFWIDTH))),
-      0
+    n_with_pressure = sum(has_actual_pressure),
+    pressure_range = if (sum(has_actual_pressure) > 1) diff(range(Mean_Pressure, na.rm = TRUE)) else 0,
+    rescaled_pressure = as.numeric(suppressWarnings(
+      scales::rescale(Mean_Pressure, to = c(-POINT_SPREAD_HALFWIDTH, POINT_SPREAD_HALFWIDTH))
+    )),
+    # Deterministic, non-overlapping nudge for missing-pressure points only,
+    # applied via a running count of missing rows seen so far within the
+    # group (1, 2, 3... in whatever row order they appear) -- NOT row_number()
+    # directly, which would give each missing row its absolute position in
+    # the whole group (e.g. 3 and 5), not its rank among JUST the missing
+    # ones (1 and 2), breaking the centering below.
+    missing_nudge_rank = ifelse(has_actual_pressure, NA_integer_, cumsum(!has_actual_pressure)),
+    n_missing_in_group = sum(!has_actual_pressure),
+    x_offset = case_when(
+      has_actual_pressure & pressure_range > 0 & is.finite(rescaled_pressure) ~ rescaled_pressure,
+      has_actual_pressure ~ 0,
+      n_missing_in_group <= 1 ~ 0,
+      TRUE ~ (missing_nudge_rank - mean(seq_len(n_missing_in_group[1]))) * 0.08
     ),
     n_group = n()
   ) %>%
   ungroup() %>%
   mutate(
     x_plot = Target_pos + x_offset,
-    # Hollow (hex NA) fill for outliers, solid Study-colored fill otherwise;
-    # border color always shows Study, so outliers remain identifiable by
-    # which study they came from even though they're unfilled.
-    fill_value = ifelse(is_outlier, NA_character_, Study)
+    # Hollow (hex NA) fill for outliers OR missing-pressure points; solid
+    # Study-colored fill otherwise. Border color always shows Study, so
+    # both remain identifiable by which study they came from even when
+    # unfilled.
+    fill_value = ifelse(is_outlier | !has_actual_pressure, NA_character_, Study),
+    pressure_source = factor(
+      ifelse(has_actual_pressure, "Actual mass recorded", "No mass record (nominal position)"),
+      levels = c("Actual mass recorded", "No mass record (nominal position)")
+    )
   )
 
 n_outliers <- sum(plot_data$is_outlier)
@@ -216,8 +281,8 @@ p <- ggplot() +
   ) +
   geom_point(
     data = plot_data,
-    aes(x = x_plot, y = Recovery_pct, fill = fill_value, color = Study),
-    shape = 21, size = 2.5, stroke = 0.9
+    aes(x = x_plot, y = Recovery_pct, fill = fill_value, color = Study, shape = pressure_source),
+    size = 2.5, stroke = 0.9
   ) +
   geom_point(
     data = mean_points,
@@ -229,20 +294,22 @@ p <- ggplot() +
     aes(x = Target_pos, y = y, label = label),
     size = 3.2, color = "black"
   ) +
-  scale_fill_manual(values = c("Main" = "#4477AA", "Pilot" = "#EE9944"), na.value = NA, guide = "none") +
-  scale_color_manual(values = c("Main" = "#4477AA", "Pilot" = "#EE9944")) +
+  scale_fill_manual(values = pal_study, na.value = NA, guide = "none") +
+  scale_color_manual(values = pal_study) +
+  scale_shape_manual(values = c("Actual mass recorded" = 21, "No mass record (nominal position)" = 24)) +
   scale_x_discrete(labels = as.character(target_levels)) +
   coord_cartesian(ylim = c(min(0, min(plot_data$Recovery_pct, na.rm = TRUE) * 1.05), y_max)) +
   facet_grid(rows = vars(Surface_label), cols = vars(Analyte)) +
   labs(
-    title = sprintf("Recovery by Pressure -- Pilot + Main Study (n=%d)", nrow(plot_data)),
+    title = sprintf("Recovery by Applied Mass -- Pilot + Main Study (n=%d)", nrow(plot_data)),
     subtitle = paste0(
-      "Box = IQR/median across pooled Pilot+Main samples | Point x-position = actual achieved pressure within each nominal-pressure group (not jittered)\n",
-      "Hollow circle = boxplot outlier (1.5xIQR) | Red diamond = mean"
+      "Box = IQR/median across pooled Pilot+Main samples | Circle x-position = actual achieved mass within each nominal-mass group (not jittered)\n",
+      "Hollow circle = boxplot outlier (1.5xIQR) | Triangle = no mass-trace record, plotted at nominal box centre | Red diamond = mean"
     ),
-    x = "Nominal Pressure (g)",
+    x = "Nominal Applied Mass (g)",
     y = "Recovery (%)",
-    color = "Study"
+    color = "Study",
+    shape = "Mass position"
   ) +
   theme_minimal(base_size = 12) +
   theme(
@@ -255,22 +322,34 @@ p <- ggplot() +
     panel.spacing = unit(0.15, "lines"),
     legend.position = "right"
   ) +
-  guides(color = guide_legend(override.aes = list(fill = c("#4477AA", "#EE9944"), shape = 21, size = 3)))
+  guides(
+    color = guide_legend(override.aes = list(fill = c(pal_study[["Main"]], pal_study[["Pilot"]]), shape = 21, size = 3)),
+    shape = guide_legend(override.aes = list(fill = "gray70", color = "black", size = 3))
+  )
 
 ggsave(OUTPUT_PLOT_FILE, p, width = 13, height = 8.3, dpi = 300)
 cat(sprintf("\nPlot saved to: %s\n", OUTPUT_PLOT_FILE))
 
 # ===============================================================================
-# CONSOLE SUMMARY: outlier points (for traceability)
+# CONSOLE SUMMARY: outlier points + missing-pressure points (for traceability)
 # ===============================================================================
 
 if (n_outliers > 0) {
   cat("\n=== Outlier points (hollow circles in plot) ===\n")
   outlier_summary <- plot_data %>%
     filter(is_outlier) %>%
-    select(RunID, Study, Surface_label, Analyte, Target, Mean_Pressure, Recovery_pct) %>%
-    arrange(Surface_label, Analyte, Target)
+    select(RunID, Study, Surface_label, Analyte, Pressure_g, Mean_Pressure, Recovery_pct) %>%
+    arrange(Surface_label, Analyte, Pressure_g)
   print(as.data.frame(outlier_summary), row.names = FALSE)
+}
+
+if (n_missing_pressure > 0) {
+  cat("\n=== Points with NO pressure-trace match (hollow triangles, plotted at nominal box centre) ===\n")
+  missing_summary <- plot_data %>%
+    filter(!has_actual_pressure) %>%
+    select(RunID, Study, Surface_label, Analyte, Pressure_g, Recovery_pct) %>%
+    arrange(Surface_label, Analyte, Pressure_g)
+  print(as.data.frame(missing_summary), row.names = FALSE)
 }
 
 cat("\nDone.\n")

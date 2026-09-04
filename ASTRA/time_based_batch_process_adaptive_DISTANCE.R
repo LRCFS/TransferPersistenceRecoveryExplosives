@@ -237,8 +237,12 @@ PLOTTING_PARAMS <- list(
   # group with >5 dry or >5 wet samples - e.g. the 200g group currently has
   # 7 dry and 6 wet - would silently reuse the same hex color for two
   # different samples, previously making them visually indistinguishable).
-  color_wet = "#3182bd",
-  color_dry = "#31a354"
+  # Values match the thesis-wide shared palette's pal_solvent$wet/dry
+  # (repo-root thesis_palette.R, Okabe-Ito colourblind-safe) -- inlined literally
+  # rather than source()'d, since this script is deliberately single-file/
+  # self-contained (see header).
+  color_wet = "#0072B2",
+  color_dry = "#009E73"
 )
 
 # ===============================================================================
@@ -1269,7 +1273,7 @@ create_full_trace_plot <- function(data, all_cycles, params, sample_name) {
   # Main plot
   plot(data$elapsed_sec, data$load, type = "l", col = "gray40", lwd = 1.5,
        xlab = "Time (s)", ylab = "Load (g)",
-       main = sprintf("%s: Full Pressure Trace (%d cycles detected)", 
+       main = sprintf("%s: Full Applied Mass Trace (%d cycles detected)", 
                       sample_name, n_cycles),
        ylim = c(0, max_pressure * 1.05))
   
@@ -1367,7 +1371,7 @@ create_full_trace_plot_distance <- function(data, all_cycles, params, sample_nam
   # Main plot
   plot(data$distance_mm, data$load, type = "l", col = "gray40", lwd = 1.5,
        xlab = "Distance (mm)", ylab = "Load (g)",
-       main = sprintf("%s: Full Pressure Trace - Distance Based (%d cycles, %.0fmm total)", 
+       main = sprintf("%s: Full Applied Mass Trace - Distance Based (%d cycles, %.0fmm total)", 
                       sample_name, n_cycles, max_distance),
        ylim = c(0, max_pressure * 1.05))
   
@@ -2078,14 +2082,14 @@ plot_full_traces_comparison <- function(target_pressure, sample_results, metadat
     scale_x_continuous(breaks = seq(0, dist_limit, dist_limit / 5)) +
     facet_wrap(~ sample_id, ncol = ncol_facet) +
     labs(
-      title = sprintf("%dg Samples - Full Pressure Traces (Distance-Based)", target_pressure),
+      title = sprintf("%dg Samples - Full Applied Mass Traces (Distance-Based)", target_pressure),
       subtitle = sprintf(
         "Blue = Wet | Green = Dry  |  First %.0fmm, aligned to each sample's Cycle 1 start  |  Shared y-axis scale across panels%s",
         dist_limit,
         if (isTRUE(suppress_transients)) "  |  Non-contact transients suppressed" else ""
       ),
       x = "Cumulative swabbing distance (mm)",
-      y = "Pressure (g)"
+      y = "Applied Mass (g)"
     ) +
     theme_minimal() +
     theme(
@@ -2161,14 +2165,18 @@ plot_stable_regions_overlay <- function(sample_id, sample_result, data_dir, outp
   dist_limit <- params$overlay_distance_limit_mm
   p <- ggplot(regions_data, aes(x = distance_in_region, y = pressure_g, group = cycle_num, color = cycle_num)) +
     geom_line(linewidth = params$overlay_line_width, alpha = params$overlay_alpha) +
-    scale_color_gradient(low = "#c6dbef", high = "#08519c", name = "Cycle #") +
+    # direction = -1: viridis's default is dark(low)->light(high), but the
+    # plot's own subtitle says "Light (early) -> Dark (late)" (Cycle # low =
+    # early) -- reversed here so the actual color direction matches that
+    # caption instead of contradicting it.
+    scale_color_viridis_c(name = "Cycle #", direction = -1) +
     scale_x_continuous(limits = c(0, dist_limit), breaks = seq(0, dist_limit, dist_limit / 6)) +
     scale_y_continuous(limits = y_limits) +
     labs(
       title = sprintf("%s - Stable Region Overlay (Distance-Based)", sample_id),
       subtitle = "Color intensity: Light (early) -> Dark (late)",
       x = "Distance in stable region (mm)",
-      y = "Pressure (g)"
+      y = "Applied Mass (g)"
     ) +
     theme_minimal() +
     theme(
@@ -2236,7 +2244,11 @@ plot_batch_qc_overview <- function(summary_data, params, outlier_pct) {
     geom_point(aes(color = Flag_Label), size = 3) +
     scale_color_manual(
       values = setNames(
-        c("steelblue", "firebrick"),
+        # Bluish Green/Vermillion match the thesis-wide shared palette's
+        # pal_qc_status$PASS/FAIL (repo-root thesis_palette.R, Okabe-Ito) --
+        # inlined literally rather than source()'d, since this script is
+        # deliberately single-file/self-contained (see header).
+        c("#009E73", "#D55E00"),
         c(sprintf("Within %.0f%% of Target", outlier_pct * 100),
           sprintf("Outside %.0f%% of Target", outlier_pct * 100))
       ),
@@ -2244,12 +2256,12 @@ plot_batch_qc_overview <- function(summary_data, params, outlier_pct) {
     ) +
     facet_wrap(~ Target, scales = "free", labeller = labeller(Target = function(x) paste0(x, "g target"))) +
     labs(
-      title = "Batch QC Overview - Mean Pressure vs Target",
+      title = "Batch QC Overview - Mean Applied Mass vs Target",
       subtitle = sprintf(
         "Dashed line = Target  |  Shaded band = within %.0f%% of Target  |  Red = flagged (Flag_15Pct_Outlier)",
         outlier_pct * 100
       ),
-      x = "Mean Pressure (stable regions, g)",
+      x = "Mean Applied Mass (stable regions, g)",
       y = NULL
     ) +
     theme_minimal() +

@@ -1,5 +1,441 @@
 # Design of Experiments: Trace Explosives Recovery
 
+## Session Summary (September 3, 2026) — Thesis Colour Palette Extended to Every Subproject in the Repo (GCMSQuantitation, UVSwabbing, Data Analysis, Extraction)
+
+### Motivation
+
+Direct continuation of the previous session's ASTRA-only colour palette work (Okabe-Ito qualitative palette + viridis for ordinal/high-cardinality data, `ASTRA/thesis_palette.R`). User asked for the same palette extended to **every** plotting script across the whole `TransferPersistenceRecoveryExplosives` repo, not just ASTRA. Explicitly asked for a staged plan before any changes, then for a full audit of every remaining subproject before any edits.
+
+### Scope decided with the user before editing
+
+- `ExplosivesInterpolScopusSearch`/`SamplingInterpolScopusSearch` (literature-review bibliometric figures) explicitly excluded from scope -- user confirmed these don't need to change.
+- `Sartorius Balance`, `Reports`, `Solution Preparation MU` confirmed (by direct inspection, not just grep) to contain **no plotting code at all** -- out of scope, nothing to do.
+- Remaining in scope: `GCMSQuantitation` (24 live plotting files), `UVSwabbing` (8), `Data Analysis/Chapter 3/ASTRA` (2), `Extraction` (2) -- 36 files total, audited in full (via parallel sub-agent exploration) before any edits, per the user's explicit request.
+- Cross-chapter colour-reuse policy agreed with the user: **per-study/chapter uniqueness only** -- a colour may mean something different in an unrelated chapter/study (there are only 8 Okabe-Ito hues and dozens of distinct factors thesis-wide; full global uniqueness is not achievable), but never two different things within the same study's own closely-related figures (the original problem this whole effort started from).
+- High-cardinality factors (>8 levels: `Lab`, `Dataset`, `Sample`) and genuinely-ordered factors (`Pressure` High/Normal/Low, `Concentration` 50/25/10%, `CalibrationSet`, extraction-step index `Ext 1-5`) -- confirmed with the user to use `scale_*_viridis_*()` rather than a qualitative palette, consistent with the file's own stated policy.
+- Confirmed with the user to also fix genuine cross-file colour inconsistencies found during the audit (not just add colours where missing).
+
+### `thesis_palette.R` relocated to the repo root
+
+Moved from `ASTRA/thesis_palette.R` to `TransferPersistenceRecoveryExplosives/thesis_palette.R` (deleted the old ASTRA-local copy) so every subproject sources the exact same one file. Updated all 4 ASTRA scripts that already `source()`'d the old path (`main_study_analysis.R`, `pilot_analysis.R`, `plot_recovery_boxplot_actualpressure.R`, `plot_recovery_vs_pressure_unified.R`) to point at the new root location; updated the code-comment references (not `source()` calls, per the file's own "no source()" self-contained design rule) in `main_study_batch_process.R`/`time_based_batch_process_adaptive_DISTANCE.R` to say "repo-root thesis_palette.R" instead of "ASTRA/thesis_palette.R".
+
+Added ~20 new `pal_*` vectors to the file, organised into clearly-labelled `SECTION:` blocks per subproject (GCMSQuantitation, UVSwabbing, Data Analysis, Extraction), each documenting which real file(s)/factor(s) it covers and any label-text aliasing needed (several scripts used slightly different literal strings, including embedded-newline variants, for what turned out to be the exact same underlying category -- e.g. `"Current(Ratio Poly)"`/`"Current (Ratio Poly)"`/`"Current Polynomial"`/`"Current"` all alias to the same colour in the new `pal_method`).
+
+**GCMSQuantitation** (full detail in that repo's own `CONTEXT.md`): `pal_surface_gcms`, `pal_injection_role`, `pal_method`, `pal_analyte_vs_is`, `pal_significant`, `pal_sample_role`, `pal_ion_interpretation`, `pal_ion_candidate`, `pal_ion_classification`, `pal_method_group`, `pal_sequence_flag`, `pal_trace_baseline`. Applied across `GlobalCode.R` + 20 of 24 live files (2 had no colour-mapped factors at all; 1 already used Brewer Dark2 consistently and was left alone -- no inconsistency to fix).
+
+**UVSwabbing** (full detail in that repo's own `CONTEXT.md`): `pal_image_stage`, `pal_pattern`, `pal_condition`, `pal_surface_uv`, `pal_method_uv`, `pal_source_surface_rep`. Applied across `00-GlobalCode.R` + all 8 live files. Fixed a genuine cross-file inconsistency (Blank/Before/After using different colours in `Diagnostic_ThresholdPlots.R` vs `UV_Recovery_Reprocessing.R`) and tightened `06-RecoveryAnalysis.R`'s fragile unnamed/positional `ColourPalette2` into a proper named alias.
+
+**Data Analysis / Extraction** (no `CONTEXT.md` of their own -- documented here instead): `pal_mount_type` (Original/Modified swab mount, `OrigModSwabMountPressure.R`), `pal_swab_mount_angle` (45°/90°/70°, `SwabMountAngles.R`) -- both previously `scale_colour_brewer(palette="Set1")`, now the shared palette. `pal_test_std` (3-level test-standard condition) and `pal_swab` (Swab 1/2/3) in `Extraction/InitialExtractionTest.R`/`PlotExtractionRecovery.R`; the latter's `Extraction` (Ext 1-5) sequential index switched to `scale_fill_viridis_d(direction = -1)` -- `direction = -1` specifically because the underlying factor's own levels are deliberately reversed (`levels = 5:1`, for stacking order) and viridis's default direction would otherwise have come out backwards (Ext5 dark/Ext1 light) relative to the original dark=Ext1/light=Ext5 design.
+
+### Two more pre-existing bugs found and fixed (both were blocking verification of this session's own work, both trivial)
+
+- `Data Analysis/Chapter 3/ASTRA/SwabMountAngles.R`: line referenced an undefined `orig_data_avg` (a copy-paste artefact from the sibling `OrigModSwabMountPressure.R` file) which crashed the script *before it ever reached the plotting code* -- meaning this file's own colour change could never have been verified by execution otherwise. Fixed to reference the correct `data45_avg`.
+- `UVSwabbing/UV_Recovery_Reprocessing.R`: `Diagnostic_RawCurves.png`'s own subtitle caption ("Blue=Blank, Red=Before swab, Green=After swab") would have gone stale/wrong the moment the underlying colours changed -- caught only by actually rendering the plot and comparing the legend against the caption text, not by reading the code alone. Fixed to match the new colours (see also the `PETN_pilot_interactions`-style viridis-direction catch from the previous ASTRA-only session -- same category of bug: a change that's correct in isolation but makes an existing caption/comment describing the OLD behaviour silently wrong).
+
+One more pre-existing bug found but deliberately left UNFIXED (out of scope, disclosed instead): `UVSwabbing/Diagnostic_ThresholdPlots.R` contains `cat("=".join(rep("=", 60)), ...)` -- Python `.join()` syntax, invalid R -- which fails to parse and blocks the entire script (including its own plots) from ever running, regardless of this session's changes.
+
+### Verification
+
+All ~40 touched files across all 4 subprojects `parse()`-checked (39 pass; 1 known pre-existing unrelated failure, disclosed above). Executed end-to-end and visually confirmed correct rendering for: both Data Analysis scripts, 1 of 2 Extraction scripts (the other blocked by a missing input data file, unrelated to this change), 1 representative GCMSQuantitation diagnostic script, and 1 UVSwabbing script (which is also where the stale-caption bug above was caught). The remaining edited files were not individually executed this session -- many require specific real experimental datasets not populated in this local OneDrive checkout, and several are explicitly documented as "authoritative" scripts that reproduce already-submitted thesis results, which did not seem appropriate to re-run wholesale without checking first; correctness for those was instead verified by exact string-for-string comparison of every new `pal_*` key against the real label text/column values found in each script.
+
+### Update (same day, continued) -- user asked to actually run everything remaining; this caught 2 real bugs a code-only review had missed
+
+Went back and executed every remaining edited file where the underlying data was locally available (full detail in `GCMSQuantitation/CONTEXT.md` and `UVSwabbing/CONTEXT.md`, since each subproject's own dependency chains/gotchas are specific to it). Headline finding: **actually rendering the outputs caught two genuine functional bugs in this session's own edits that parse-checking and code review had both missed**:
+
+1. `GCMSQuantitation/FINEX/05_StatisticalAnalysis.R`'s Lab forest plot: a new `scale_color_manual()` was added without noticing a **pre-existing** one further down the same plot's layer chain (positioned unusually, after `coord_flip()`) -- ggplot2 silently let the old one win, so the new colour was never actually applied despite the edit looking correct on its own. Caught only by rendering the PNG and seeing plain red instead of vermillion. This prompted a full systematic re-scan of every one of the ~30 edited files across the whole cross-project effort for this exact pattern (any two same-aesthetic scale calls within 40 lines, checked for an intervening `ggplot(` boundary) -- confirmed this was the only real instance.
+2. The same file's Lab x Surface interaction plot: `scale_color_viridis_c()` (continuous) was the wrong choice for that specific plot's `Lab` column, which turned out to already be a factor there (confirmed via its use in `leveneTest(Recovery ~ Lab, ...)` immediately above) -- should have been `_d()`. The mismatch didn't error the whole script; it failed silently inside a `tryCatch`, leaving a stale/blank PNG on disk. Caught by noticing the `tryCatch`'s own printed warning ("Discrete value supplied to a continuous scale") while checking the log, not from the image itself. Both fixed, re-run, and visually re-confirmed correct.
+
+Also fixed `UVSwabbing/Diagnostic_ThresholdPlots.R`'s previously-disclosed pre-existing Python-syntax bug (`"=".join(...)`) so it could actually be executed and its colours verified -- was left broken/unfixed in the first verification pass; fixed properly this time since the user confirmed wanting everything actually run.
+
+Several more pre-existing, unrelated bugs were found while attempting to execute other files (data-shape mismatches, a missing upstream data-prep pipeline for UVSwabbing's numbered `04`-`07` scripts, one `select()` on a non-existent column) -- none of these were fixed, since they require actual data/logic investigation rather than a one-line typo fix; all disclosed in the relevant subproject's own `CONTEXT.md` rather than silently left unmentioned. One deliberate non-action: `GCMSQuantitation/FINEX/RunAllDatasets.R` (the only way to actually exercise `Code/02_PeakDetection.R`/`Code/03_Quantification.R`'s edited plots) was NOT run -- it reprocesses raw MS data for all 20 datasets (a documented past disk-space incident, ~10GB/dataset) and its default flags would skip already-processed datasets without even reaching the edited code anyway; judged disproportionate for a legend-colour change.
+
+**Final execution tally across the whole cross-project effort**: GCMSQuantitation 13/21 edited files executed successfully with colours visually confirmed; UVSwabbing 2/8; Data Analysis 2/2; Extraction 1/2 (both now including the files originally left un-executed in the first pass). The remainder are either blocked by genuine pre-existing unrelated issues (disclosed, not fixed) or were judged disproportionately heavy to run for a colour-only change (disclosed, not run).
+
+### Files Modified
+
+`TransferPersistenceRecoveryExplosives/thesis_palette.R` (new location; ~20 new `pal_*` vectors added in per-subproject sections). `ASTRA/doe/main_study_analysis.R`, `ASTRA/doe/pilot_analysis.R`, `ASTRA/plot_recovery_boxplot_actualpressure.R`, `ASTRA/plot_recovery_vs_pressure_unified.R` (source path updated). `ASTRA/main_study_batch_process.R`, `ASTRA/time_based_batch_process_adaptive_DISTANCE.R` (comment references updated). `GCMSQuantitation/GlobalCode.R` + 21 files, including the 2 bug fixes in `FINEX/05_StatisticalAnalysis.R` (see `GCMSQuantitation/CONTEXT.md` for the full list). `UVSwabbing/00-GlobalCode.R` + 8 files, including the `Diagnostic_ThresholdPlots.R` bug fix (see `UVSwabbing/CONTEXT.md`). `Data Analysis/Chapter 3/ASTRA/OrigModSwabMountPressure.R`, `SwabMountAngles.R` (also: `orig_data_avg` bug fix). `Extraction/InitialExtractionTest.R`, `PlotExtractionRecovery.R`. Regenerated real output files across all 4 subprojects wherever execution succeeded (see each subproject's own `CONTEXT.md` for exact file lists). `CONTEXT.md` (this entry).
+
+---
+
+## Session Summary (September 2, 2026, continued) — Codebase Simplification Pass
+
+### Motivation
+
+The ASTRA scripts had accumulated into 16 "live" files across `ASTRA/` and `ASTRA/doe/`, many of them one-off companion scripts each explicitly documented as "additional, not a replacement" of an earlier one — a real, user-flagged mess, not just a perception. Went through every live script, asked the user what's actually still needed vs safe to retire/consolidate, and acted only on confirmed answers rather than guessing.
+
+### 1. Experimental design scripts moved to `ASTRA/doe/ExperimentalDesign/`
+
+`doe_explosives_recovery.R`, `pilot_study_design.R`, `pilot_design_batch_reorganizer.R`, `doe_nested_design.R` — all four confirmed (by reading their own headers) to be one-time design/randomisation/power-analysis generators, not part of the live analysis pipeline, and confirmed via `grep` that nothing else `source()`s them. User wants them kept as a methods-section record, not deleted. Moved, along with the design-output files that are **not** read by any live script (`design_matrix.csv`, `design_matrix_blocked.csv`, `main_study_negative_controls.csv`, `main_study_batch_checklist.csv`, `main_study_protocol.txt`, `batch_protocol.md`, `batch_timing_checklist.csv`, `power_sensitivity_summary.csv`, `power_analysis.png`, `pilot_design_batch_organized_original.csv`).
+
+**Deliberately left in place in `ASTRA/doe/`** (not moved, despite also being design outputs): `pilot_design_nested.csv`, `pilot_design_batch_organized.csv`, `main_study_design_nested.csv`, `main_study_surface_use_tally.csv` — confirmed these are still read directly, every run, by `pilot_analysis.R`/`main_study_analysis.R`'s hardcoded paths. Moving them would require updating those paths in the live pipeline for no real benefit; see the new `ExperimentalDesign/README.md` for the full explanation of this split, so it doesn't look like an oversight later.
+
+### 2. Three near-identical "unified pressure fit" scripts consolidated into one
+
+`plot_recovery_vs_pressure_unified.R` (linear), `_quadratic.R`, `_logarithmic.R` in `ASTRA/` each independently loaded and joined the exact same Pilot+Main actual-pressure dataset, differing only in which curve shape was fit — confirmed by reading all three in full. User confirmed: consolidate. `plot_recovery_vs_pressure_unified.R` now does the data loading/joining and the AIC/BIC 4-model comparison (Linear/Quadratic/Logarithmic/Asymptotic — this part already existed in the logarithmic script) **once**, then produces all three existing named output figures in one run. Verified: re-ran end-to-end, exit code 0, all three PNGs regenerated with identical content to before. `_quadratic.R`/`_logarithmic.R` deleted (their functionality is now fully inside the consolidated script — nothing lost).
+
+### 3. `rdx_batch_effect_with_main_study.R` — confirmed still open, left untouched
+
+User confirmed this investigation (RDX recovery vs calendar date/batch) is still open, not concluded — kept live, no changes.
+
+### 4. Pressure-model primary-analysis question — not yet decided, needs the categorical-vs-quadratic tradeoff explained first
+
+User asked for `main_study_analysis_categorical_pressure.R` (built same day, see previous session entry) to be explained in plain terms before deciding whether it, the existing quadratic model, or the actual-pressure quadratic variant should be treated as the single primary reported model (vs keeping several as parallel analyses). Not yet resolved — explained to the user directly in conversation, decision pending.
+
+### Files Modified
+
+Moved 4 scripts + 10 data/doc files into new `ASTRA/doe/ExperimentalDesign/` (with a new `README.md` explaining the design-vs-live-pipeline file split). Rewrote `ASTRA/plot_recovery_vs_pressure_unified.R` (consolidated), deleted `ASTRA/plot_recovery_vs_pressure_unified_quadratic.R` and `_logarithmic.R`. `CONTEXT.md` (this entry).
+
+### 5. Decision: categorical pressure made primary; quadratic fit retired to Archive/
+
+User's decision after the categorical-vs-quadratic tradeoff was explained: **categorical is now the primary model in `main_study_analysis.R` itself** (not a separate companion script — folding it into the main script directly, per the earlier feedback that a standalone companion script was the wrong call for what's really a refinement of the same existing model, not a genuinely separate analysis).
+
+**Archived** (new `ASTRA/doe/Archive/` folder):
+- `main_study_analysis_QUADRATIC_VERSION_2026-09-02.R` — a full snapshot of `main_study_analysis.R` taken immediately before this edit, preserving the retired quadratic combined model for reference/reproducibility.
+- `main_study_analysis_actual_pressure.R` — entirely a quadratic-model sensitivity check (actual vs nominal pressure); moot now that quadratic itself is retired.
+- `main_study_analysis_categorical_pressure.R` — the standalone companion script from earlier today; fully superseded by folding its logic into `main_study_analysis.R` directly (see below).
+
+**`main_study_analysis.R` itself restructured** (Section 5 rewritten, not a new file):
+- `fit_combined_model()`: formula changed from `Surface_type * (Pressure_g + I(Pressure_g^2)) + Study + (1|SurfaceID_nested)` to `Surface_type * Pressure_f + Study + (1|SurfaceID_nested)` (`Pressure_f` = `Pressure_g` as a 5-level factor, added to `combined_data` in `build_pooled_dataset()`). Now also runs `emmeans()` pairwise (Tukey-adjusted) contrasts between every pair of pressure levels, within each `Surface_type` — the direct test of "is 100g different from 200g" that motivated this whole change.
+- New `fit_surface_subset_model()` (Section 5b): fits Steel-only and ABS-only subset models, answering "does ABS show a pressure effect on its own?" directly — the other open question from the Aug 27 session. Called from the driver code for both analytes x both surfaces.
+- `run_power_analysis()`'s `k_map` updated: `"Pressure_g"`/`"I(Pressure_g^2)"` (2 separate terms) → single `"Pressure_f"` term; `"Surface_type:I(Pressure_g^2)"` removed (no quadratic term exists any more).
+- `run_apriori_power_check()` (Section 6b) needed **no changes** — it only uses `n_pressure_levels`/overall model noise SD, not specific term names.
+
+**Verified**: syntax check passed; full end-to-end re-run (exit code 0) reproduces the same pairwise-contrast/subset-model results already found earlier today with the standalone script (e.g. RDX-on-ABS still significant on its own, p=0.017; PETN-on-ABS still not, p=0.136), confirming the merge preserved the underlying analysis exactly. `main_study_results.xlsx` and `main_study_analysis_summary.txt` both regenerated successfully this run (Excel was closed).
+
+### 6. Two-segment ("hinge"/broken-stick) model investigated, confirmed, and formalised into `main_study_analysis.R` alongside categorical
+
+User's own read of the data ("rises to a point then somewhat levels off/decreases") tested directly with a broken-stick model: two linear slopes joined at a breakpoint (100g, where the categorical model's own group means already peak), via `Recovery ~ Surface_type * (Pre100 + Post100) + Study + (1|SurfaceID_nested)` (`Pre100`/`Post100` parameterised so each segment's own slope — not just the *change* in slope — gets its own coefficient/SE/p-value directly).
+
+**Result — confirms the hypothesis precisely, and outperforms both alternatives:**
+- **Fits better by AIC than both linear and the (now-archived) quadratic model**, for both analytes (e.g. PETN: Linear 423.0, Quadratic 409.7, Hinge 406.1).
+- **The slope genuinely changes at 100g** (highly significant everywhere the change itself was tested, p<0.001 to p=0.03).
+- **Segment 2 (100g→300g) tested directly for its own significance** (not just "different from segment 1"): Steel PETN, Steel RDX, and ABS RDX all show a **statistically significant decline** (p=0.01-0.05); ABS PETN alone is **not significant — a genuine plateau**, not a decline, consistent with that combination's already-weak overall fit.
+- **R² (Nakagawa, mixed models) comparison**: the hinge model (with per-surface slopes, 7 parameters) explains almost as much variance as the fully-flexible categorical model (10 parameters) — PETN marginal R²=0.525 vs 0.540; RDX marginal R²=0.493 vs 0.483 (hinge is *better* for RDX) — good parsimony, not just a lower AIC by accident. Honest caveat carried into the script's own comments: even the best models only explain ~50% of variance via fixed effects; the rest is real sample-to-sample scatter not captured by pressure/surface/study.
+
+**Formalised directly into `main_study_analysis.R`** (per the user's explicit instruction — both categorical AND hinge in the one final script, not a separate companion file):
+- New global `PRESSURE_BREAKPOINT <- 100` (USER CONFIGURATION section).
+- `build_pooled_dataset()` now also builds `Pre100`/`Post100` columns alongside `Pressure_f`.
+- New `report_r2()` helper (Nakagawa marginal/conditional R², `performance::r2()`) — added to **every** model function (categorical combined, categorical subset, hinge combined, hinge subset), not just the new hinge ones, so R² is reported consistently everywhere.
+- New `fit_hinge_model()` (Section 5c, combined model with `Surface_type` interaction) and `fit_hinge_surface_subset_model()` (Section 5d, per-surface slope1/slope2 with individual significance + plain-English verdict) — structured to mirror `fit_combined_model()`/`fit_surface_subset_model()` exactly.
+- `performance` added to `required_packages`.
+- Driver code at the bottom calls both hinge functions for both analytes, alongside the existing categorical calls.
+
+**Verified**: syntax check passed; full end-to-end re-run (exit code 0) reproduces the investigation's exact numbers (e.g. `>>> VERDICT (PETN, abs-only, post-100g slope): NOT significant -- consistent with a PLATEAU <<<`).
+
+### Files Modified (this sub-session)
+
+`ASTRA/doe/main_study_analysis.R` (added `PRESSURE_BREAKPOINT`, `Pre100`/`Post100`, `report_r2()`, `fit_hinge_model()`, `fit_hinge_surface_subset_model()`, R² calls added to the existing categorical functions, `performance` package added). `CONTEXT.md` (this entry).
+
+### 7. Main Study plot audit -- every figure now traced to exactly one live script, no orphans, no redundant overlap
+
+User asked which plots in `Main Study/` to keep. Audited all 8 (mapping each to whichever script, if any, currently regenerates it):
+
+- **Live, kept as-is**: `PETN_RDX_main_preliminary.png` (`main_study_analysis.R`), the 3 `Recovery_vs_ActualPressure_Unified_*.png` (`plot_recovery_vs_pressure_unified.R`, already consolidated earlier this session).
+- **Orphaned, found by this audit**: `Pressure_Categorical_Means_PilotMain.png` -- only ever produced by the now-archived `main_study_analysis_categorical_pressure.R`; nothing was regenerating it any more, and it predated the hinge model entirely.
+- **Redundant with each other**: `Recovery_Boxplot_ActualPressure_PilotMain.png` (`plot_recovery_boxplot_actualpressure.R`) and `Recovery_vs_ActualPressure_MainStudy_PETN/RDX.png` (`plot_main_study_recovery_vs_pressure.R`) -- both visualise "how actual measured pressure varies within each nominal level", from two separate scripts.
+
+**Actioned (all three, per user confirmation):**
+1. **New `generate_categorical_hinge_plot()` added to `main_study_analysis.R`** (Section 5e), replacing the orphaned figure -- a single figure per analyte showing BOTH primary models together: categorical group means ± SE (points/error bars, no shape assumption) with the hinge model's own fitted two-segment line overlaid (dashed, evaluated at the 5 real pressure levels -- since the hinge model is piecewise linear with a breakpoint exactly at 100g, this reproduces the true fitted curve exactly, no interpolation error). Output: `Pressure_Categorical_Hinge_PilotMain.png`. Verified visually -- the dashed hinge line tracks the categorical means closely on both analytes/surfaces, confirming the two models agree.
+2. **Orphaned `Pressure_Categorical_Means_PilotMain.png` moved to `Archive/`** (alongside its already-archived source script).
+3. **`plot_main_study_recovery_vs_pressure.R` archived** (kept `plot_recovery_boxplot_actualpressure.R` instead -- it packs both nominal category *and* real position into one figure, plus outlier detection, which the other script doesn't have). Its two output figures + intermediate joined-data CSV moved to `Archive/` alongside it.
+
+**Final state**: every figure in `Main Study/` now traces to exactly one currently-live script; zero orphans; zero redundant overlap.
+
+### Files Modified (this sub-session, continued)
+
+`ASTRA/doe/main_study_analysis.R` (added Section 5e `generate_categorical_hinge_plot()`, called from the driver code). Moved `plot_main_study_recovery_vs_pressure.R` + its 2 PNG outputs + 1 CSV, and the orphaned `Pressure_Categorical_Means_PilotMain.png`, into `ASTRA/doe/Archive/`. `CONTEXT.md` (this entry).
+
+### 8. User flagged `PETN_RDX_main_preliminary.png` and `Recovery_Boxplot_ActualPressure_PilotMain.png` as visually near-identical -- preliminary plot retired; the real one extended to cover the samples it was silently dropping
+
+Compared both directly: same box+point+mean-diamond structure, same facets, but the "preliminary" one used random jitter (no outlier detection, n=118, no pressure-trace dependency) while the actual-pressure one used real achieved-pressure positioning + 1.5xIQR outlier flagging (n=114 -- 4 fewer, because it silently DROPPED any sample lacking a pressure-trace match). Confirmed the original "preliminary, works with partial/lightweight data" justification for keeping a separate plot is moot now both studies are essentially complete.
+
+**Decision: retire the preliminary plot; fix the actual-pressure one's silent drop instead of accepting it as an unavoidable tradeoff.**
+
+- **`generate_preliminary_plot()` removed entirely from `main_study_analysis.R`** (Section 4 -- function body and driver call both deleted, not just commented out, to avoid dead code). Header comments updated throughout to stop referencing it. The now-orphaned `PETN_RDX_main_preliminary.png` moved to `Archive/`.
+- **`plot_recovery_boxplot_actualpressure.R` fixed to stop dropping samples without a pressure-trace match** (previously `filter(!is.na(Mean_Pressure), ...)` silently excluded them -- confirmed exactly 4 such points exist, all `PILOT_*` ABS @ 200g, 2 samples x 2 analytes). Root cause of the drop: the script sourced its nominal pressure level from `Target` (a column that comes from the SAME pressure-trace join as `Mean_Pressure`, so it's NA in exactly the cases that needed a nominal level to fall back on) -- switched to `Pressure_g` (each study's own recovery-data column, always present) instead.
+  - Missing-pressure points are now **included**, plotted at their nominal-pressure box centre (no real position to place them at) with a distinct **hollow triangle** marker (`scale_shape_manual`), vs. filled/hollow **circles** for points with a real position -- new "Pressure position" legend.
+  - Handles the (found-to-be-real) edge case of >1 missing point in the same group: a small fixed nudge (based on a running count of missing rows within the group, not raw row-number, which would have miscentered it) spreads them apart so both remain visible rather than perfectly overlapping.
+  - Outlier detection, IQR/mean calculations, and `n=` labels are unaffected -- computed over ALL points in a group regardless of pressure-match status, since a missing pressure record says nothing about whether the recovery value itself is unusual.
+- **Verified**: syntax checks passed for both files; `main_study_analysis.R` re-ran end-to-end (exit code 0, no "PRELIMINARY DESCRIPTIVE PLOTS" section any more); `plot_recovery_boxplot_actualpressure.R` re-ran standalone (exit code 0, console confirms "4 point(s) have NO pressure-trace match", both hollow triangles visually confirmed at the correct position in the regenerated PNG).
+
+### Files Modified (this sub-session, continued further)
+
+`ASTRA/doe/main_study_analysis.R` (Section 4 / `generate_preliminary_plot()` removed, header comments updated). `ASTRA/plot_recovery_boxplot_actualpressure.R` (stopped dropping pressure-trace-unmatched samples; added triangle marker + `pressure_source` legend; switched nominal-pressure source from `Target` to `Pressure_g`). Moved the now-orphaned `PETN_RDX_main_preliminary.png` into `ASTRA/doe/Archive/`. `CONTEXT.md` (this entry).
+
+### 9. Per-panel R²/p annotations added to the hinge plot (matching the Unified plots' convention)
+
+User noticed `Pressure_Categorical_Hinge_PilotMain.png` had no R²/p-value annotations, unlike the Unified linear/quadratic/logarithmic plots (which print `n=.../R2=.../p=...` directly on each panel). Added the same idea to `generate_categorical_hinge_plot()` (Section 5e), per Surface_type x Analyte:
+
+- **R²**: marginal (Nakagawa, fixed effects only -- same measure as `report_r2()` elsewhere in the script), from the same per-surface hinge model already being fit for the plotted line (no duplicate model fitting).
+- **p**: a likelihood-ratio test comparing the hinge model (`Pre100 + Post100 + Study`) against a no-pressure null model (`Study` only, same random-effect structure) -- refit with `REML = FALSE` for a valid LRT, as required. This is the fairest analogue to the Unified plots' own overall-model p-value ("does this curve improve on nothing"), as opposed to the segment-2-specific p-value already reported in the text summary (Section 5d) -- the two answer different questions and are both legitimate, but this plot uses the "does pressure matter at all" framing to match the Unified plots' convention specifically, per the user's request.
+- Rendered as italic, colour-matched text (blue=Steel, orange=ABS) in the top-left of each Analyte panel.
+- Increased plot width (8 -> 10in) and reduced subtitle font size -- the added second subtitle line (explaining what R²/p mean here) was being clipped at the original width.
+
+**Result** (for the record): PETN Steel R²=0.52, p=9.2e-06; PETN ABS R²=0.17, p=0.065 (borderline, consistent with ABS-PETN being the weakest signal of the 4 combinations throughout this investigation); RDX Steel R²=0.34, p=0.0006; RDX ABS R²=0.40, p=0.0013.
+
+**Verified**: syntax check passed; end-to-end re-run (exit code 0); plot visually confirmed -- all 4 annotations render correctly positioned and colour-matched, subtitle no longer clipped.
+
+### Files Modified (this sub-session, continued once more)
+
+`ASTRA/doe/main_study_analysis.R` (Section 5e `generate_categorical_hinge_plot()`: added per-panel R²/LRT-p annotations, widened plot, shrunk subtitle font). `CONTEXT.md` (this entry).
+
+### 10. Individual sample points added to the hinge plot (was means-only, unlike the Unified plots' raw-scatter style)
+
+User flagged that `Pressure_Categorical_Hinge_PilotMain.png` showed only the categorical group means +/- SE, while the Unified linear/quadratic/logarithmic plots show every individual sample as a scatter point with the fitted curve overlaid -- making the two families of plots hard to visually cross-check against each other.
+
+**Fixed**: added a `geom_point()` layer plotting every individual sample (from `long_data`, already available in the function), jittered + dodged by `Surface_type` (`position_jitterdodge()`, fixed seed for reproducibility) so Steel/ABS points at the same nominal pressure don't overlap, drawn small and faint (`size = 1.4, alpha = 0.35`) so they sit visually behind the large mean points/error bars/hinge line, which remain the primary signal. Subtitle updated to describe both layers.
+
+**Side benefit, not the original goal**: the individual points immediately make visible several outliers that were invisible in the means-only version (e.g. a ~38% PETN Steel point at 200g, ~33% at 300g) -- consistent with (and a nice visual confirmation of) the outliers already flagged numerically in `Recovery_Boxplot_ActualPressure_PilotMain.png`'s own console summary.
+
+**Verified**: syntax check passed; end-to-end re-run (exit code 0); plot visually confirmed -- individual points render correctly, faint enough not to obscure the means/line, and the R²/p annotations from item 9 remain legible.
+
+### Files Modified (this sub-session, continued yet further)
+
+`ASTRA/doe/main_study_analysis.R` (Section 5e `generate_categorical_hinge_plot()`: added individual-sample point layer, updated subtitle). `CONTEXT.md` (this entry).
+
+### 11. Hinge plot styling revised -- solid points (not faded), diamond means (not circles)
+
+User feedback on item 10's fix: the individual-sample points were too faded (`alpha = 0.35`), and asked for styling consistent with the existing conventions elsewhere in the repo -- solid/visible points like the Unified (quadratic etc.) plots, and the categorical means shown as diamonds (matching `plot_recovery_boxplot_actualpressure.R`'s own black-bordered diamond mean marker).
+
+- Individual points: `alpha` 0.35 -> 0.85, `size` 1.4 -> 2.1, explicit `shape = 19` (solid circle) -- same visual weight as `plot_recovery_vs_pressure_unified.R`'s own points.
+- Categorical means: changed from a plain coloured `geom_point()` to `shape = 23` (diamond), `fill = Surface_type` (coloured interior) with a fixed `color = "black"` border -- overriding the plot's inherited `color = Surface_type` mapping for this one layer, mirroring the boxplot script's own mean-diamond convention. Added a matching `scale_fill_manual()` (`guide = "none"` -- Surface is already shown via the existing colour legend, no need for a second one).
+- Subtitle updated ("Circles = individual samples... | Diamonds/error bars = categorical group mean...").
+
+**Verified**: syntax check passed; end-to-end re-run (exit code 0); plot visually confirmed -- points now solid and clearly visible, diamonds prominent with a black border, no duplicate legend appeared.
+
+### Files Modified (this sub-session, final)
+
+`ASTRA/doe/main_study_analysis.R` (Section 5e `generate_categorical_hinge_plot()`: point/diamond styling revised, `scale_fill_manual()` added, subtitle updated). `CONTEXT.md` (this entry).
+
+### 12. Legend bug fix -- stray "a" glyph underneath the Surface legend keys
+
+User spotted a faint letter "a" rendered underneath the circle/diamond/line glyphs in the Surface legend. Root cause: the item 9 R²/p annotation's `geom_text()` maps `color = Surface_type` but never set `show.legend = FALSE` -- ggplot2's default behaviour for a *text* geom included in a legend is to render its own key glyph as a literal lowercase "a" (a generic text-geom placeholder), which was being layered into the same Surface legend keys as the point/diamond/line geoms (all sharing the same `color` aesthetic).
+
+**Fixed**: added `show.legend = FALSE` to that `geom_text()` call (the `n=` label `geom_text()` elsewhere in the same function already had this set correctly, which is how the original design intended every text layer to behave -- this one was simply missed when it was added in item 9).
+
+**Verified**: end-to-end re-run (exit code 0); legend visually confirmed clean -- only the circle+line glyphs remain, no stray text artefact.
+
+### 13. "Pressure" -> "Applied Mass" terminology finished across the remaining plot-facing text (display text only, not variable/column names)
+
+Continuation of an in-progress rename (already partially done in `main_study_analysis.R`'s hinge plot: `x = "Nominal Applied Mass (g)"`, "no-mass-effect null model") -- the design has always measured this via mass on a balance (grams), not true pressure (kPa/Pa); `Pressure_g`/`Mean_Pressure` etc. are literally applied mass readings mislabelled "pressure" in plot-facing text specifically. Scope confirmed with the user: rendered plot text only (titles/axis labels/legends/subtitles, including factor levels that become legend entries) -- `Pressure_g`/`Mean_Pressure`/`Pressure_level`/`Target`/file names/`Pressure Traces` folder path and all other code identifiers deliberately left untouched (renaming those would be a much larger, higher-risk change touching CSVs and other scripts' hardcoded paths).
+
+Brought the remaining 3 files into line:
+- **`ASTRA/plot_recovery_boxplot_actualpressure.R`**: title `"Recovery by Pressure..."` -> `"Recovery by Applied Mass..."`; `x = "Nominal Pressure (g)"` -> `"Nominal Applied Mass (g)"`; subtitle's "actual achieved pressure"/"no pressure-trace record" -> "actual achieved mass"/"no mass-trace record"; `shape` legend title `"Pressure position"` -> `"Mass position"`; the `pressure_source` factor's own two level labels (which double as the shape legend's entries) `"Actual pressure recorded"`/`"No pressure record (nominal position)"` -> `"Actual mass recorded"`/`"No mass record (nominal position)"` (and the matching `scale_shape_manual()` keys).
+- **`ASTRA/plot_recovery_vs_pressure_unified.R`** (all 3 fit blocks -- linear/quadratic/logarithmic): titles `"...vs Actual Swabbing Pressure..."` -> `"...vs Actual Applied Mass..."`; `x = "Actual mean swabbing pressure (g, stable regions)"` -> `"Actual mean applied mass (g, stable regions)"`; quadratic/logarithmic subtitles' `"Recovery ~ Pressure + Pressure^2"`/`"Recovery ~ log(Pressure)"` -> `"Recovery ~ Mass + Mass^2"`/`"Recovery ~ log(Mass)"`.
+- **`ASTRA/doe/pilot_analysis.R`**: interaction plot titles `"- Surface x Pressure"`/`"- Pressure x Solvent"` -> `"- Surface x Applied Mass"`/`"- Applied Mass x Solvent"`; `color = "Pressure"` legend -> `"Applied Mass"`; the Applied-Mass-x-Solvent plot previously had no explicit `x =` at all (would have defaulted to ggplot's raw column name, `"Pressure_level"`, as the visible axis title) -- added `x = "Applied Mass"` explicitly rather than leaving that default.
+
+Console-only `cat()` log text (not rendered on any plot) and code comments were deliberately left saying "pressure" throughout -- out of scope per the confirmed display-text-only boundary above.
+
+**Verified**: `parse()`-checked all 3 edited files (no syntax errors); re-grepped all three for any remaining "Pressure" inside `labs()`/`title`/`subtitle`/`x =`/`y =`/`color =`/`shape =`/`scale_shape_manual()` -- zero matches remain. Not re-run end-to-end against real data this session (no code logic changed, only literal label strings).
+
+### Files Modified
+
+`ASTRA/plot_recovery_boxplot_actualpressure.R`, `ASTRA/plot_recovery_vs_pressure_unified.R`, `ASTRA/doe/pilot_analysis.R` (all three: plot-facing title/axis/legend/subtitle text only, per above). `CONTEXT.md` (this entry).
+
+### 14. All 6 renamed-plot outputs actually regenerated (item 13 above only edited source, never re-ran it); `Pressure_Categorical_Hinge_PilotMain.png` further updated -- diamonds/points now positioned at ACTUAL achieved mass, not the nominal target
+
+User asked directly whether the plots had been regenerated after item 13 -- they hadn't; item 13 only edited the `.R` source. Ran `plot_recovery_boxplot_actualpressure.R`, `plot_recovery_vs_pressure_unified.R` (all 3 fits), and `pilot_analysis.R` (full collation + stats pipeline) -- all exit code 0, all 6 PNGs confirmed regenerated by timestamp.
+
+User then separately spotted that `Pressure_Categorical_Hinge_PilotMain.png` (`main_study_analysis.R`, not touched by item 13) still showed the OLD "Pressure (g)" label -- root cause was the same "edited but never re-run" gap: that script's own last edit (19:53) postdated the PNG's last write (19:45), so the "Nominal Applied Mass (g)" label from an earlier sub-session had genuinely never been rendered. Re-ran it once to confirm -- fixed.
+
+**User's actual further request** (this item's main work): reposition `generate_categorical_hinge_plot()`'s diamonds (categorical group means) at the group's own mean ACTUAL achieved mass, and the individual sample points at each sample's own ACTUAL achieved mass -- instead of both being placed at the nominal design target (`Pressure_g` = 10/50/100/200/300). This plot had never joined in the ASTRA-measured `Mean_Pressure` at all (unlike `plot_recovery_boxplot_actualpressure.R`/`plot_recovery_vs_pressure_unified.R`, which already did).
+
+**Implementation** (`main_study_analysis.R`):
+- New `main_pressure_file`/`pilot_pressure_file` config paths (USER CONFIGURATION) pointing at each study's own `Pressure Traces/ProcessedData/batch_summary.csv` -- same files the two standalone plotting scripts already read.
+- `build_pooled_dataset()`: after `combined` is built, both studies' `batch_summary.csv` files are stacked into one `Sample`/`Mean_Pressure` lookup (safe to do in one step, unlike those two scripts' per-study joins, since `RunID` is globally unique across `PILOT_`/`MAIN_` prefixes) and left-joined onto `combined` by `RunID <-> Sample`. Logged: "Actual-pressure-trace match: 57/59 combined rows matched (2 unmatched)". Explicitly scoped as **only** feeding this one plot -- the combined mixed-effects model itself is untouched, still fit against nominal `Pressure_g`/`Pressure_f`/`Pre100`/`Post100` (this request was about the figure, not the statistical model).
+- `generate_categorical_hinge_plot()`:
+  - `long_data` (individual points) gains `Mean_Pressure`; plotted at `aes(x = Mean_Pressure, ...)` (was `Pressure_g`), and the `position_jitterdodge()` used to spread out points at a shared nominal x is removed entirely -- with real, continuous, naturally-distinct x-positions, artificial jitter/dodge would misrepresent them (matches the existing convention in `plot_recovery_vs_pressure_unified.R`, which never jitters its own real-position points either). 4 sample x analyte points (2 physical pilot samples x 2 analytes, the same `PILOT_015`/`PILOT_020` ABS-200g-wet pair already known from item 8's boxplot fix to lack a pressure-trace match) have no real position and are excluded from this layer -- logged explicitly, and still counted in their group's `mean_rec`/`n` (only the x-position calculation skips them via `na.rm = TRUE`).
+  - `means_data`: gains `mean_actual` (mean `Mean_Pressure` per `Surface_type x Analyte x Pressure_g` group, `na.rm = TRUE`) -- the diamond/error-bar/n-label layer's new x-position. `y` values (`mean_rec`/`se_rec`/`n`) are unchanged (still computed from `Recovery` alone), so this is a pure repositioning, not a change to any reported number.
+  - Hinge line: the model itself still predicts from nominal `Pre100`/`Post100` (derived from the nominal `pressure_levels` grid, since that's how it was fit) -- but the line's own plotted x-coordinate (`PlotX`, new) is remapped per Surface_type to that level's own mean actual achieved mass (computed from `sub`, the same data the model was fit on), so the dashed line lands among the repositioned points/diamonds instead of at the nominal target. Falls back to the nominal value if a level has zero matched samples (not observed in practice).
+  - `hinge_stats_df$x_pos` (R²/p annotation placement) similarly switched from `min(pressure_levels)` (nominal) to `min(long_data$Mean_Pressure, na.rm = TRUE)` (actual).
+  - `geom_vline(xintercept = PRESSURE_BREAKPOINT, ...)` (the dotted 100g reference line) deliberately left as a literal nominal `x = 100` -- it marks the model's own design breakpoint, not a data point, so repositioning it wouldn't make sense the way it does for the diamonds/points/line.
+  - Subtitle rewritten (3 lines instead of 2) to describe the new positions plainly and to note the x-axis breaks are nominal reference marks only; plot width widened 10in -> 11in and subtitle font shrunk 9 -> 8pt after the longer text first overflowed the right edge in testing.
+
+**Verified**: end-to-end re-run (exit code 0, no errors -- only the same pre-existing singular-fit `performance::r2()` warnings already present before this change); console confirmed the join (57/59 matched) and the 4-point exclusion note; visually confirmed via the regenerated PNG -- diamonds for Steel vs ABS at the same nominal level are now visibly offset from each other (previously both sat exactly on the nominal gridline), the dashed hinge line still tracks through them correctly, and the 3-line subtitle now fits within the widened frame with no clipping.
+
+### Files Modified
+
+`ASTRA/doe/main_study_analysis.R` (`main_pressure_file`/`pilot_pressure_file` config vars; `build_pooled_dataset()` gains the actual-pressure join; `generate_categorical_hinge_plot()`: `long_data`/`means_data` gain `Mean_Pressure`/`mean_actual`, jitterdodge removed, hinge-line `PlotX` remapping, annotation `x_pos` switched to actual, subtitle/width/font adjustments). Regenerated (not just edited) all 4 live plotting scripts' outputs: `Recovery_Boxplot_ActualPressure_PilotMain.png`, `Recovery_vs_ActualPressure_Unified_PilotMain.png` (+ `_Quadratic`/`_Logarithmic`), `PETN_pilot_interactions.png`/`RDX_pilot_interactions.png` (+ the rest of `pilot_analysis.R`'s usual outputs, regenerated as an unavoidable side effect of it being one all-in-one script), `Pressure_Categorical_Hinge_PilotMain.png`. `CONTEXT.md` (this entry).
+
+### 15. "Pressure" -> "Applied Mass" rename extended to the raw ASTRA trace-processing pipelines + a retired design template, plus a full regeneration run of both heavy batch pipelines
+
+User asked to extend the item 13/14 rename to cover "all pressure plots", not just the DOE recovery-analysis figures. Did a repo-wide grep (excluding `archive/`/`Archive/`, per the existing convention that those are intentionally-frozen historical snapshots) for any remaining plot-facing "Pressure" text (`labs()`/`title=`/`x=`/`y=`/`color=`/`fill=`/`shape=`/base-R `main=`), which surfaced two more live scripts that had never been touched by the earlier rename:
+
+- **`ASTRA/main_study_batch_process.R`** and **`ASTRA/time_based_batch_process_adaptive_DISTANCE.R`** (the raw ASTRA balance-trace processing pipelines for the Main Study and Pilot Study respectively -- near-identical twin scripts) -- 6 identical edits in each:
+  - Base-R `plot(..., main = sprintf("%s: Full Pressure Trace (%d cycles detected)", ...))` -> `"...Full Applied Mass Trace..."` (time-based single-sample trace plot)
+  - Same for the distance-based variant: `"...Full Pressure Trace - Distance Based..."` -> `"...Full Applied Mass Trace - Distance Based..."`
+  - `ggplot` multi-sample comparison plot: `title = sprintf("%dg Samples - Full Pressure Traces (Distance-Based)", ...)` -> `"...Full Applied Mass Traces..."`; `y = "Pressure (g)"` -> `"Applied Mass (g)"` (appears in both the comparison plot and the per-sample stable-region-overlay plot, `replaceAll`'d)
+  - `plot_batch_qc_overview()`: `title = "Batch QC Overview - Mean Pressure vs Target"` -> `"...Mean Applied Mass vs Target"`; `x = "Mean Pressure (stable regions, g)"` -> `"Mean Applied Mass (stable regions, g)"`
+  - Left untouched (out of scope, consistent with items 13/14's own display-text-only boundary): `xlab`/`ylab` on the base-R trace plots already said `"Load (g)"`, not "Pressure" -- no change needed there; every `Pressure_g`/`Mean_Pressure`/`pressure_g` column/variable name; the `.../Pressure Traces/...` folder path; and all console-only `cat()` diagnostic text (e.g. "PRESSURE STATISTICS:", "Mean pressure (stable regions): ...").
+- **`ASTRA/doe/ExperimentalDesign/doe_explosives_recovery.R`** (the retired original, never-executed 2-level design template, kept only as a methods-record per the Sept 2 "Codebase Simplification" session) -- its two interaction-plot titles, `"Surface_type x Pressure Interaction"`/`"Pressure x Solvent Interaction"` -> `"Surface_type x Applied Mass Interaction"`/`"Applied Mass x Solvent Interaction"`. The underlying `Pressure` data-column/`aes()` mapping in this template was left as-is (out of scope, matching the established variable-name boundary).
+
+A repo-wide re-grep afterward (same exclusions) confirmed **zero** remaining plot-facing "Pressure" text anywhere live -- the two apparent hits it initially returned were both false positives from case-insensitive substring matching against code identifiers (`PRESSURE_BREAKPOINT`, `target_pressure`), not actual display strings.
+
+**Regenerated both heavy pipelines end-to-end** (per explicit user confirmation, since -- unlike every other script touched in this rename -- these two reprocess every individual raw trace file and rewrite dozens of PNGs each, a much larger blast radius): `main_study_batch_process.R` (`RUN_MODE <- "batch"`, all 44 Main Study samples) and `time_based_batch_process_adaptive_DISTANCE.R` (all 32 Pilot Study samples). Both exit code 0, no real errors (only the pipeline's own normal per-cycle timing-prediction diagnostic lines and ggplot's routine "removed missing values" warnings, 45/32 respectively -- unrelated to this change). Visually confirmed via two regenerated PNGs (`batch_qc_overview.png`, `10g_samples_full_traces.png`) that the new "Applied Mass" title/axis text renders correctly.
+
+### Files Modified
+
+`ASTRA/main_study_batch_process.R`, `ASTRA/time_based_batch_process_adaptive_DISTANCE.R` (6 plot-facing label edits each, per above), `ASTRA/doe/ExperimentalDesign/doe_explosives_recovery.R` (2 interaction-plot titles). Regenerated every individual sample's trace/overlay PNG plus each study's own comparison-by-level and `batch_qc_overview.png` figures, in both `Main Study/Pressure Traces/ProcessedData/Figures/` and `Pilot Study/Pressure Traces/ProcessedData/Figures/`. `CONTEXT.md` (this entry).
+
+### 16. Shared thesis-wide colour palette (`ASTRA/thesis_palette.R`, Okabe-Ito) -- new, single source of truth for every plot; every hardcoded colour across the live codebase replaced
+
+User asked for a single consistent colour scheme to use across every chart in their thesis. Investigated the live codebase first: colours were scattered and inconsistent -- `Study` (Pilot/Main) and `Surface_type` (steel/abs) both used the exact same blue/orange hex pair (`#4477AA`/`#EE9944`) in different figures (so the same two colours carried two different meanings depending on which figure you were looking at), `wet`/`dry` used a completely unrelated blue/green (`#3182bd`/`#31a354`), and the raw-trace QC/cycle-gradient plots used their own separate ad hoc colours again -- no single source of truth anywhere.
+
+**Palette discussion with the user** (talked through before implementing): recommended the Okabe-Ito 8-colour qualitative palette (Okabe & Ito, 2008; Wong, 2011, *Nature Methods*) -- colourblind-safe for both common forms of colour vision deficiency, distinguishable in greyscale -- with a fixed, non-overlapping colour pair assigned to each recurring NOMINAL factor (Surface_type, Study, Analyte, Solvent), so the same two colours never carry two different meanings again. User initially pushed back on the resulting blue/orange pairing (disliked it aesthetically); explored an alternative (Paul Tol's "muted" qualitative palette -- wine/teal/purple/olive/green/rose, no blue or orange anywhere) and a viridis-based option (rejected for nominal factors specifically, since viridis is a *sequential*/ordinal colormap -- using it for unordered categories is a recognised anti-pattern, multiple independent binary factors sampled from it end up looking like arbitrary slices of the same rainbow rather than genuinely distinct comparisons; demonstrated this directly with a rendered comparison swatch). After seeing a rendered swatch of the original full Okabe-Ito mapping again, user decided to go with it after all.
+
+**Final semantic assignment** (`ASTRA/thesis_palette.R`, new file):
+- `pal_surface_type`: steel = Blue `#0072B2`, abs = Orange `#E69F00`
+- `pal_study`: Pilot = Reddish Purple `#CC79A7`, Main = Bluish Green `#009E73`
+- `pal_analyte`: PETN = Sky Blue `#56B4E9`, RDX = Vermillion `#D55E00` (defined for consistency/future use -- no current live plot colours by Analyte, it's always shown via facets instead)
+- `pal_solvent`: keyed under BOTH naming conventions used across scripts (`present`/`absent` in `pilot_analysis.R`'s `Solvent_level`, `wet`/`dry` in the raw-trace scripts' `wet_dry`) -> Blue `#0072B2` / Bluish Green `#009E73`
+- `pal_mass_level`: pilot's original 2-level low/high design factor (`Pressure_level`, distinct from the main study's 5-level `Pressure_f`/`Pressure_g`, which isn't shown as a discrete colour anywhere) -> Yellow `#F0E442` / Black `#000000`
+- `pal_qc_status`: PASS/WARN/FAIL traffic light -> Bluish Green/Orange/Vermillion -- deliberate, disclosed exception to the "never reuse a colour for a different meaning" rule, since status is always shown captioned (PASS/WARN/FAIL text) and never appears as a colour comparison side-by-side with Surface_type/Study/etc in the same figure
+- Ordinal/continuous quantities (e.g. cycle number in the stable-region-overlay gradient) directed to use `scale_colour_viridis_c()`/`_d()` instead of a slice of the qualitative palette -- viridis is perceptually uniform and built for exactly this use case.
+- `qc_pass_fail_labels()` helper: builds a 2-colour (pass/fail only, no warn) named vector for legend labels that are dynamically `sprintf()`-built at runtime (e.g. `plot_batch_qc_overview()`'s `"Within X% of Target"` text, where X isn't a compile-time constant).
+
+**Applied across all 6 live plotting scripts**:
+- `main_study_analysis.R`, `pilot_analysis.R`, `plot_recovery_boxplot_actualpressure.R`, `plot_recovery_vs_pressure_unified.R`: added `source(".../ASTRA/thesis_palette.R")` (absolute path, matching this repo's existing cross-file `source()` convention) alongside each script's own package loading, then replaced every hardcoded hex with the matching `pal_*` vector: `main_study_analysis.R`'s hinge plot (`pal_surface_type`), `pilot_analysis.R`'s 3 interaction plots (`pal_mass_level`, `pal_solvent` x2 -- these previously had NO explicit colour scale at all, relying on ggplot's own default hue picker), `plot_recovery_boxplot_actualpressure.R` + `plot_recovery_vs_pressure_unified.R`'s `Study` colour/fill scales (`pal_study`, including the boxplot script's `guide_legend(override.aes = ...)` fill list, which had to preserve the correct Main-before-Pilot alphabetical legend order rather than just swapping in the new hex codes positionally).
+- `main_study_batch_process.R` / `time_based_batch_process_adaptive_DISTANCE.R`: **NOT** `source()`'d -- both scripts' own headers explicitly state "SINGLE-SCRIPT DESIGN: this file is fully self-contained... nothing should source() it either", a deliberate pre-existing design rule that was respected rather than overridden. Instead, the matching hex values were inlined literally (with a comment noting they match `pal_solvent`/`pal_qc_status` for provenance): `PLOTTING_PARAMS$color_wet/color_dry` -> `#0072B2`/`#009E73`; `plot_batch_qc_overview()`'s `Flag_Label` colours (`"steelblue"`/`"firebrick"`, an ad hoc 2-colour PASS/FAIL-style pair with no WARN tier) -> `#009E73`/`#D55E00`; the stable-region-overlay's `cycle_num` gradient (previously `scale_color_gradient(low = "#c6dbef", high = "#08519c")`, an ad hoc light-to-dark blue) -> `scale_color_viridis_c()`.
+- **Bug caught during visual verification**: viridis's default direction is dark(low)->light(high), but the stable-overlay plot's own subtitle says "Color intensity: Light (early) -> Dark (late)" (Cycle # low = early) -- a straight swap would have silently made the caption describe the colours backwards. Fixed with `direction = -1` in both scripts' `scale_color_viridis_c()` call before regenerating, confirmed visually correct afterward (cycle 1-4 render pale yellow, cycle 16 renders dark purple, matching the caption).
+- **Deliberately left unchanged**: `pilot_analysis.R`'s by-repeat barchart `Condition` fill (a 4-level composite of mass-level x solvent, `"50g/dry"`/`"50g/wet"`/`"200g/dry"`/`"200g/wet"`, currently a separate ColorBrewer-ish quartet) -- all 8 Okabe-Ito hues are already spoken for by the 4 factor pairs above, and this composite factor doesn't decompose cleanly into any single one of them; forcing a worse-fitting reuse was judged worse than leaving its own already-reasonable, already-colourblind-conscious palette alone. Flagged here explicitly rather than silently left inconsistent without explanation.
+
+**Verified**: all 6 files `parse()`-checked after editing (no syntax errors); all 6 re-run end-to-end (`main_study_analysis.R`, `pilot_analysis.R` -- full collation + stats pipeline, `plot_recovery_boxplot_actualpressure.R`, `plot_recovery_vs_pressure_unified.R`, `main_study_batch_process.R`, `time_based_batch_process_adaptive_DISTANCE.R` -- both full batch re-processing runs, twice each, once before and once after the viridis-direction fix), all exit code 0, zero real errors (only the pipelines' own pre-existing, unrelated warnings: `performance::r2()`'s singular-fit notices, ggplot's routine "removed missing values", 45/32 harmless warnings respectively). Visually confirmed via 5 regenerated PNGs spanning every changed colour: `Pressure_Categorical_Hinge_PilotMain.png` (Surface_type blue/orange), `Recovery_Boxplot_ActualPressure_PilotMain.png` (Study purple/green), `PETN_pilot_interactions.png` (mass_level yellow/black, solvent blue/green), `batch_qc_overview.png` (QC status bluish-green/vermillion), `MAIN_001_stable_overlay.png` (viridis cycle gradient, correct direction).
+
+### Files Modified
+
+`ASTRA/thesis_palette.R` (new). `ASTRA/doe/main_study_analysis.R`, `ASTRA/doe/pilot_analysis.R`, `ASTRA/plot_recovery_boxplot_actualpressure.R`, `ASTRA/plot_recovery_vs_pressure_unified.R` (each: added `source()` of the new palette file, replaced hardcoded hex with `pal_*` vectors). `ASTRA/main_study_batch_process.R`, `ASTRA/time_based_batch_process_adaptive_DISTANCE.R` (each: matching hex values inlined literally, not `source()`'d, per their own self-contained design rule; cycle-gradient switched to `scale_color_viridis_c(direction = -1)`). Regenerated every plot produced by all 6 scripts (Pilot Study + Main Study, both `Pressure Traces/ProcessedData/Figures/` folders and the main `doe/`-analysis PNGs). `CONTEXT.md` (this entry).
+
+---
+
+## Session Summary (September 2, 2026) — Follow-up on MAIN_013, ABS NC Contamination Source, and the Other 4 Unevaluated NCs
+
+### Motivation
+
+Direct follow-up to the August 27, 2026 session's "Not done, flagged for follow-up" list (below): reanalyse `MAIN_013`, investigate the ABS NC contamination source, and resolve the other 4 unevaluated NCs. Cross-referenced with `RedTeam_Findings.md`'s FINEX-side item 20 work done the same week (the same underlying failure mode — a whole-injection instrument-response wobble that PETN's raw-PA quantification is exposed to but RDX's IS ratio cancels — turns out to explain `MAIN_013` too, see below).
+
+### 1. `MAIN_013` — same root cause as FINEX's Steel 4/Outstanding samples 4 (RedTeam_Findings.md item 20), not a data-quality problem with this sample
+
+`MAIN_013` (Line 95, Analysis1) fails on an isolated `petn_qc_6ng_post` FAIL. Traced to its bracketing 6ng PETN QCs: pre = Line 87 (PASS), post = **Line 99 (FAIL_BIAS, +51.2% bias)** — the *last* 6ng QC in the Analysis1 sequence. Investigated why Line 99 fails when the whole run otherwise declines smoothly (133,251→80,334→49,449→44,387→38,948→36,160→30,580 across Lines 15-87):
+
+- Line 99's own PETN PA jumps *up* to 42,757 (vs. 30,580 at Line 87) — breaking the decline.
+- **The internal standard's own raw PA at Line 99 also jumps up in the same direction and a similar relative magnitude** (7,456→9,949, +33%, vs. PETN's 30,580→42,757, +40%) — proving this is a shared, whole-injection instrument-response effect, not a PETN-specific integration failure (identical diagnostic signature to the FINEX Steel 4/Line 87 and Outstanding samples 4 findings — this is now the **third** independent real-data confirmation of the same mechanism).
+- **RDX's own ratio-based bias at Line 99 is only −8.8%** (in fact *less* biased than its neighbours' −18% to −19%) — direct confirmation that RDX's `rdx_pa/rdx_is_pa` ratio cancels this wobble almost perfectly, while PETN's raw-PA-only quantification (item 8) has no such protection.
+
+**Not yet reanalysed anywhere** — checked the "Oustanding samples 5" mixed FINEX/ASTRA dataset (the other reprocessed-elsewhere candidate) directly; it contains 9 other `MAIN_###` samples but not `MAIN_013`. Per the FINEX decision on the structurally-identical Steel 4/Outstanding samples 4 case (accept the failure, treat existing reanalysis as the fix — see `RedTeam_Findings.md` item 20), the consistent options here are: (a) physically reanalyse `MAIN_013` (a lab task, not something resolvable from these data files), or (b) accept the already-computed values (`PETN_Recovery_pct=12.63`, `RDX_Recovery_pct=10.86` — both internally plausible against neighbouring samples) with a documented caveat, consistent with how Steel 4/Outstanding samples 4 were handled. **Not decided here — flagged for the same user decision as item 20.**
+
+### 2 & 3. ABS NC contamination source AND 3 of the 4 other unevaluated NCs — traced to a single bad low-level RDX calibration standard in Analysis1
+
+Investigating the ABS NC contamination source and the Steel/ABS NC bracket failures converged on the same root cause, found by comparing each dataset's own 0.2ng-level RDX calibration point against (a) the rest of that dataset's own 0.2ng QCs and (b) simple proportional scaling from the 6ng calibrator:
+
+| Dataset | 0.2ng Cal ratio (rdx_pa/rdx_is_pa) | 0.2ng QCs' own ratio (rest of run) | 6ng Cal ratio (for scale) |
+|---|---|---|---|
+| Analysis1 | **0.0445** (Line 6) | ~0.018–0.022 (Lines 25-97) | 0.511 (Line 9) |
+| Analysis2 (healthy, for contrast) | 0.0208 (Line 6) | ~0.019–0.023 (Lines 25-93) | 0.575 (Line 9) |
+
+**Analysis1's own lowest-level RDX calibration standard (Cal Line 6, nominal 0.2ng) reads at roughly double the ratio every other 0.2ng-level measurement in the same dataset shows** — and Analysis2's freshly-run equivalent calibrator (0.0208) matches Analysis1's *other* 0.2ng QCs almost exactly, not Analysis1's own Cal point. Simple proportional scaling from the 6ng calibrator (0.511 × 0.2/6 ≈ 0.017) also lands close to the ~0.018-0.022 range, not 0.0445. This is strong, convergent evidence that **Analysis1's 0.2ng RDX calibration standard itself is the anomalous point** (almost certainly a contaminated/mislabeled/degraded calibration injection), not a reflection of the dataset's true low-end response.
+
+**Practical consequence**: this single bad calibration point drags the low end of Analysis1's fitted RDX quadratic curve upward, so every genuine 0.2ng-level RDX response for the rest of the run (Lines 25 onward) computes a concentration of **exactly 0** (`rdx_percent_bias = -100.0000000%`, to 7 decimal places, at every one of Lines 25/37/49/61/73/85) — a "floor at zero" `solve_concentration()` result (no positive root exists once the response falls below the curve's distorted lower bound), not a real non-detect. (Also confirms Analysis1 predates item 5's `rdx_extrapolated`/`petn_extrapolated` column — it has no `rdx_extrapolated` column at all, unlike Analysis2 — so this dataset hasn't been reprocessed with the current `03_Quantification.R` since that flag was added; reprocessing alone would surface the flag but would **not** fix the underlying bad calibrator.)
+
+This one bug explains 3 separate open items at once:
+- **`MAIN_SteelBatch1_NC`/`MAIN_SteelBatch2_NC`** ("RDX 0.2ng QC bracket FAILED or unavailable"): their bracketing 0.2ng RDX QCs floor to a computed concentration of 0 → `SENSITIVITY_CHECK_FAIL` → bracket FAIL. Not a problem with these NCs' own data.
+- **The reported 0% RDX recovery for the 2 "positive" ABS NCs (`MAIN_ABSBatch1_NC`/`MAIN_ABSBatch2_NC`, also Analysis1)**: their `nc_result` = "RDX contaminated" is genuine and **independent of this bug** (driven purely by `rdx_snr_flag == "Quantifiable"`, i.e. a real detected peak, in `derive_nc_result()`'s tier-based logic — concentration value is irrelevant to that classification). But their reported `RDX_Recovery_pct = 0%` is almost certainly an **underestimate** caused by the same floor-at-zero bug — the true contamination level is probably a small positive value, not literally zero.
+- (Does not explain the *source* of the contamination itself — that's a real lab/physical question (pre-contaminated ABS stock vs. handling/storage vs. equipment carryover) that can't be answered from these data files alone. One data-only observation that might help narrow it down: both positive ABS NCs are in Analysis1, both came back positive, and both evaluable Steel NCs elsewhere (Analysis1's own SteelBatch1/2 are unevaluated due to the bug above, but Analysis2's SteelBatch3/4/5 are clean) — worth checking against lab records whether the *specific physical ABS surfaces* used for Batch1/2 were also used/stored/handled differently from the Steel surfaces in the same batches, or reused from a prior contaminated run.)
+
+**Recommended fix, implemented and tested (02/09/2026), then REVERTED — it made the problem worse, not better.** Added a genuine per-dataset calibration-point exclusion mechanism, mirroring the existing QC-exclusion pattern:
+- `GlobalCode.R`: new `cal_exclude_lines_by_dataset` (keyed by `ParentFolder`, same convention as `drift_correction_exclude_qc_lines_by_dataset`) resolving to `cal_exclude_lines`, validated in `validate_setup()` and logged in `run_metadata.yaml`.
+- `Code/03_Quantification.R`: the calibration-fitting loop now filters `cal_exclude_lines`-matched Line(s) out of `cal_fit` (after the existing Below_LOD filter, before the `lm()` call) — deliberately **not analyte-specific** per explicit user instruction (excludes the Line from both PETN's and RDX's fits together, even though the investigation below shows only RDX's response at Line 6 is actually anomalous — PETN's own raw PA there is perfectly consistent with its neighbouring Cal levels). Excluded row stays in `Combined`/`CalData`/`CalibrationSet` and the output — only removed from the fit itself. New `N_Excluded_Manual` column added alongside the existing `N_Excluded_LOD` in the `*_CalibrationStats.xlsx` export.
+- **Verified the mechanism itself works exactly as designed**: re-ran `GlobalCode.R`→`02`→`03` for Analysis1 with `"Analysis1" = c(6)` set; console confirmed `"PETN calibration set 1: excluding 1 Cal point(s) from the fit (Line 6)"` and the same for RDX; Line 6 remained present in the output, just absent from the fitted curve. Exit code 0, no errors.
+- **But the actual effect was the opposite of what was wanted**: with only Cal levels 2/4/6/8/10ng left to fit RDX's quadratic curve, the curve no longer extrapolates down to a 0.2ng-equivalent response *at all* — **every** 0.2ng-level RDX QC, including **Line 13, which correctly resolved to ~0.20ng before this change**, now floors to a computed concentration of exactly 0 (`rdx_extrapolated = TRUE`). Confirmed directly: before exclusion, Line 13 = 0.2011ng (bias +0.6%), Lines 25-85 = 0 (bias -100%), Line 97 = 0.322ng (bias +61%); after exclusion, **all 8** 0.2ng QCs floor to 0.
+- **Conclusion: Cal Line 6, whatever its own merits, is functioning as this dataset's only usable low-end calibration anchor — removing it doesn't fix the flooring problem, it just extends it to cover the entire 0.2ng level instead of most of it.** The earlier "Analysis2's fresh 0.2ng Cal ratio (0.0208) closely matches Analysis1's own later 0.2ng QCs (~0.018-0.022), not Analysis1's own Cal point (0.0445)" evidence is still true and still suggests Line 6 itself reads anomalously high relative to the rest of the dataset's real 0.2ng-level behaviour — but "anomalous" doesn't mean "safe to discard" when there's no other low-end anchor to fall back on.
+- **Reverted**: removed the `"Analysis1" = c(6)` entry from `cal_exclude_lines_by_dataset` (left empty, with a comment explaining why it was tried and rejected) and re-ran Analysis1 through `03_Quantification.R` again to restore the original (better) behaviour — confirmed byte-for-byte identical per-QC concentrations to the pre-exclusion state (Line 13 = 0.2011ng again, etc.). The exclusion **mechanism** itself is kept in the codebase (tested, working, currently unused — empty by default for every dataset), available for a genuinely fixable future case (e.g. a QC-style dip-then-recover Cal point with healthy calibration data on both sides, unlike this case where the bad point is the *only* data at that end of the range).
+- **Practical consequence**: `SteelBatch1_NC`/`SteelBatch2_NC` remain unresolved, and `ABSBatch1_NC`/`ABSBatch2_NC`'s reported 0% RDX recovery remains a likely understatement of their real (still-positive) contamination. **Root cause is now understood but NOT fixed** — this dataset's RDX calibration design simply doesn't have a second, independent low-level standard to substitute in; a real fix would need either a genuinely different/additional low-level calibration point (impossible to add retroactively to already-acquired data) or accepting these specific NCs as analytically unresolvable via calibration, similar to the `MAIN_013`/`ABSBatch3_NC` "needs physical reanalysis" category above.
+
+### Files Modified (this sub-investigation)
+
+`GCMSQuantitation/GlobalCode.R` (new `cal_exclude_lines_by_dataset`/`cal_exclude_lines`, `validate_setup()` check, `run_metadata.yaml` logging — net effect on live datasets: none, since the list is empty), `GCMSQuantitation/Code/03_Quantification.R` (calibration-fit loop now honours `cal_exclude_lines`; `N_Excluded_Manual` column added to `cal_stats`/`*_CalibrationStats.xlsx`). Analysis1 was reprocessed twice (once with the exclusion, once without) — final on-disk state is unchanged from before this investigation (confirmed identical per-QC values); the intermediate "with exclusion" run's own backup is retained in `Analysis1/Results/Backup/2026-09-02_10-41-43_Analysis1_GCMSResults.csv` purely as an artefact of the normal backup-before-overwrite mechanism, not as a meaningful alternate result.
+
+### 4. `MAIN_ABSBatch3_NC` — genuine, isolated injection-validity failure, not fixable
+
+Fails on `"IS abnormally low (PA=105)"` — the internal-standard injection-validity check (`rdx_is_pa_flag`), a hard-coded short-circuit unrelated to any bracket or calibration mechanism. PA=105 is far below `MinPeakArea_IS` (1000) and even further below every genuine injection in this study (thousands to tens of thousands). This is a real, isolated problem with that one specific injection (partial injection, syringe issue, etc.) — not fixable via any exclusion list, since it's the row's *own* IS that's bad, not a neighbour's. Would need physical reanalysis, same category as `MAIN_013` above.
+
+### 5. `MAIN_ABSBatch4_NC`/`MAIN_ABSBatch5_NC` — NOT fixed by the existing Line 39 exclusion; real (but marginal) cause found
+
+`main_study_analysis.R` already has `qc_bracket_exclude <- list("/Analysis2/" = c(39))` (the already-documented item-23-equivalent bad injection — PETN PA=267/Below_LOQ, RDX PA=107 collapsing in lockstep, IS unaffected — see `RedTeam_Findings.md` item 23 for the FINEX-side twin of this exact injection). **Verified this exclusion is actually being applied** (re-ran `main_study_analysis.R`; console confirms `"excluding QC Line(s) 39 from bracket assignment"`) — but the NC fail count is unchanged (still 5 FAIL) either way, because **Line 39 was never the real cause of these two NCs' failure**.
+
+Traced the actual cause: `MAIN_ABSBatch3_NC`/`4_NC`/`5_NC`/`SteelBatch3_NC` (Lines 17/19/21/23) sit between the 6ng RDX QC at **Line 15 (pre, bias = −19.3%, PASS)** and **Line 27 (post, bias = −20.9%, FAIL)** — Line 27 sits just **0.9 percentage points** outside the ±20% bias limit. This is a genuine but *marginal* QC performance early in the Analysis2 run (Lines 15 and 27 both sit close to the boundary, ~19-21% biased, before settling to a much cleaner ~1.5-3% for the rest of the run from Line 51 onward) — not a dramatic, obviously-anomalous single injection the way Line 33/39/99 elsewhere in this document are. `MAIN_ABSBatch3_NC` and `SteelBatch3_NC`'s own overall results aren't affected by this (the former already fails earlier on its own IS check; the latter's own RDX result doesn't need the 6ng bracket), but `MAIN_ABSBatch4_NC`/`5_NC`'s does.
+
+**Not fixed — flagged as a judgement call, not a mechanical bug**: there's no clear evidence Line 27 (or Line 15) is an anomalous/failed injection the way the other excluded points in this document are (no lockstep IS collapse, no dip-then-recover shape) — it may simply be genuine early-run QC performance that happens to sit right at the pass/fail boundary. Worth a decision on whether ±20% is being read too strictly at the margin here, versus treating it as a real (if small) accuracy problem specific to the early part of this run.
+
+### Decision (02/09/2026): physically reanalyse the affected samples
+
+**User's decision: reanalyse the affected samples in the lab, rather than pursuing further code-side fixes.** Covers every item above that isn't already resolved by existing code:
+- `MAIN_013` (item 1) — bracketed by a whole-injection instrument-response wobble at Line 99, not a real data-quality problem with the sample itself.
+- `MAIN_SteelBatch1_NC`/`MAIN_SteelBatch2_NC` (item 2/3) — bracket failures caused by Analysis1's RDX 0.2ng calibration-curve flooring; confirmed not fixable by excluding the calibration point (see item 2/3 above — tried, made it worse, reverted).
+- `MAIN_ABSBatch1_NC`/`MAIN_ABSBatch2_NC` (item 2/3) — genuine RDX-positive result, but reported 0% recovery is an artefact of the same calibration flooring; a reanalysis would give a trustworthy quantitative recovery figure instead of the current artificial 0%.
+- `MAIN_ABSBatch3_NC` (item 4) — genuine, isolated IS injection failure, not fixable from the existing data.
+
+`MAIN_ABSBatch4_NC`/`MAIN_ABSBatch5_NC` (item 5, the marginal Line 27 bias case) is **not** included in this decision — no reanalysis needed unless the user separately decides the ±20% boundary call for Line 27 should be revisited; left as an open judgement call, not actioned here.
+
+**Status: reanalysis is a lab task, pending — not yet done.** No further code changes follow from this decision; the calibration-exclusion mechanism added and tested above remains in the codebase (unused, empty by default) in case a genuinely fixable calibration-point case turns up in a future dataset. Once the physical reanalysis results come back, they should be dropped into a new `AnalysisN` folder under `Main Study/GC Data/` and picked up automatically by `main_study_analysis.R`'s existing `select_best_attempt()` dedup logic (same mechanism already used for `MAIN_004/005/018/027/033/034/038/042/044`'s own re-analyses) — no code changes needed for that step either.
+
+### 6. `main_study_analysis_categorical_pressure.R` (new, standalone) — resolves the Aug 27 "refit Pressure_g as categorical + test ABS curvature" follow-up
+
+New self-contained companion script (mirrors `main_study_analysis_actual_pressure.R`'s own pattern — reads the already-collated `main_study_data_nested.csv`/`pilot_data_nested.csv` directly, rebuilds the identical pooled Pilot+Main dataset, does **not** touch `main_study_analysis.R` or its outputs). Refits `Recovery ~ Surface_type * Pressure_f + Study + (1|SurfaceID_nested)` with `Pressure_f` as a 5-level categorical factor (no quadratic-curve shape assumption at all), plus `emmeans()` pairwise (Tukey-adjusted) contrasts between every pair of pressure levels, both for the combined model and for Steel-only/ABS-only subsets. Output: `main_study_analysis_summary_CATEGORICAL_PRESSURE.txt` and `Pressure_Categorical_Means_PilotMain.png` (both in `Main Study/`, alongside but not overwriting the quadratic model's own outputs).
+
+**Result — refines rather than simply confirms the Aug 27 finding:**
+
+- **The categorical model's own EMMs peak at 100g, not 200g, for both analytes on Steel** (PETN: 100g=28.7% vs 200g=24.9%; RDX: 100g=28.1% vs 200g=24.2%) — directly matching the raw data (not the quadratic model's forced-symmetric-parabola EMM), confirming the Aug 27 correction was right to prefer the raw means over the quadratic curve's vertex.
+- **But formally, 100g is NOT statistically distinguishable from 200g for either analyte** (Steel PETN Tukey p=0.889; Steel RDX p=0.874) — the categorical model's own point estimates favour 100g, but the sample size/variability here can't statistically pin down which of the two adjacent levels is the "true" peak. Correct statement for the thesis: *recovery is descriptively higher at 100g than 200g, but the two are not statistically distinguishable at this sample size* — not "the peak is significantly at 100g, not 200g."
+- **What IS statistically solid for Steel (both analytes): the RISE from 10g is real.** 10g vs 100g and 10g vs 200g are both significant (p<0.05, both analytes) — i.e. "more pressure helps, up to a point" is a safe claim. The DECLINE at the top end (100g/200g vs 300g) is directionally present in the point estimates but **not statistically significant anywhere** (e.g. Steel PETN 100g vs 300g: p=0.121) — "rises then falls" should be stated as "rises significantly, then a non-significant decline" for Steel, not as a confirmed two-sided effect.
+- **ABS curvature, tested directly for the first time (Part B, surface-only subset models) — genuinely different answers for the two analytes, correcting the Aug 27 session's informal "ABS doesn't show a clean pattern" framing:**
+  - **PETN on ABS: NO significant pressure effect on its own** (p = 0.146) — confirms the Aug 27 informal read was right for PETN specifically.
+  - **RDX on ABS: a SIGNIFICANT pressure effect on its own** (p = 0.017) — this is a **new finding**, not previously tested. ABS RDX's own EMMs (10g=7.1%, 50g=11.6%, 100g=15.5%, 200g=11.2%, 300g=10.0%) show the same qualitative rise-then-plateau shape as Steel, just smaller in magnitude — the significant pairwise contrast is specifically 10g vs 100g (p=0.008), the same "real rise, non-significant decline" pattern found for Steel above.
+- **Practical correction to the Aug 27 text**: "for ABS specifically, the raw data doesn't show a clean version of that pattern" should be revised to **analyte-specific**: true for PETN, not true for RDX — RDX on ABS does show a real, statistically detectable pressure response, just a smaller one than Steel's (consistent with the significant `Surface_type:Pressure_f` interaction in the combined RDX-adjacent PETN model, though note the combined RDX model's own interaction term itself was *not* significant, p=0.29 — the ABS-only subset model is the more direct/sensitive test for this specific question than the interaction term in the pooled model).
+
+### Files Modified
+
+`ASTRA/doe/main_study_analysis_categorical_pressure.R` (new, standalone — does not modify `main_study_analysis.R` or any of its existing outputs). `CONTEXT.md` (this entry).
+
+Re-ran `main_study_analysis.R` (no code changes made this session) to verify the existing Line 39 exclusion and refresh `main_study_data_nested.csv`/`.xlsx` (written successfully) — **`main_study_results.xlsx` failed to write** (`Permission denied`, `GC Data/main_study_results.xlsx` is currently locked, likely open in Excel) — needs a re-run with that file closed before the refreshed workbook is available. `CONTEXT.md` (this entry). No fixes implemented yet — every finding above is flagged for a decision (calibration-point exclusion mechanism, `MAIN_013`/`ABSBatch3_NC` reanalysis, and the Line 27 marginal-bias judgement call) before further code changes.
+
+---
+
+## Session Summary (August 27, 2026) — Main Study Full Run: One QC Failure, ABS Negative-Control Contamination Found, Pooled-Model Pressure Peak Shown to Be a Curve-Fitting/Study-Composition Artefact, Preliminary Boxplot X-Axis Fixed
+
+### Motivation
+
+Continuation of a red-team-style review session (see `GCMSQuantitation/CONTEXT.md` for the FINEX-side work done in parallel, and `RedTeam_Findings.md` for the numbered-item tracking). A drift-correction bug found in `Analysis2` (see GCMSQuantitation's CONTEXT.md entry, same date) was fixed first; this entry covers the subsequent full Main Study run and its statistical interpretation.
+
+### 1. Full Main Study run: 43/44 real samples pass, but the negative controls tell a more concerning story
+
+`main_study_results.xlsx` regenerated post-Analysis2-fix: 43 of 44 real samples PASS/PASS* (97.7% complete). The one failure, **MAIN_013** (ABS, 300g, EtOH present, `Analysis1`) — an isolated `petn_qc_6ng_post` FAIL, unrelated to the Analysis2 fix; RDX and the pre-bracket both PASS. Values are still computed (`PETN_Recovery_pct=12.63`, `RDX_Recovery_pct=10.86`) despite the FAIL flag, per the pipeline's usual "compute but flag" convention; `Outcome=Reanalyse` is the correct next step, not yet done.
+
+**Negative controls are a real concern, not just a bookkeeping gap.** Of 10 NCs, only 5 gave a usable clean/contaminated verdict — the other 5 failed their own analysis-acceptance QC (2 Steel: RDX 0.2ng bracket, `Analysis1`; 1 ABS: IS abnormally low PA=105, `Analysis2`; 2 ABS: RDX 6ng bracket, `Analysis2`) and are "not evaluated." Of the 5 that *did* resolve: **all 3 evaluable Steel NCs came back "Negative (clean)"; both evaluable ABS NCs came back "Positive: PETN trace detected, RDX contaminated."** A 100%-vs-0% split on real (if small) evidence — worth investigating the source (pre-contaminated ABS stock? handling/storage? equipment carryover?) before treating ABS sample recovery values as background-free. Not yet investigated further.
+
+### 2. The pooled quadratic model's "pressure peaks at 200g" claim does not match the raw data — traced to two compounding causes
+
+Asked to interpret `main_study_analysis_summary.txt`'s combined (Pilot+Main) model. Initially reported the EMM table's apparent peak at 200g (Steel PETN: 7.70→16.18→23.58→**27.68**→17.51 across 10/50/100/200/300g) as "the" pressure optimum — **this was wrong**, caught when the raw boxplot (`PETN_RDX_main_preliminary.png`) visibly peaked at 100g instead.
+
+Quantified directly (Steel, PETN): raw pooled mean at 100g is **29.96%**, the model's EMM is 23.58% (under by 6.4pp); raw pooled mean at 200g is 24.53%, the model's EMM is 27.68% (over by 3.15pp). Two independent causes, both real:
+1. **Symmetric-parabola mismatch**: the quadratic model (`Pressure_g + Pressure_g²`) forces one smooth symmetric curve through all 5 points, but the real relationship rises sharply (10g→100g) then declines only gently (100g→300g) — an asymmetric shape a single quadratic term structurally can't represent. The least-squares fit compromises by flattening/shifting the peak rightward.
+2. **Study-composition confound at 50g/200g**: those two levels are a 1/3-Main + 2/3-Pilot mix (Pilot's own original design levels), while 10/100/300g are 100% Main. Since `Study` has a real, significant effect, and the EMM is reported "averaged over the levels of Study" (an implicit 50/50 blend, not weighted by the actual 1-Main:2-Pilot composition), the 200g EMM gets pulled toward Main's higher values more than the raw pooled mean does.
+
+**Correction issued to the user**: the statistically-confirmed finding is that curvature exists (`Pressure_g²` significant, p=2.3e-05 PETN / p=4.5e-05 RDX) — i.e. the relationship is non-monotonic, not "more pressure = more recovery." *Where* the peak sits is a separate question the model's own smoothed curve answers less reliably than the raw per-level means; the raw data says 100g, not 200g, for Steel. Recommended (not yet done): refit `Pressure_g` as a categorical factor + pairwise contrasts to formally test 100g vs 200g rather than relying on the parabola's vertex.
+
+**Follow-up correction (n/replication)**: initially claimed 50g/200g were under-replicated (n=2/surface, Main-only). This was also wrong — `build_pooled_dataset()` pools in Pilot's own 4 reps/surface at exactly those two levels, giving a genuinely **balanced n=6/surface at all 5 levels** (verified directly: 43 Main QC-passed + 16 Pilot-pooled = 59, matching the summary file's reported n exactly). Retracted the "need more 50g/200g repeats" recommendation once checked against the actual pooling code rather than the Main-only `Summary_By_Pressure` sheet.
+
+**ABS surface reconsidered separately, at the user's prompt**: the same raw-vs-EMM check for ABS shows an even weaker case for "rises then falls" — raw pooled means (PETN) go 8.98→12.60→**17.00**→**9.99**→13.85 across 10/50/100/200/300g, i.e. rise, peak at 100g, **drop below the 50g level at 200g**, then rise again at 300g (RDX shows the same shape). Not a clean parabola at all, and the whole range (~8-17%) is much smaller than Steel's (~8-30%) — closer to a flat relationship with sampling noise (n=6/cell) than a reliable curve. The significant `Surface_type:Pressure_g` interaction confirms ABS's response *differs* from Steel's, almost certainly because Steel's much larger effect dominates the pooled model's overall quadratic terms — but whether ABS shows any statistically detectable curvature *on its own* has not been tested (would need an ABS-only subset fit or a simple-effects contrast). Honest conclusion given to the user: "rises then falls" is well-supported for Steel; for ABS specifically, the raw data doesn't show a clean version of that pattern, and it shouldn't be assumed to hold there without testing it directly.
+
+### 3. `main_study_analysis.R`'s preliminary boxplot fixed — numeric, not categorical, pressure axis
+
+`generate_preliminary_plot()` (Section 4) converted `Pressure_g` to a factor before plotting, forcing all 5 nominal levels to equal categorical spacing regardless of their real numeric gaps (10→50 = 40g, 50→100 = 50g, 100→200 and 200→300 = 100g each) — visually distorting the shape of the pressure-recovery relationship (part of why the 200g-vs-100g peak discrepancy above was easy to miss at a glance). Fixed: `Pressure_g` now stays numeric, `geom_boxplot`/`geom_jitter` use an explicit `group = Pressure_g` aesthetic and gram-scale widths (15/5) to work correctly on a continuous x, and `scale_x_continuous(breaks = c(10,50,100,200,300))` keeps all levels labelled. Re-ran and confirmed visually. Committed (`34ce142`).
+
+**Files modified**: `main_study_analysis.R` (item 3). No other files changed by ASTRA-side work this session — the drift-correction fix (item 4, see `GCMSQuantitation/CONTEXT.md`) was in `GlobalCode.R`, shared with FINEX.
+
+**Not done, flagged for follow-up**: reanalyse `MAIN_013`; investigate the ABS NC contamination source; resolve the other 4 unevaluated NCs; refit `Pressure_g` as categorical + pairwise contrasts to properly locate the peak (Steel) and test whether ABS shows any curvature at all.
+
+---
+
 ## Session Summary (August 25, 2026) — Actual (ASTRA-Measured) Pressure Model + RDX Batch/Date Effect Re-Tested With Main Study Data + Stock/Vial (`Standard`) Column Investigated
 
 ### Motivation

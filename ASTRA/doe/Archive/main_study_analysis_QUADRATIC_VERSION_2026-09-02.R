@@ -13,21 +13,18 @@
 #   3. Calculates PETN/RDX recovery (%), updates main_study_data_nested.csv,
 #      and writes main_study_results.xlsx (analogous to
 #      ASTRA_PilotStudyResults.xlsx).
-#   4. (RETIRED 2026-09-02 -- see Section 4's own header comment) previously
-#      generated a preliminary descriptive plot here; superseded by
-#      plot_recovery_boxplot_actualpressure.R, now the sole descriptive
-#      boxplot for this study.
+#   4. Generates PRELIMINARY descriptive plots (Recovery vs Pressure_g by
+#      Surface_type) from whatever new-study data exists so far -- this is
+#      the fast, always-available "how are things looking" check, and works
+#      even with very little data.
 #   5. Pools the pilot's own existing 50g/200g wet-only samples with the new
 #      main-study data (Study covariate), builds an approximate
 #      CumulativeUseNumber per physical surface, and -- only once enough
 #      data exists across enough distinct pressure levels/surfaces -- fits
-#      the combined mixed-effects model (updated 2026-09-02 -- Pressure_g is
-#      now a categorical factor, not a continuous quadratic; see Section 5's
-#      own header comment for why):
-#        Recovery ~ Surface_type * Pressure_f + Study + (1|SurfaceID_nested)
-#      plus emmeans() pairwise contrasts between every pair of pressure
-#      levels, and per-Surface_type subset models, checking CumulativeUseNumber
-#      as an additional covariate.
+#      the combined mixed-effects model specified in CONTEXT.md:
+#        Recovery ~ Surface_type * (Pressure_g + I(Pressure_g^2)) + Study +
+#                   (1|SurfaceID_nested)
+#      checking CumulativeUseNumber as an additional covariate.
 #
 # IMPORTANT -- PATHS ARE PLACEHOLDERS. This script was written before any
 # main-study GC-MS data had been located/confirmed. `gc_data_dir` and
@@ -39,9 +36,11 @@
 # Output:
 #   - main_study_data_nested.csv / .xlsx (design + recovery + QC columns)
 #   - main_study_results.xlsx (collated multi-sheet study workbook)
+#   - PETN_RDX_main_preliminary.png (always generated, works with partial
+#     data -- box plots of Recovery by Pressure_g, faceted Surface_type x
+#     Analyte)
 #   - main_study_analysis_summary.txt (only when analysis_mode == "full" AND
-#     enough data exists to fit the combined model) -- includes
-#     Pressure_Categorical_Hinge_PilotMain.png (Section 5e)
+#     enough data exists to fit the combined model)
 #
 # Author: Generated for trace explosives recovery optimization (main study)
 # Date: 2026-08-19
@@ -114,19 +113,6 @@ pilot_data_file <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Docu
 surface_use_tally_file <- file.path(data_dir, "main_study_surface_use_tally.csv")
 
 # ---------------------------------------------------------------------------
-# ACTUAL (ASTRA-MEASURED) SWABBING PRESSURE -- for Section 5e's own plot only
-# (generate_categorical_hinge_plot()). Each study's own pressure-trace
-# pipeline batch_summary.csv (Sample, Target, Mean_Pressure, ...), same files
-# plot_recovery_boxplot_actualpressure.R/plot_recovery_vs_pressure_unified.R
-# already join in. Joined onto combined_data by RunID <-> Sample so the
-# hinge plot can position points/group means at the REAL achieved mass
-# rather than the nominal design target -- see build_pooled_dataset(). Not
-# used anywhere else in this script (the combined model itself still fits
-# against nominal Pressure_g/Pressure_f/Pre100/Post100, unchanged).
-main_pressure_file  <- file.path(output_dir, "Pressure Traces/ProcessedData/batch_summary.csv")
-pilot_pressure_file <- file.path(dirname(pilot_data_file), "Pressure Traces/ProcessedData/batch_summary.csv")
-
-# ---------------------------------------------------------------------------
 # RECOVERY CALCULATION CONSTANTS (unchanged from the pilot -- same
 # contamination protocol: 50uL x 200ng/uL = 10,000ng deposited, 1000uL
 # extraction volume -- see doe_nested_design.R's own "Contamination details
@@ -187,13 +173,6 @@ expected_total_nc      <- 10
 # Significance level (used by the combined-model section, if reached)
 alpha_level <- 0.05
 
-# Breakpoint (g) for the hinge/broken-stick model (Section 5c/5d) -- where
-# the two linear segments (10-100g rise, 100-300g decline/plateau) join.
-# Set to 100g based on the categorical model's own group means peaking
-# there (see Section 5's header comment) -- update if a future dataset with
-# more pressure levels suggests a different breakpoint.
-PRESSURE_BREAKPOINT <- 100
-
 # Target MEANINGFUL recovery difference (percentage points), for the
 # externally-anchored / a priori power check (Section 6b) -- deliberately
 # NOT derived from this study's own observed Pressure effect (that would be
@@ -213,8 +192,7 @@ target_power <- 0.80
 #===============================================================================
 
 required_packages <- c("lme4", "lmerTest", "dplyr", "ggplot2", "car",
-                        "effectsize", "emmeans", "pwr", "stringr", "openxlsx", "readxl",
-                        "performance")
+                        "effectsize", "emmeans", "pwr", "stringr", "openxlsx", "readxl")
 for (pkg in required_packages) {
   if (!require(pkg, character.only = TRUE, quietly = TRUE)) {
     install.packages(pkg, dependencies = TRUE)
@@ -228,14 +206,6 @@ for (pkg in required_packages) {
 # locally -- see that file's own header for the full rationale.
 #===============================================================================
 source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/GCMSQuantitation/Code/InjectionAcceptance.R")
-
-#===============================================================================
-# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
-# source of truth for every plot in this repo. See thesis_palette.R's own
-# header for the full rationale (each recurring factor gets a fixed,
-# dedicated colour pair, never reused for a different factor's meaning).
-#===============================================================================
-source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
 
 #===============================================================================
 # SECTION 1: DATA COLLATION FROM GC-MS RESULTS
@@ -813,10 +783,10 @@ cat("(Design target: ", expected_total_samples, " new samples total)\n\n", sep =
 # Per CONTEXT.md's explicit "Still To Do" spec and doe_nested_design.R's own
 # Section 5 ("Existing pilot data to pool"): pool the pilot's own wet-only
 # (Solvent_level=="present") samples at Pressure_g %in% c(50,200) into the
-# combined analysis, with a Study (Pilot vs Main) covariate. Built so the
-# combined model (Section 5+) and its own plot (Section 5e) can show all 5
-# pressure levels (10/50/100/200/300) with the pilot's 50g/200g points
-# included, not just the 3 levels the main study collects itself.
+# combined analysis, with a Study (Pilot vs Main) covariate. Built BEFORE the
+# preliminary plots (Section 4 below) so those plots can show all 5 pressure
+# levels (10/50/100/200/300) with the pilot's 50g/200g points included, not
+# just the 3 levels the main study collects itself.
 #===============================================================================
 
 build_pooled_dataset <- function() {
@@ -856,32 +826,6 @@ build_pooled_dataset <- function() {
 
   combined$Surface_type <- factor(combined$Surface_type, levels = c("steel", "abs"))
   combined$Study <- factor(combined$Study, levels = c("Pilot", "Main"))
-
-  #---------------------------------------------------------------------------
-  # Join each study's own ACTUAL (ASTRA-measured) achieved pressure
-  # (Mean_Pressure) onto combined, by RunID <-> Sample. Both studies' RunIDs
-  # are globally unique (PILOT_xxx / MAIN_xxx prefixes never collide), so the
-  # two batch_summary.csv files can simply be stacked into one lookup and
-  # joined in a single step, rather than joining each study separately as
-  # plot_recovery_boxplot_actualpressure.R does (that script also needs each
-  # study's own Target column for a different purpose; this one only needs
-  # Mean_Pressure). Only used by Section 5e's own plot (real position of
-  # points/group means) -- the combined model itself is untouched, still
-  # fit against nominal Pressure_g/Pressure_f/Pre100/Post100.
-  #---------------------------------------------------------------------------
-  pressure_lookup <- bind_rows(
-    if (file.exists(main_pressure_file)) read.csv(main_pressure_file, stringsAsFactors = FALSE) %>% select(Sample, Mean_Pressure) else data.frame(),
-    if (file.exists(pilot_pressure_file)) read.csv(pilot_pressure_file, stringsAsFactors = FALSE) %>% select(Sample, Mean_Pressure) else data.frame()
-  )
-  if (nrow(pressure_lookup) > 0) {
-    combined <- combined %>% left_join(pressure_lookup, by = c("RunID" = "Sample"))
-    n_missing_actual <- sum(is.na(combined$Mean_Pressure))
-    cat("Actual-pressure-trace match: ", nrow(combined) - n_missing_actual, "/", nrow(combined),
-        " combined rows matched (", n_missing_actual, " unmatched -- see Section 5e's own console note).\n", sep = "")
-  } else {
-    cat("[NOTE] Neither pressure-trace batch_summary.csv found -- Section 5e's plot will fall back to nominal Pressure_g positions.\n")
-    combined$Mean_Pressure <- NA_real_
-  }
 
   # SurfaceID_nested: the pilot's own reused physical surfaces (Steel_01-04,
   # ABS_01-04) are THE SAME physical surface across both studies -- so the
@@ -966,116 +910,114 @@ build_pooled_dataset <- function() {
   cat("Combined (pilot-pooled + main) dataset: ", nrow(combined), " rows ",
       "(", sum(combined$Study == "Pilot"), " pooled pilot + ", sum(combined$Study == "Main"), " main)\n\n", sep = "")
 
-  # Pressure_g as an ORDERED categorical factor -- see Section 5 below for why
-  # this replaced the earlier quadratic (Pressure_g + I(Pressure_g^2))
-  # treatment (2026-09-02 -- the quadratic model's forced-symmetric-parabola
-  # EMM peaked at 200g, but the raw data and this categorical model both
-  # agree the real peak is at 100g; see Archive/main_study_analysis_QUADRATIC_VERSION_2026-09-02.R
-  # for the retired quadratic version). Ordered purely for sensible level
-  # ordering in output/plots -- treated as a plain (unordered) factor in the
-  # model formula, not polynomial contrasts.
-  combined$Pressure_f <- factor(combined$Pressure_g, levels = sort(unique(combined$Pressure_g)))
-
-  # Hinge/broken-stick predictors (added 2026-09-02, alongside Pressure_f
-  # above -- see Section 5c/5d below): a two-segment linear model joined at
-  # PRESSURE_BREAKPOINT (10-100g and 100-300g), motivated by the categorical
-  # model's own group means peaking at 100g and both raw data + categorical
-  # contrasts showing an asymmetric rise-then-decline shape a single
-  # quadratic term can't represent. Pre100/Post100 together let a single
-  # lm/lmer term report each segment's OWN slope directly (with its own SE/
-  # p-value), rather than just the change between them:
-  #   slope1 (10g->100g) = coefficient on Pre100
-  #   slope2 (100g->300g) = coefficient on Post100
-  # (An alternative, more common encoding -- Pressure_g + Post100 where
-  # Post100's own coefficient is the CHANGE in slope, not slope2 itself --
-  # is algebraically equivalent but requires an extra step to recover
-  # slope2's own significance; this encoding reports both directly.)
-  # NOTE: PRESSURE_BREAKPOINT itself is defined in USER CONFIGURATION at the
-  # top of this script (global scope -- needed there too, by
-  # fit_hinge_model()/fit_hinge_surface_subset_model() in Section 5c/5d).
-  combined$Pre100  <- pmin(combined$Pressure_g, PRESSURE_BREAKPOINT) - PRESSURE_BREAKPOINT
-  combined$Post100 <- pmax(0, combined$Pressure_g - PRESSURE_BREAKPOINT)
-
   combined
 }
 
 combined_data <- build_pooled_dataset()
 
 #===============================================================================
-# SECTION 4: (RETIRED 2026-09-02) -- was a preliminary descriptive boxplot
-# (Recovery by Pressure_g, jittered points, no outlier detection). Retired
-# because it had become redundant with plot_recovery_boxplot_actualpressure.R
-# (same box+point+mean-diamond structure, but with points positioned by
-# REAL achieved pressure instead of random jitter, outlier detection, and --
-# as of the same date -- includes samples lacking a pressure-trace match
-# too, positioned at nominal box centre with a distinct triangle marker, so
-# no coverage is lost by preferring it). The "preliminary, works with
-# partial data" justification that originally motivated a lightweight
-# separate plot is now moot -- both studies are essentially complete. See
-# CONTEXT.md for the full discussion. generate_preliminary_plot() itself
-# has been removed, not just its call, to avoid leaving dead code behind.
+# SECTION 4: PRELIMINARY DESCRIPTIVE PLOTS (always run -- works with partial
+# data, no minimum sample count required). Box plots of Recovery by
+# Pressure_g, faceted Surface_type (rows) x Analyte (columns), using the
+# POOLED dataset (Section 3) so the pilot's own 50g/200g wet-only samples
+# appear alongside the main study's own 10/50/100/200/300g samples -- all 5
+# pressure levels in one figure. Points are coloured by Study (Pilot vs
+# Main) so it's visually clear which points came from which study; falls
+# back to main-study-only data (no pilot pooling) if combined_data couldn't
+# be built (e.g. pilot_data_file not found).
 #===============================================================================
+
+generate_preliminary_plot <- function(data) {
+  if (is.null(data) || nrow(data) == 0) {
+    cat("  Skipping preliminary plot -- no pooled data available\n")
+    return(invisible(NULL))
+  }
+  if (!("Study" %in% names(data))) data$Study <- "Main"
+
+  # Reshape to long format (one row per Analyte) so PETN and RDX can share a
+  # single figure, faceted Surface_type (rows) x Analyte (columns).
+  long_data <- bind_rows(
+    data %>% filter(!is.na(PETN_Recovery_pct), !is.na(Pressure_g)) %>%
+      transmute(Surface_type, Pressure_g, Study, Recovery = PETN_Recovery_pct, Analyte = "PETN"),
+    data %>% filter(!is.na(RDX_Recovery_pct), !is.na(Pressure_g)) %>%
+      transmute(Surface_type, Pressure_g, Study, Recovery = RDX_Recovery_pct, Analyte = "RDX")
+  )
+
+  if (nrow(long_data) == 0) {
+    cat("  Skipping preliminary plot -- no data with both a recovery value and Pressure_g yet\n")
+    return(invisible(NULL))
+  }
+
+  long_data$Analyte <- factor(long_data$Analyte, levels = c("PETN", "RDX"))
+  long_data$Study   <- factor(long_data$Study, levels = c("Pilot", "Main"))
+  # Pressure_g stays NUMERIC (not factor) so the x-axis reflects true spacing
+  # between levels (10->50 = 40g, 50->100 = 50g, 100->200 and 200->300 = 100g
+  # each) rather than forcing all 5 nominal levels to equal categorical
+  # spacing, which visually distorts the shape of the pressure-recovery
+  # relationship (e.g. can make the curve look like it peaks further right
+  # than the real data supports). geom_boxplot/geom_jitter below use an
+  # explicit `group` aesthetic and g-scale widths to work correctly with a
+  # continuous x.
+
+  n_labels <- long_data %>%
+    group_by(Surface_type, Analyte, Pressure_g) %>%
+    summarise(n = n(), .groups = "drop")
+
+  y_max <- max(long_data$Recovery, na.rm = TRUE)
+  label_y <- y_max * 1.05
+
+  n_pilot <- sum(long_data$Study == "Pilot")
+  subtitle_txt <- if (n_pilot > 0) {
+    "Box = IQR/median across pooled Pilot+Main samples; points coloured by Study; red diamond = mean"
+  } else {
+    "Box = IQR/median; red diamond = mean (main-study samples only -- pilot data not found to pool)"
+  }
+
+  p <- ggplot(long_data, aes(x = Pressure_g, y = Recovery, group = Pressure_g)) +
+    geom_boxplot(outlier.shape = NA, width = 15) +
+    geom_jitter(aes(colour = Study), width = 5, height = 0, size = 1.6, alpha = 0.75) +
+    scale_colour_manual(values = c(Pilot = "darkorange", Main = "steelblue"), drop = FALSE) +
+    stat_summary(fun = mean, geom = "point", shape = 18, size = 3.5, colour = "red") +
+    geom_text(data = n_labels, aes(x = Pressure_g, y = label_y, label = paste0("n=", n)),
+              size = 3, vjust = 0, inherit.aes = FALSE) +
+    coord_cartesian(ylim = c(0, y_max * 1.15)) +
+    scale_x_continuous(breaks = c(10, 50, 100, 200, 300)) +
+    facet_grid(Surface_type ~ Analyte,
+               labeller = labeller(Surface_type = c("steel" = "Steel", "abs" = "ABS"))) +
+    labs(title = paste0("Recovery by Pressure -- Pilot + Main Study (Preliminary, n=", nrow(long_data), ")"),
+         subtitle = subtitle_txt,
+         x = "Pressure (g)", y = "Recovery (%)") +
+    theme_bw(base_size = 12) +
+    theme(strip.text = element_text(size = 12, face = "bold"), plot.title = element_text(size = 13, face = "bold"))
+
+  out_file <- file.path(output_dir, "PETN_RDX_main_preliminary.png")
+  ggsave(out_file, p, width = 9, height = 6.5, dpi = 300)
+  cat("  Saved:", out_file, "\n")
+  invisible(p)
+}
+
+cat("========================================\nPRELIMINARY DESCRIPTIVE PLOTS\n========================================\n\n")
+generate_preliminary_plot(if (is.null(combined_data)) main_data %>% mutate(Study = "Main") else combined_data)
+cat("\n")
 
 #===============================================================================
 # SECTION 5: COMBINED MIXED-EFFECTS MODEL (only in "full" mode, and only if
 # there's enough data to fit it at all)
 #
-# Recovery ~ Surface_type * Pressure_f + Study + (1|SurfaceID_nested)
-#
-# Pressure_f is Pressure_g treated as a 5-level CATEGORICAL factor, not a
-# continuous quadratic (Pressure_g + I(Pressure_g^2)) -- changed 2026-09-02.
-# The quadratic model forces one smooth symmetric parabola through all 5
-# group means, but the real Steel relationship rises sharply (10g->100g)
-# then declines only gently (100g->300g) -- an asymmetric shape a single
-# quadratic term structurally can't represent. This showed up in practice as
-# a real bug: the quadratic model's own EMM claimed the pressure "peak" was
-# at 200g, when both the raw data AND this categorical model's own group
-# means peak at 100g (see ASTRA/doe/CONTEXT.md, "Main Study Full Run" +
-# "Follow-up on MAIN_013..." sessions for the full investigation). The
-# categorical factor makes no shape assumption at all -- it just asks
-# directly "is level A's mean different from level B's mean?" for every
-# pair, via emmeans() pairwise contrasts below -- at the cost of losing the
-# ability to predict recovery at untested pressures, and somewhat less
-# power per comparison than a curve that borrows strength across all levels.
-# The retired quadratic version is preserved at
-# Archive/main_study_analysis_QUADRATIC_VERSION_2026-09-02.R.
-#
-# Fit once per analyte, with a second model adding CumulativeUseNumber to
-# check whether physical surface wear needs to be controlled for (several
-# reused surfaces exceed the pilot's own previously-validated 6-use range
-# once NCs and new pressure tests are added -- see doe_nested_design.R
-# Section 4), plus per-Surface_type subset models (Part B) to test whether
-# ABS shows any pressure effect on its own, independent of Steel's much
-# larger effect dominating the combined model's interaction term.
+# Recovery ~ Surface_type * (Pressure_g + I(Pressure_g^2)) + Study +
+#            (1|SurfaceID_nested)
+# per CONTEXT.md's explicit spec, fit once per analyte, with a second model
+# adding CumulativeUseNumber to check whether physical surface wear needs to
+# be controlled for (several reused surfaces exceed the pilot's own
+# previously-validated 6-use range once NCs and new pressure tests are
+# added -- see doe_nested_design.R Section 4).
 #===============================================================================
-
-# Shared helper (used by every model function below, categorical and hinge
-# alike): Nakagawa's R^2 for mixed models (Nakagawa & Schielzeth 2013,
-# extended 2017 -- performance::r2()). Marginal R^2 = variance explained by
-# fixed effects only (Pressure/Study/Surface -- "how well does the pressure
-# model itself explain recovery"). Conditional R^2 = fixed + random effects
-# (adds each physical surface's own average level) -- "how well does the
-# whole model, including which specific surface a sample came from, explain
-# recovery". Returns NA for conditional (not both) when the random-effect
-# variance itself is estimated at ~0 (a singular fit) -- performance()
-# declines to report a marginal/conditional split it can't support in that
-# case, rather than overclaiming; reported as "n/a" downstream, not hidden.
-report_r2 <- function(model) {
-  if (is.null(model)) { cat("  R^2: not available (model not fitted)\n"); return(invisible(NULL)) }
-  r <- tryCatch(performance::r2(model), error = function(e) NULL)
-  if (is.null(r)) { cat("  R^2: could not be computed\n"); return(invisible(NULL)) }
-  marg <- as.numeric(r$R2_marginal)
-  cond <- as.numeric(r$R2_conditional)
-  cat(sprintf("  R^2 (marginal, fixed effects only): %.3f | R^2 (conditional, + between-surface): %s\n",
-              marg, if (is.na(cond)) "n/a (singular fit)" else sprintf("%.3f", cond)))
-  invisible(list(marginal = marg, conditional = cond))
-}
 
 fit_combined_model <- function(data, recovery_col, analyte_name) {
 
-  data_clean <- data[!is.na(data[[recovery_col]]) & !is.na(data$Pressure_f), ]
+  data_clean <- data[!is.na(data[[recovery_col]]) & !is.na(data$Pressure_g), ]
 
-  n_pressure_levels <- length(unique(data_clean$Pressure_f))
+  n_pressure_levels <- length(unique(data_clean$Pressure_g))
   n_surfaces        <- length(unique(data_clean$SurfaceID_nested))
   n_surface_types   <- length(unique(data_clean$Surface_type))
 
@@ -1083,21 +1025,22 @@ fit_combined_model <- function(data, recovery_col, analyte_name) {
   cat("  n =", nrow(data_clean), " | distinct Pressure_g levels =", n_pressure_levels,
       " | distinct physical surfaces =", n_surfaces, " | surface types =", n_surface_types, "\n")
 
-  # Minimum data requirement to even attempt the model: need at least 3
-  # distinct pressure levels, at least 2 surface types, and at least, say, 10
+  # Minimum data requirement to even attempt the quadratic model: need at
+  # least 4 distinct pressure levels (to identify linear + quadratic terms
+  # with any residual df), at least 2 surface types, and at least, say, 10
   # total observations. This is a pragmatic floor, not a formal power
   # calculation -- the point is to fail gracefully with a clear message
   # rather than crash lmer() on rank-deficient data.
-  if (nrow(data_clean) < 10 || n_pressure_levels < 3 || n_surface_types < 2) {
-    cat("  [NOT ENOUGH DATA YET] Need >=10 observations, >=3 distinct Pressure_g levels,\n",
-        "  and both surface types represented to fit the combined model.\n",
+  if (nrow(data_clean) < 10 || n_pressure_levels < 4 || n_surface_types < 2) {
+    cat("  [NOT ENOUGH DATA YET] Need >=10 observations, >=4 distinct Pressure_g levels,\n",
+        "  and both surface types represented to fit the combined quadratic model.\n",
         "  Currently: n=", nrow(data_clean), ", levels=", n_pressure_levels,
         ", surface types=", n_surface_types, ". Re-run once more data is collected.\n", sep = "")
     return(list(ok = FALSE, reason = "insufficient data"))
   }
 
   formula_base <- as.formula(paste0(
-    recovery_col, " ~ Surface_type * Pressure_f + Study + (1|SurfaceID_nested)"
+    recovery_col, " ~ Surface_type * (Pressure_g + I(Pressure_g^2)) + Study + (1|SurfaceID_nested)"
   ))
 
   model_base <- tryCatch(
@@ -1139,30 +1082,19 @@ fit_combined_model <- function(data, recovery_col, analyte_name) {
     print(eff)
   }
 
-  # EMMs by Surface_type x Pressure_f, plus pairwise (Tukey-adjusted)
-  # contrasts WITHIN each Surface_type across every pair of pressure levels
-  # -- the direct test of "is 100g different from 200g" (etc.) that a
-  # quadratic model's smoothed curve can't answer cleanly on its own.
+  # EMMs at representative pressures, per surface type
   emm <- tryCatch(
-    emmeans(model_base, ~ Pressure_f | Surface_type),
+    emmeans(model_base, ~ Surface_type | Pressure_g, at = list(Pressure_g = c(10, 50, 100, 200, 300))),
     error = function(e) { cat("  [NOTE] emmeans failed: ", conditionMessage(e), "\n"); NULL }
   )
-  contrasts_within_surface <- NULL
   if (!is.null(emm)) {
-    cat("\nEstimated marginal means by Surface_type x Pressure_g:\n")
+    cat("\nEstimated marginal means at Pressure_g = 10/50/100/200/300:\n")
     print(emm)
-
-    cat("\nPairwise contrasts WITHIN each Surface_type (Tukey-adjusted):\n")
-    contrasts_within_surface <- tryCatch(pairs(emm, adjust = "tukey"), error = function(e) NULL)
-    if (!is.null(contrasts_within_surface)) print(contrasts_within_surface)
   }
 
   # Residual diagnostics
   shapiro_resid <- tryCatch(shapiro.test(residuals(model_base)), error = function(e) NULL)
   if (!is.null(shapiro_resid)) cat("\nShapiro-Wilk (residuals): p =", round(shapiro_resid$p.value, 4), "\n")
-
-  cat("\nModel fit (Nakagawa R^2 for mixed models):\n")
-  report_r2(model_base)
 
   ranef_vals <- tryCatch(unlist(ranef(model_base)$SurfaceID_nested), error = function(e) NULL)
   if (!is.null(ranef_vals) && length(unique(ranef_vals)) > 1) {
@@ -1173,375 +1105,12 @@ fit_combined_model <- function(data, recovery_col, analyte_name) {
   }
 
   list(ok = TRUE, model = model_base, anova = anova_base, effect_sizes = eff,
-       emm = emm, contrasts = contrasts_within_surface, cum_use = cum_use_result, data_clean = data_clean,
+       emm = emm, cum_use = cum_use_result, data_clean = data_clean,
        n_pressure_levels = n_pressure_levels, n_surface_types = n_surface_types)
 }
 
 #===============================================================================
-# SECTION 5b: SURFACE-SPECIFIC SUBSET MODELS -- does ABS show ANY pressure
-# effect on its own, independent of Steel's much larger effect dominating
-# the combined model's Surface_type:Pressure_f interaction term? (Added
-# 2026-09-02, alongside the categorical refit above -- see CONTEXT.md.)
-#===============================================================================
-
-fit_surface_subset_model <- function(data, recovery_col, analyte_name, surface_type) {
-
-  subset_data <- data[data$Surface_type == surface_type &
-                        !is.na(data[[recovery_col]]) & !is.na(data$Pressure_f), ]
-
-  cat("\n--- ", analyte_name, " (", surface_type, "-only) ---\n", sep = "")
-  cat("  n =", nrow(subset_data), " | distinct Pressure_g levels =", length(unique(subset_data$Pressure_f)), "\n")
-
-  if (nrow(subset_data) < 10 || length(unique(subset_data$Pressure_f)) < 3) {
-    cat("  [NOT ENOUGH DATA] Skipping.\n")
-    return(list(ok = FALSE, reason = "insufficient data"))
-  }
-
-  formula_obj <- as.formula(paste0(recovery_col, " ~ Pressure_f + Study + (1|SurfaceID_nested)"))
-  model <- tryCatch(lmer(formula_obj, data = subset_data, REML = TRUE),
-                     error = function(e) { cat("  [ERROR] Model failed to fit: ", conditionMessage(e), "\n"); NULL })
-  if (is.null(model)) return(list(ok = FALSE, reason = "model fit failed"))
-
-  if (isSingular(model)) cat("  [WARNING] Boundary (singular) fit.\n")
-
-  anova_res <- tryCatch(car::Anova(model, type = 3, test.statistic = "F"), error = function(e) NULL)
-  cat("\nType III ANOVA:\n")
-  if (!is.null(anova_res)) print(anova_res)
-
-  emm <- tryCatch(emmeans(model, ~ Pressure_f), error = function(e) NULL)
-  if (!is.null(emm)) {
-    cat("\nEstimated marginal means (", surface_type, " only):\n", sep = "")
-    print(emm)
-    cat("\nPairwise contrasts (Tukey-adjusted):\n")
-    contrasts_res <- tryCatch(pairs(emm, adjust = "tukey"), error = function(e) NULL)
-    if (!is.null(contrasts_res)) print(contrasts_res)
-  }
-
-  if (!is.null(anova_res) && "Pressure_f" %in% rownames(anova_res)) {
-    p_val <- anova_res["Pressure_f", "Pr(>F)"]
-    verdict <- if (is.na(p_val)) "could not be tested" else if (p_val < alpha_level) {
-      sprintf("SIGNIFICANT pressure effect detected on its own (p = %.4g)", p_val)
-    } else {
-      sprintf("NO significant pressure effect detected on its own (p = %.4g)", p_val)
-    }
-    cat("\n>>> VERDICT (", analyte_name, ", ", surface_type, "-only): ", verdict, " <<<\n", sep = "")
-  }
-
-  cat("\nModel fit (Nakagawa R^2 for mixed models):\n")
-  report_r2(model)
-
-  list(ok = TRUE, model = model, anova = anova_res, emm = emm)
-}
-
-#===============================================================================
-# SECTION 5c/5d: HINGE (BROKEN-STICK) MODEL -- a second, complementary
-# candidate shape alongside the categorical model above (added 2026-09-02,
-# see CONTEXT.md "Two-Segment / Hinge Model Investigation").
-#
-# Motivation: the categorical model (5/5b) answers "which pressure levels
-# differ" with no shape assumption at all, but doesn't give a single
-# interpretable "rate of change" the way a curve does. The hinge model fits
-# TWO linear slopes joined at PRESSURE_BREAKPOINT (100g, where the
-# categorical model's own group means peak) -- directly testing the
-# hypothesis that recovery rises to a point then levels off/declines,
-# without quadratic's forced-symmetric-parabola assumption (which gets the
-# peak location wrong -- see Section 5's header comment). Verified (before
-# being added here) to fit better by AIC than both linear and the retired
-# quadratic model, and to explain nearly as much variance (Nakagawa R^2) as
-# the fully-flexible categorical model despite using far fewer parameters.
-#
-# Section 5c: combined model (Surface_type x Pre100/Post100 interaction).
-# Section 5d: per-Surface_type subset models -- reports each surface's own
-# slope1 (10-100g) and slope2 (100-300g) directly, with its own SE/p-value,
-# so "is segment 2 a genuine decline, or just a plateau" has a clean answer
-# per surface/analyte (this is precisely what distinguished, e.g., a
-# significant Steel decline from a non-significant ABS-PETN plateau in the
-# original investigation).
-#===============================================================================
-
-fit_hinge_model <- function(data, recovery_col, analyte_name) {
-
-  data_clean <- data[!is.na(data[[recovery_col]]) & !is.na(data$Pre100), ]
-
-  cat("\n--- ", analyte_name, " hinge model (breakpoint = ", PRESSURE_BREAKPOINT, "g) ---\n", sep = "")
-  cat("  n =", nrow(data_clean), "\n")
-
-  if (nrow(data_clean) < 10) {
-    cat("  [NOT ENOUGH DATA YET] Skipping.\n")
-    return(list(ok = FALSE, reason = "insufficient data"))
-  }
-
-  formula_base <- as.formula(paste0(
-    recovery_col, " ~ Surface_type * (Pre100 + Post100) + Study + (1|SurfaceID_nested)"
-  ))
-
-  model <- tryCatch(
-    lmer(formula_base, data = data_clean, REML = TRUE),
-    error = function(e) { cat("  [ERROR] Model failed to fit: ", conditionMessage(e), "\n"); NULL }
-  )
-  if (is.null(model)) return(list(ok = FALSE, reason = "model fit failed"))
-
-  if (isSingular(model)) cat("  [WARNING] Boundary (singular) fit: between-surface variance estimated at ~0.\n")
-
-  cat("\nFixed effects (Pre100 = slope 10-100g, Post100 = slope 100-300g, per Surface_type):\n")
-  print(summary(model)$coefficients)
-
-  cat("\nType III ANOVA:\n")
-  anova_res <- tryCatch(car::Anova(model, type = 3, test.statistic = "F"), error = function(e) NULL)
-  if (!is.null(anova_res)) print(anova_res)
-
-  eff <- tryCatch(effectsize::eta_squared(anova_res, partial = TRUE), error = function(e) NULL)
-  if (!is.null(eff)) {
-    cat("\nEffect sizes (partial eta^2):\n")
-    print(eff)
-  }
-
-  cat("\nModel fit (Nakagawa R^2 for mixed models):\n")
-  report_r2(model)
-
-  list(ok = TRUE, model = model, anova = anova_res, effect_sizes = eff, data_clean = data_clean,
-       n_pressure_levels = length(unique(data_clean$Pressure_f)),
-       n_surface_types = length(unique(data_clean$Surface_type)))
-}
-
-fit_hinge_surface_subset_model <- function(data, recovery_col, analyte_name, surface_type) {
-
-  subset_data <- data[data$Surface_type == surface_type &
-                        !is.na(data[[recovery_col]]) & !is.na(data$Pre100), ]
-
-  cat("\n--- ", analyte_name, " (", surface_type, "-only) hinge model ---\n", sep = "")
-  cat("  n =", nrow(subset_data), "\n")
-
-  if (nrow(subset_data) < 10) {
-    cat("  [NOT ENOUGH DATA] Skipping.\n")
-    return(list(ok = FALSE, reason = "insufficient data"))
-  }
-
-  formula_obj <- as.formula(paste0(recovery_col, " ~ Pre100 + Post100 + Study + (1|SurfaceID_nested)"))
-  model <- tryCatch(lmer(formula_obj, data = subset_data, REML = TRUE),
-                     error = function(e) { cat("  [ERROR] Model failed to fit: ", conditionMessage(e), "\n"); NULL })
-  if (is.null(model)) return(list(ok = FALSE, reason = "model fit failed"))
-
-  if (isSingular(model)) cat("  [WARNING] Boundary (singular) fit.\n")
-
-  co <- summary(model)$coefficients
-  print(co)
-
-  slope1 <- co["Pre100", "Estimate"]
-  slope2 <- co["Post100", "Estimate"]
-  p1 <- co["Pre100", "Pr(>|t|)"]
-  p2 <- co["Post100", "Pr(>|t|)"]
-
-  cat(sprintf("\n  Slope 10-100g:  %+.4f %%/g  (p = %.4g)\n", slope1, p1))
-  cat(sprintf("  Slope 100-300g: %+.4f %%/g  (p = %.4g)\n", slope2, p2))
-
-  verdict <- if (is.na(p2)) {
-    "could not be tested"
-  } else if (p2 < alpha_level && slope2 < 0) {
-    "SIGNIFICANT DECLINE after the breakpoint"
-  } else if (p2 < alpha_level && slope2 > 0) {
-    "SIGNIFICANT CONTINUED RISE after the breakpoint (no leveling off)"
-  } else {
-    "NOT significant -- consistent with a PLATEAU, not a decline or continued rise"
-  }
-  cat(sprintf("\n>>> VERDICT (%s, %s-only, post-%dg slope): %s <<<\n",
-              analyte_name, surface_type, PRESSURE_BREAKPOINT, verdict))
-
-  cat("\nModel fit (Nakagawa R^2 for mixed models):\n")
-  report_r2(model)
-
-  list(ok = TRUE, model = model, slope1 = slope1, slope2 = slope2, p1 = p1, p2 = p2)
-}
-
-#===============================================================================
-# SECTION 5e: CATEGORICAL + HINGE PLOT -- the primary models' own figure.
-#
-# Added 2026-09-02, replacing the now-orphaned Pressure_Categorical_Means_
-# PilotMain.png (previously produced by the standalone
-# main_study_analysis_categorical_pressure.R script, now archived and no
-# longer able to regenerate it -- see CONTEXT.md). Self-contained (takes
-# `data` directly, refits its own lightweight per-surface models purely for
-# the plotted line), self-contained rather than threading the Section
-# 5/5d model objects through as arguments.
-#
-# Shows BOTH primary models on one figure per Surface_type x Analyte panel:
-#   - Categorical group means +/- SE (points/error bars) -- the "no shape
-#     assumption" empirical view.
-#   - The hinge model's own fitted two-segment line, evaluated at exactly
-#     the 5 real pressure levels (10/50/100/200/300g) -- since the hinge
-#     model is piecewise LINEAR with a breakpoint exactly at one of these
-#     levels (100g), connecting these 5 fitted points with straight lines
-#     reproduces the true fitted curve exactly, no interpolation error.
-#===============================================================================
-
-generate_categorical_hinge_plot <- function(data) {
-  if (is.null(data) || nrow(data) == 0) {
-    cat("  Skipping categorical+hinge plot -- no pooled data available\n")
-    return(invisible(NULL))
-  }
-
-  pressure_levels <- sort(unique(data$Pressure_g))
-
-  # NOTE: Mean_Pressure (joined in build_pooled_dataset()) is the ASTRA-
-  # measured ACTUAL achieved mass for each sample -- used below to position
-  # both the individual points and the categorical group means/hinge line at
-  # their real achieved mass rather than the nominal design target
-  # (Pressure_g). A sample with no pressure-trace match (Mean_Pressure NA --
-  # 4 known cases, PILOT_015/020 x 2 analytes, ABS 200g wet) has no real
-  # position to plot at and is excluded from the point layer below (still
-  # counted in its group's mean_rec/se_rec/n, which use Recovery only).
-  long_data <- bind_rows(
-    data %>% filter(!is.na(PETN_Recovery_pct), !is.na(Pressure_g)) %>%
-      transmute(Surface_type, Pressure_g, Mean_Pressure, Recovery = PETN_Recovery_pct, Analyte = "PETN"),
-    data %>% filter(!is.na(RDX_Recovery_pct), !is.na(Pressure_g)) %>%
-      transmute(Surface_type, Pressure_g, Mean_Pressure, Recovery = RDX_Recovery_pct, Analyte = "RDX")
-  )
-  if (nrow(long_data) == 0) {
-    cat("  Skipping categorical+hinge plot -- no data with both a recovery value and Pressure_g yet\n")
-    return(invisible(NULL))
-  }
-  long_data$Analyte <- factor(long_data$Analyte, levels = c("PETN", "RDX"))
-
-  n_missing_actual <- sum(is.na(long_data$Mean_Pressure))
-  if (n_missing_actual > 0) {
-    cat("  NOTE: ", n_missing_actual, " sample x analyte point(s) have no actual-pressure-trace match -- ",
-        "excluded from the individual-point layer (still contribute to their group's mean_rec/n).\n", sep = "")
-  }
-
-  # Categorical group means +/- SE (y-axis, unchanged -- based on Recovery
-  # only) PLUS the group's own mean ACTUAL achieved mass (x-axis position
-  # for the diamond -- na.rm = TRUE so the 4 unmatched samples noted above
-  # don't turn a whole group's position into NA, they just don't contribute
-  # to it).
-  means_data <- long_data %>%
-    group_by(Surface_type, Analyte, Pressure_g) %>%
-    summarise(mean_rec = mean(Recovery), se_rec = sd(Recovery) / sqrt(n()), n = n(),
-              mean_actual = mean(Mean_Pressure, na.rm = TRUE), .groups = "drop")
-
-  # Hinge model fitted line, per Surface_type x Analyte, evaluated at the
-  # real pressure levels. Fit directly on `data` (not long_data, since lmer
-  # needs SurfaceID_nested/Study, which were dropped by the transmute above).
-  # The model itself is STILL fit against nominal Pre100/Post100 (unchanged)
-  # -- only the line's PLOTTED x-position (PlotX below) is remapped to each
-  # level's own actual mean achieved mass, so the line lands among the
-  # points/diamonds it's meant to describe rather than at the nominal target.
-  #
-  # Also computes, per Surface_type x Analyte (added 2026-09-02, so this
-  # plot reports the hinge model's own fit quality directly on the figure,
-  # the same way the Unified linear/quadratic/logarithmic plots annotate
-  # their own curve's R^2/p per panel):
-  #   - R^2 (marginal, Nakagawa) -- same measure as report_r2() elsewhere.
-  #   - An overall p-value via likelihood-ratio test against a NULL model
-  #     with the pressure terms (Pre100/Post100) removed but Study kept --
-  #     "does the hinge shape improve the fit at all", the fairest analogue
-  #     to the Unified plots' own overall-model p-value (their lm()-based
-  #     equivalent of "is this curve better than nothing").
-  hinge_lines <- list()
-  hinge_stats <- list()
-  for (an in c("PETN", "RDX")) {
-    recovery_col <- paste0(an, "_Recovery_pct")
-    for (surf in c("steel", "abs")) {
-      sub <- data[data$Surface_type == surf & !is.na(data[[recovery_col]]) & !is.na(data$Pre100), ]
-      if (nrow(sub) < 10) next
-      m <- tryCatch(
-        lmer(as.formula(paste0(recovery_col, " ~ Pre100 + Post100 + Study + (1|SurfaceID_nested)")),
-             data = sub, REML = TRUE),
-        error = function(e) NULL
-      )
-      if (is.null(m)) next
-      # Predict at Study = "Main" (arbitrary reference level -- the fitted
-      # line's SHAPE, which is what this plot is for, is identical for
-      # either Study level; only the intercept shifts) with each physical
-      # surface's own random effect averaged out (re.form = NA).
-      pred_df <- data.frame(
-        Pressure_g = pressure_levels,
-        Pre100  = pmin(pressure_levels, PRESSURE_BREAKPOINT) - PRESSURE_BREAKPOINT,
-        Post100 = pmax(0, pressure_levels - PRESSURE_BREAKPOINT),
-        Study = factor("Main", levels = levels(sub$Study))
-      )
-      pred_df$fitted <- predict(m, newdata = pred_df, re.form = NA)
-      pred_df$Surface_type <- surf
-      pred_df$Analyte <- an
-
-      # Remap each nominal level's plotting x-position to this Surface's own
-      # mean ACTUAL achieved mass at that level (falls back to the nominal
-      # value itself if a level has no matched samples in `sub` at all).
-      achieved_by_level <- sub %>% group_by(Pressure_g) %>%
-        summarise(mean_actual = mean(Mean_Pressure, na.rm = TRUE), .groups = "drop")
-      pred_df <- pred_df %>% left_join(achieved_by_level, by = "Pressure_g")
-      pred_df$PlotX <- ifelse(is.na(pred_df$mean_actual), pred_df$Pressure_g, pred_df$mean_actual)
-
-      hinge_lines[[paste(an, surf)]] <- pred_df
-
-      r2_val <- tryCatch(performance::r2(m)$R2_marginal, error = function(e) NA_real_)
-
-      m_ml   <- tryCatch(lmer(as.formula(paste0(recovery_col, " ~ Pre100 + Post100 + Study + (1|SurfaceID_nested)")), data = sub, REML = FALSE), error = function(e) NULL)
-      m_null <- tryCatch(lmer(as.formula(paste0(recovery_col, " ~ Study + (1|SurfaceID_nested)")), data = sub, REML = FALSE), error = function(e) NULL)
-      lrt_p <- if (!is.null(m_ml) && !is.null(m_null)) {
-        tryCatch(anova(m_null, m_ml)[2, "Pr(>Chisq)"], error = function(e) NA_real_)
-      } else NA_real_
-
-      hinge_stats[[paste(an, surf)]] <- data.frame(
-        Analyte = an, Surface_type = surf,
-        label = sprintf("%s: R\u00B2=%.2f, p=%s", ifelse(surf == "steel", "Steel", "ABS"),
-                         as.numeric(r2_val), if (is.na(lrt_p)) "n/a" else sprintf("%.3g", lrt_p))
-      )
-    }
-  }
-  hinge_lines_df <- bind_rows(hinge_lines)
-  if (nrow(hinge_lines_df) > 0) hinge_lines_df$Analyte <- factor(hinge_lines_df$Analyte, levels = c("PETN", "RDX"))
-
-  hinge_stats_df <- bind_rows(hinge_stats)
-  if (nrow(hinge_stats_df) > 0) {
-    hinge_stats_df$Analyte <- factor(hinge_stats_df$Analyte, levels = c("PETN", "RDX"))
-    # Stack the Steel/ABS annotation lines in the top-left corner of each
-    # Analyte panel -- y-position computed from the actual data range so it
-    # sits just under the panel's own top edge regardless of scale.
-    y_range <- max(means_data$mean_rec + means_data$se_rec, na.rm = TRUE) -
-               min(means_data$mean_rec - means_data$se_rec, na.rm = TRUE)
-    y_top <- max(means_data$mean_rec + means_data$se_rec, na.rm = TRUE) + 0.12 * y_range
-    hinge_stats_df$y_pos <- y_top - ifelse(hinge_stats_df$Surface_type == "steel", 0, 0.07 * y_range)
-    hinge_stats_df$x_pos <- min(long_data$Mean_Pressure, na.rm = TRUE)
-  }
-
-  p <- ggplot(means_data, aes(x = mean_actual, y = mean_rec, color = Surface_type)) +
-    geom_point(data = long_data, aes(x = Mean_Pressure, y = Recovery, color = Surface_type),
-               shape = 19, size = 2.1, alpha = 0.85, inherit.aes = FALSE) +
-    geom_point(aes(fill = Surface_type), shape = 23, size = 3.8, color = "black", stroke = 0.6) +
-    geom_errorbar(aes(ymin = mean_rec - se_rec, ymax = mean_rec + se_rec), width = 8) +
-    geom_text(aes(label = paste0("n=", n), y = mean_rec + se_rec + 1.5), size = 2.5, show.legend = FALSE) +
-    { if (nrow(hinge_lines_df) > 0) {
-        geom_line(data = hinge_lines_df, aes(x = PlotX, y = fitted, color = Surface_type),
-                  linetype = "dashed", linewidth = 0.7, inherit.aes = FALSE)
-      } else NULL } +
-    geom_vline(xintercept = PRESSURE_BREAKPOINT, linetype = "dotted", color = "gray50", linewidth = 0.4) +
-    { if (nrow(hinge_stats_df) > 0) {
-        geom_text(data = hinge_stats_df, aes(x = x_pos, y = y_pos, label = label, color = Surface_type),
-                  hjust = 0, size = 3, fontface = "italic", inherit.aes = FALSE, show.legend = FALSE)
-      } else NULL } +
-    scale_x_continuous(breaks = pressure_levels) +
-    scale_color_manual(values = pal_surface_type,
-                       labels = c(steel = "Steel", abs = "ABS")) +
-    scale_fill_manual(values = pal_surface_type, guide = "none") +
-    facet_wrap(~ Analyte, ncol = 1) +
-    labs(
-      title = paste0("Categorical means + hinge model fit -- Pilot + Main Study (n=", nrow(long_data), ")"),
-      subtitle = paste0("Circles = individual samples at their own ACTUAL achieved mass | Diamonds/error bars = group mean +/- SE at the group's mean ACTUAL achieved mass\n",
-                        "Dashed line = hinge model fit (nominal breakpoint ", PRESSURE_BREAKPOINT, "g, dotted vertical line) | x-axis breaks = nominal design targets (10/50/100/200/300g), for reference only\n",
-                        "R\u00B2 = marginal (Nakagawa, fixed effects only) | p = likelihood-ratio test, hinge vs. a no-mass-effect null model"),
-      x = "Actual Applied Mass (g)", y = "Recovery (%)", color = "Surface"
-    ) +
-    theme_bw(base_size = 12) +
-    theme(strip.text = element_text(size = 12, face = "bold"), plot.title = element_text(size = 13, face = "bold"),
-          plot.subtitle = element_text(size = 8))
-
-  out_file <- file.path(output_dir, "Pressure_Categorical_Hinge_PilotMain.png")
-  ggsave(out_file, p, width = 11, height = 9, dpi = 300)
-  cat("  Saved:", out_file, "\n")
-  invisible(p)
-}
-
-
+# SECTION 6: PER-EFFECT POWER ANALYSIS -- "is n=6/level/surface-type enough?"
 #
 # Mirrors the pilot's own established "PER-EFFECT POWER ANALYSIS" convention
 # (pilot_analysis.R, find_min_n_for_power()): for each Type III effect in the
@@ -1581,10 +1150,12 @@ run_power_analysis <- function(fit, analyte_name, n_target = 6, alpha = alpha_le
   n_surface_types   <- fit$n_surface_types
 
   k_map <- c(
-    "Surface_type"            = n_surface_types,
-    "Pressure_f"              = n_pressure_levels,
-    "Study"                   = 2,
-    "Surface_type:Pressure_f" = n_surface_types * n_pressure_levels
+    "Surface_type"                 = n_surface_types,
+    "Pressure_g"                   = n_pressure_levels,
+    "I(Pressure_g^2)"              = n_pressure_levels,
+    "Study"                        = 2,
+    "Surface_type:Pressure_g"      = n_surface_types * n_pressure_levels,
+    "Surface_type:I(Pressure_g^2)" = n_surface_types * n_pressure_levels
   )
 
   eta2_to_f <- function(eta2) {
@@ -1810,33 +1381,6 @@ if (analysis_mode == "full") {
 
       run_apriori_power_check(petn_fit, "PETN")
       run_apriori_power_check(rdx_fit, "RDX")
-
-      cat("\n========================================\n")
-      cat("SURFACE-SPECIFIC SUBSETS (does ABS show a pressure effect on its own?)\n")
-      cat("========================================\n")
-      for (analyte in list(list(col = "PETN_Recovery_pct", name = "PETN"),
-                           list(col = "RDX_Recovery_pct",  name = "RDX"))) {
-        for (surf in c("steel", "abs")) {
-          fit_surface_subset_model(combined_data, analyte$col, analyte$name, surf)
-        }
-      }
-
-      cat("\n========================================\n")
-      cat("HINGE (BROKEN-STICK) MODEL -- complementary to the categorical model above\n")
-      cat("========================================\n")
-      petn_hinge_fit <- fit_hinge_model(combined_data, "PETN_Recovery_pct", "PETN")
-      rdx_hinge_fit  <- fit_hinge_model(combined_data, "RDX_Recovery_pct", "RDX")
-
-      cat("\n--- Per-surface hinge models (slope1/slope2 with their own significance) ---\n")
-      for (analyte in list(list(col = "PETN_Recovery_pct", name = "PETN"),
-                           list(col = "RDX_Recovery_pct",  name = "RDX"))) {
-        for (surf in c("steel", "abs")) {
-          fit_hinge_surface_subset_model(combined_data, analyte$col, analyte$name, surf)
-        }
-      }
-
-      cat("\n--- Categorical + hinge plot ---\n")
-      generate_categorical_hinge_plot(combined_data)
 
 
       cat("\n========================================\nMAIN STUDY ANALYSIS COMPLETE\n========================================\n")

@@ -581,7 +581,7 @@ interaction_plots_template <- function(data) {
   p1 <- ggplot(data, aes(x = Surface_type, y = Recovery, color = Pressure, group = Pressure)) +
     stat_summary(fun = mean, geom = "point", size = 3) +
     stat_summary(fun = mean, geom = "line", size = 1) +
-    labs(title = "Surface_type x Pressure Interaction", y = "Mean Recovery") +
+    labs(title = "Surface_type x Applied Mass Interaction", y = "Mean Recovery") +
     theme_bw()
   
   # Two-way interaction: Surface_type x Solvent
@@ -595,7 +595,7 @@ interaction_plots_template <- function(data) {
   p3 <- ggplot(data, aes(x = Pressure, y = Recovery, color = Solvent, group = Solvent)) +
     stat_summary(fun = mean, geom = "point", size = 3) +
     stat_summary(fun = mean, geom = "line", size = 1) +
-    labs(title = "Pressure x Solvent Interaction", y = "Mean Recovery") +
+    labs(title = "Applied Mass x Solvent Interaction", y = "Mean Recovery") +
     theme_bw()
   
   # Arrange plots
