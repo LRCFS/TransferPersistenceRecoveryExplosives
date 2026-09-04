@@ -3,13 +3,17 @@
 library(ggplot2)
 library(dplyr)
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 #Load data
 data <- read.csv("C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Thesis Data/Chapter 3 - Methodology/Original vs Modified Swab Mount.csv")
 
 #Plot graph
 p <- ggplot(data) +
   geom_line(aes(x = Time, y = Mass, colour = Type), linewidth = 0.8) +
-  scale_colour_brewer(palette = "Set1") +
+  scale_colour_manual(values = pal_mount_type) +
   labs(
     x = "Time (ms)",
     y = "Measured Weight (g)"

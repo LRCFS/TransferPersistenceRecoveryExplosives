@@ -24,6 +24,10 @@ suppressPackageStartupMessages({
   library(openxlsx)
 })
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 # Define constants
 SPIKE_AMOUNT <- 10000  # ng (same as swabs)
 SAMPLE_VOLUME <- 1000  # µL
@@ -153,13 +157,7 @@ plot <- ggplot(data_long, aes(x = TestStd, y = Recovery, fill = TestStd)) +
             vjust = -0.5, size = 4, fontface = "bold") +
   
   # Color scheme
-  scale_fill_manual(
-    values = c(
-      "100% recovery\n(no swab)" = "#E41A1C",  # Red
-      "Spiked swab\n(wet)" = "#377EB8",  # Blue
-      "Spiked swab\n(dry)" = "#4DAF4A"   # Green
-    )
-  ) +
+  scale_fill_manual(values = pal_test_std) +
   
   # Facet by analyte
   facet_wrap(~ Analyte, ncol = 2) +

@@ -3,6 +3,10 @@
 library(ggplot2)
 library(dplyr)
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 #Load data
 data <- read.csv("C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Thesis Data/Chapter 3 - Methodology/SwabMountAngles.csv")
 
@@ -13,7 +17,7 @@ data45_max <- max(data45$Load)
 data45_min <- min(data45$Load)
 data45_avg <- mean(data45$Load)
 data45_sd <- sd(data45$Load)
-data45_rsd <- data45_sd/orig_data_avg*100
+data45_rsd <- data45_sd/data45_avg*100
 
 data90 <- data %>%
   filter(Swab.Mount == "90°") %>%
@@ -36,7 +40,7 @@ data70_rsd <- data70_sd/data70_avg*100
 #Plot graph
 p <- ggplot(data) +
   geom_line(aes(x = Time, y = Load, colour = Swab.Mount), linewidth = 0.8) +
-  scale_colour_brewer(palette = "Set1") +
+  scale_colour_manual(values = pal_swab_mount_angle) +
   labs(
     x = "Time (ms)",
     y = "Measured Weight (g)"

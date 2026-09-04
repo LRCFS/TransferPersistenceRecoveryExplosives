@@ -24,6 +24,10 @@ suppressPackageStartupMessages({
   library(openxlsx)
 })
 
+# Shared thesis-wide colour palette (Okabe-Ito, colourblind-safe) -- single
+# source of truth for every plot across the whole thesis repo.
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/thesis_palette.R")
+
 # Define constants
 SPIKE_AMOUNT <- 10000  # ng (5 × 10 µL × 200 ng/µL)
 SAMPLE_VOLUME <- 1000  # µL
@@ -193,15 +197,16 @@ plot <- ggplot(data_long, aes(x = Swab, y = Recovery, fill = Extraction)) +
     fontface = "bold"
   ) +
   
-  # Sequential blues color palette (Ext 1 = darkest, Ext 5 = lightest)
-  scale_fill_manual(
-    values = c(
-      "Ext 5" = "#EFF3FF",  # Lightest (top of stack)
-      "Ext 4" = "#BDD7E7",
-      "Ext 3" = "#6BAED6",
-      "Ext 2" = "#3182BD",
-      "Ext 1" = "#08519C"   # Darkest (bottom of stack)
-    ),
+  # Extraction step is a SEQUENTIAL/ordinal index (Ext 1 = first, Ext 5 =
+  # last), not a nominal category -- viridis (perceptually uniform) replaces
+  # the previous hand-picked sequential blues, preserving the same dark
+  # (Ext1)-to-light (Ext5) direction. direction = -1 because the factor's own
+  # levels are deliberately reversed above (levels = 5:1, for stacking order
+  # -- Ext5 first/bottom of legend, Ext1 last), so viridis's default
+  # first-level=dark/last-level=light mapping would otherwise come out
+  # backwards (Ext5 dark, Ext1 light) relative to the original design.
+  scale_fill_viridis_d(
+    direction = -1,
     # Reverse legend order so Ext 1 appears first
     guide = guide_legend(reverse = TRUE)
   ) +
@@ -276,11 +281,7 @@ scatter_plot <- ggplot(cumulative_data, aes(x = Extraction_num, y = Cumulative_R
   
   # Color scheme for swabs
   scale_color_manual(
-    values = c(
-      "Swab 1" = "#E41A1C",  # Red
-      "Swab 2" = "#377EB8",  # Blue
-      "Swab 3" = "#4DAF4A"   # Green
-    )
+    values = pal_swab
   ) +
   
   # Facet by analyte
