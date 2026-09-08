@@ -3,7 +3,7 @@ digraph GCMS_QC_Flow {
   fontname="Helvetica";
   fontsize=20;
   labelloc="t";
-  label="GC-MS PETN/RDX Injection & Sample Acceptance Flowchart (Revised v3)\nSTATUS: TARGET DESIGN -- describes the INTENDED future pipeline. Sections A and D, and several\nSection B/C refinements below, are NOT yet implemented in the live script (see legend notes).";
+  label="GC-MS PETN/RDX Injection & Sample Acceptance Flowchart (Revised v3)\nSTATUS: IMPLEMENTED -- describes the CURRENT live pipeline (Code/InjectionAcceptance.R).\nFull audit against the live code completed 2026-09-08: Sections A-D are all implemented; Section A and C3 corrected\nto show the blank evaluation's actual 3-tier Contaminated/Trace-detected/Clean classification (previously\nunder-diagrammed as binary); stale 'not yet implemented'/'DESIGN CHANGE' notes referencing a since-removed\ncompute_analysis_accepted() function corrected to reflect current, live behaviour (see legend notes).";
   bgcolor="white";
   nodesep=0.35;
   ranksep=0.55;
@@ -27,25 +27,28 @@ digraph GCMS_QC_Flow {
     style="filled"; color="#adb5bd"; fillcolor="#f8f9fa"; fontsize=13; fontcolor="#212529";
 
     A0 [label="Analyse blank injection\n(same peak-detection pipeline as samples)"];
-    A1 [label="PETN or RDX peak\ndetected? (SNR ≥ 3)", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    A1 [label="PETN/RDX SNR tier?\n(worse of the two analytes' own tiers,\nsame Quantifiable/Trace/Negative\nclassification as everywhere else --\nSNR≥10 / 3≤SNR<10 / SNR<3)", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
     A2 [label="Any other significant peak?\n(height above clean-blank baseline)", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
-    A_CONTAM [label="BLANK CONTAMINATED\nInvestigate carryover source.\nFlag as HIGH carryover-risk for any\nQC/sample bracketed by this blank.", fillcolor="#f8d7da", fontcolor="#842029"];
+    A_CONTAM [label="BLANK CONTAMINATED\n(either analyte Quantifiable, SNR≥10)\nInvestigate carryover source.\nHard-fails any Sample/QC/NC peak this\nblank brackets (Section C, C3).", fillcolor="#f8d7da", fontcolor="#842029"];
+    A_TRACE [label="BLANK TRACE DETECTED\n(either analyte Trace, 3≤SNR<10,\nneither Quantifiable)\nDoes NOT hard-fail a bracketed peak --\ncontributes a WARNING caveat only\n(Section C, C3).", fillcolor="#fff3cd", fontcolor="#664d03"];
     A_OTHER [label="NON-TARGET PEAK PRESENT\nInstrument-performance risk only --\ndoes NOT set a carryover-risk flag\n(no PETN/RDX signal was seen, so there\nis nothing to carry over).", fillcolor="#fff3cd", fontcolor="#664d03"];
     A_PASS [label="BLANK CLEAN -- PASS\nNo carryover-risk flag set.", fillcolor="#d1e7dd", fontcolor="#0f5132"];
     INSTR_LOG [label="Instrument-Performance Log\n(trend-only; does NOT gate anything\ndownstream -- separate from the\ncarryover-risk register below)", shape=note, fillcolor="#e2e3e5", fontcolor="#41464b", fontsize=9.5];
 
     A0 -> A1;
-    A1 -> A_CONTAM [label="Yes"];
-    A1 -> A2 [label="No"];
+    A1 -> A_CONTAM [label="Quantifiable\n(either analyte)"];
+    A1 -> A_TRACE [label="Trace\n(either analyte,\nneither Quantifiable)"];
+    A1 -> A2 [label="Negative\n(both analytes)"];
     A2 -> A_OTHER [label="Yes"];
     A2 -> A_PASS [label="No"];
     A_OTHER -> INSTR_LOG;
   }
 
-  BLANK_REG [label="Blank Carryover-Risk Register\n(per blank: clean / flagged)\nOnly an ACTUAL PETN/RDX detection (A_CONTAM)\nflags a blank here -- a non-target peak (A_OTHER)\nis instrument-performance information only and\ncounts as CLEAN for this register.\nRead by the bracketing-blank check in Section C.", shape=cylinder, fillcolor="#e2e3e5", fontcolor="#41464b", fontsize=10.5];
+  BLANK_REG [label="Blank Carryover-Risk Register\n(per blank: Clean / Trace detected / Contaminated --\nUPDATED 2026-09-08: this register already stored all\nthree values, but this chart previously only diagrammed\ntwo; Section C's bracket check now shows all three, see\nC3).\nA non-target peak (A_OTHER) is instrument-performance\ninformation only and counts as CLEAN for this register\n(does not upgrade a Clean blank to Trace/Contaminated).\nRead by the bracketing-blank check in Section C.", shape=cylinder, fillcolor="#e2e3e5", fontcolor="#41464b", fontsize=10.5];
 
   START -> A0;
   A_CONTAM -> BLANK_REG;
+  A_TRACE -> BLANK_REG;
   A_PASS -> BLANK_REG;
   A_OTHER -> BLANK_REG [style=dashed, color="#adb5bd", label="counts as clean"];
 
@@ -124,8 +127,9 @@ digraph GCMS_QC_Flow {
 
     C2 [label="FOR EACH ANALYTE (PETN, RDX)\nindependently, starting here:\nIs a peak present?\n(height ≥ minimum criteria)", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
 
-    C3 [label="Are bracketing blanks clean\nfor THIS analyte?", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
-    C_CARRYOVER [label="PEAK MAY BE DUE TO CARRYOVER\nCannot distinguish from genuine\ndetection -- reanalysis required.", fillcolor="#f8d7da", fontcolor="#842029"];
+    C3 [label="Bracketing blank status for\nTHIS analyte? (worse of pre/post;\nmissing on one side treated leniently\nas Clean on that side, NOT a fail --\nunlike QC brackets, Section B)", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    C_CARRYOVER [label="PEAK MAY BE DUE TO CARRYOVER\n(bracketing blank Contaminated)\nCannot distinguish from genuine\ndetection -- reanalysis required.", fillcolor="#f8d7da", fontcolor="#842029"];
+    C_BLANKCAVEAT [label="CAVEAT NOTED\n(bracketing blank Trace detected --\nnot enough to hard-fail, but noted)\nContributes to row-level PASS* in Section D.", fillcolor="#fff3cd", fontcolor="#664d03"];
 
     C4 [label="Peak SNR classification\nfor THIS analyte?", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
 
@@ -142,7 +146,7 @@ digraph GCMS_QC_Flow {
 
     C_ROUTE [label="Route by THIS analyte's SNR tier\n(determined earlier at the peak-present /\nSNR-classification steps above, carried\nforward unchanged by the bracket checks)", shape=hexagon, fillcolor="#e2d9f3", fontcolor="#432874"];
     C_QUANTIFIED [label="ANALYTE DETECTED AND QUANTIFIED\n(append caveat if flagged above)", fillcolor="#d1e7dd", fontcolor="#0f5132"];
-    C_TRACE [label="TRACE ANALYTE DETECTED\nBelow quantitation level -- reported as a\nqualitative positive, not a numeric value.\nGENUINE outcome (not forced to FAIL), but ALWAYS\ncontributes a WARNING caveat to Section D --\neven if brackets were clean -- since it is\ninherently a below-quantitation call.\n[DESIGN CHANGE vs. current script -- see\nlegend: current code always FAILs this\ntier for samples.]", fillcolor="#fff3cd", fontcolor="#664d03"];
+    C_TRACE [label="TRACE ANALYTE DETECTED\nBelow quantitation level -- reported as a\nqualitative positive, not a numeric value.\nGENUINE outcome (not forced to FAIL), but ALWAYS\ncontributes a WARNING caveat to Section D --\neven if brackets were clean -- since it is\ninherently a below-quantitation call.", fillcolor="#fff3cd", fontcolor="#664d03"];
     C_NEGATIVE [label="ANALYTE NEGATIVE\nNo peak / below LOD, AND system LOD\nconfirmed adequate via 0.2ng bracket.", fillcolor="#d1e7dd", fontcolor="#0f5132"];
 
     C0 -> C1;
@@ -153,8 +157,10 @@ digraph GCMS_QC_Flow {
     C2 -> C_ROWTYPE [label="No peak\n(tier = Negative,\npending LOD confirmation)"];
     C2 -> C3 [label="Yes, peak\npresent"];
 
-    C3 -> C_CARRYOVER [label="No (flagged)"];
-    C3 -> C4 [label="Yes (clean)"];
+    C3 -> C_CARRYOVER [label="Contaminated"];
+    C3 -> C_BLANKCAVEAT [label="Trace detected"];
+    C3 -> C4 [label="Clean"];
+    C_BLANKCAVEAT -> C4;
 
     C4 -> C4b [label="SNR ≥ 10\n(tier = Quantifiable /\n\"positive\" -> 6ng only)"];
     C4 -> C_ROWTYPE [label="3 ≤ SNR < 10\n(tier = Trace -> 0.2ng only)"];
@@ -195,7 +201,7 @@ digraph GCMS_QC_Flow {
     D3 [label="Did RDX's Section C path end in\na FAIL-class terminal?", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
     D_FAIL_RDX [label="ROW = FAIL: <RDX's specific reason>\nOutcome = Reanalyse", fillcolor="#f8d7da", fontcolor="#842029"];
 
-    D4 [label="Does either analyte carry a WARNING\ncaveat -- 0.2ng WARN, a 0.2ng\noverride, OR either analyte's tier is\nTrace (always a caveat, even if brackets\nwere clean)?", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    D4 [label="Does either analyte carry a WARNING\ncaveat -- bracketing blank Trace detected\n(C3), 0.2ng bracket WARN (C7), OR either\nanalyte's tier is Trace (always a caveat,\neven if every bracket was clean)?", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
     D_PASSSTAR [label="ROW = PASS*\nOutcome = Complete\n(both analytes' Quantified/Trace/Negative\nresults are reported, with caveat noted --\nincluding: any analyte reported as Trace\nalways lands here, never as a plain PASS)", fillcolor="#fff3cd", fontcolor="#664d03"];
     D_PASS [label="ROW = PASS\nOutcome = Complete\n(both analytes' results reported cleanly)", fillcolor="#d1e7dd", fontcolor="#0f5132"];
 
@@ -230,12 +236,14 @@ digraph GCMS_QC_Flow {
     NOTE3C [label="0.2ng split into DETECTABILITY vs QUANTIFICATION\n(added 2026-09-08): a real, detected peak's fitted\nconcentration can floor to exactly 0 even at good SNR --\nthe fitted calibration curve's own y-intercept (an\nartefact of a weighted quadratic fit through a handful\nof real standards, not a physical measurement) can sit\nABOVE a genuine low-level response, so no concentration\n>=0 on that curve reproduces it. This is a curve-fitting\nartefact, not evidence of a non-detect -- confirmed via\ndirect comparison against the raw response and against\nan identical, independently-documented RDX/Analysis1\ncalibration-floor case. DECISION: a Sample's own reported\nrecovery % still needs a real number, so Samples keep the\nstricter QUANTIFICATION flag (SNR AND concentration>0)\nunchanged from the pre-2026-09-08 behaviour. A Negative\nControl's contamination verdict only ever needs 'was\nsomething detected', so NCs use the new DETECTABILITY\nflag (SNR only) instead -- a real detection no longer\ngets silently reclassified as 'Not evaluated' purely\nbecause of where the calibration curve happens to\nintercept zero."];
     NOTE4 [label="PETN/RDX asymmetry -- justified vs. removed:\nKEPT (grounded in chemistry/instrumentation):\n IS-ratio quantification for RDX only (15N-RDX is\n not a valid drift proxy for PETN -- tested and\n rejected); drift correction for PETN only;\n noise-window position; per-analyte height/SNR\n floors.\nREMOVED (was an incidental implementation gap,\nnot a scientific requirement): the 0.2ng\nsensitivity WARN tier is now identical for both\nanalytes (Section B)."];
     NOTE5 [label="Row-level outcome (Section D) uses a FIXED,\nagreed check order -- IS, then PETN, then RDX --\nand reports ONLY the first blocking failure found.\nThe IS check short-circuits immediately at C1 (see\nC_NOINJECT / C_ISLOW -- BOTH IS outcomes are hard\nFAILs as of 2026-08-11) -- it does NOT wait for\nSection D; only PETN-vs-RDX ordering is resolved\nthere, since IS already gates entry to the\nper-analyte loop."];
-    NOTE6 [label="CONFIRMED DESIGN DECISION: a bracket-confirmed\ntrace-level detection is a genuine, reportable\noutcome, not an automatic reanalysis trigger --\nthis is a deliberate departure from the current\nlive script, whose compute_analysis_accepted()\ntoday auto-FAILs ANY sample with a detected-but-\nnot-Quantifiable peak (Below_LOD or Below_LOQ);\ncurrently only a fully Quantifiable result or a\ntrue no-peak-at-all (NA) avoids FAIL. Under this\nchart, a Trace result ALWAYS carries a WARNING\ncaveat forward (Section D, D4) -- if every other\ncheck passes, the row is PASS*, never a plain\nPASS, reflecting the reduced confidence of an\nunquantified detection."];
+    NOTE6 [label="CONFIRMED DESIGN DECISION, LIVE SINCE 2026-08-10\n(the InjectionAcceptance.R consolidation --\nsee CONTEXT.md): a bracket-confirmed trace-level\ndetection is a genuine, reportable outcome, not an\nautomatic reanalysis trigger. A Trace result ALWAYS\ncarries a WARNING caveat forward (Section D, D4) --\nif every other check passes, the row is PASS*, never\na plain PASS, reflecting the reduced confidence of an\nunquantified detection. [Historical note: this was a\ndeliberate departure from an OLDER, now-retired\ncompute_analysis_accepted() implementation, which\nauto-FAILed any detected-but-not-Quantifiable peak --\nthat function no longer exists in the codebase.]"];
     NOTE7 [label="UPDATED 2026-09-08: Negative Controls (NCs) and Samples\nrun the IDENTICAL tree EXCEPT for exactly ONE point --\nthe 0.2ng bracket check (Section C, C_ROWTYPE/C7): a\nSample reads the QUANTIFICATION register, an NC reads\nthe DETECTABILITY register (Section B, NOTE3C). This is\na deliberate, narrow divergence, not a return to the old\nasymmetric design -- both row types still go through the\nidentical carryover check, confirmatory-ion check, 6ng\nbracket, and Section D combination logic; only WHICH\n0.2ng verdict is consulted differs, and only because a\ncontamination check and a quantified-recovery check are\ngenuinely different questions with different evidence\nrequirements. NCs and samples otherwise still diverge\nonly in reporting-label vocabulary at the very end (e.g.\n'Negative (clean)', 'Positive: trace detected' map onto\nC_NEGATIVE/C_TRACE/C_QUANTIFIED at reporting time; not\nseparately diagrammed here)."];
     NOTE8 [label="Confirmatory ion check (C4b, added 2026-08-12):\nderived empirically from all 11 'Accepted Analysis'\ndatasets (Cal standards + real Sample/QC data).\nPETN's second monitored ion (m/z57) was tested and\nREJECTED as a confirmatory requirement -- only 18.2%\nof pure Cal standards ever reach a measurable SNR for\nit, so requiring it would fail most genuine detections,\nnot catch misidentifications. m/z76 alone is used.\nRDX requires BOTH its monitored ions (m/z46, m/z75) --\nboth are reliably detected (~100% in Cal standards) and\nrequiring both costs zero extra failures on any real\nSample/QC/Cal row in the study. A ratio-based check\n(qualifier/quantifier PA ratio) was also investigated\nand rejected: RDX's ratio showed real, significant\nconcentration-dependence (r=-0.72/-0.69, p<1e-10),\nso a single fixed ratio+tolerance would not be valid\nacross the calibration range -- a qualitative detection\ncheck (SNR ≥ 3) was used instead. A full-scan (m/z\n41-200) survey at PETN's RT found no better second\nqualifier candidate than the currently-monitored ions."];
 
     NOTE9 [label="Reanalysis selection (NOT diagrammed above -- a separate\nstage that runs AFTER this per-injection acceptance chart,\nonce multiple physical re-analyses of the same Sample/NC\nexist): as of 2026-09-08, select_best_attempt() prefers the\naccepted attempt with the LOWEST 6ng-bracket %bias (Section\nB's B3/B_QUANT_PASS evidence) instead of the earliest date.\nA Negative Control's own genuinely clean result (no peak on\nEITHER analyte, i.e. both C_NEGATIVE) is trusted as the best\npossible outcome outright, rather than an unranked unknown --\nsince a clean result and a small-but-nonzero 6ng bias are not\notherwise on a directly comparable numeric scale. NOT applied\nto real Samples: a Sample's own no-peak result is not\nobviously a BETTER outcome than a low-bias detection the way\na clean NC result is, so Samples still fall through to the\ndate-based tie-break unchanged. See ASTRA/doe/CONTEXT.md and\nGCMSQuantitation/CONTEXT.md, \"Prefer Lowest QC Bracket Error\non Reanalysis\" session, for full detail."];
 
-    KEY -> NOTE1 -> NOTE2 -> NOTE3 -> NOTE3B -> NOTE3C -> NOTE4 -> NOTE5 -> NOTE6 -> NOTE7 -> NOTE8 -> NOTE9 [style=invis];
+    NOTE10 [label="Full status audit, 2026-09-08: every node/edge in Sections\nA-D checked directly against the live InjectionAcceptance.R\n(not assumed from memory or from this chart's own prior\nannotations). Two genuine, pre-existing chart/code mismatches\nfound and fixed:\n(1) Section A's blank evaluation was ALREADY a 3-tier\n    classification in the code (Contaminated/Trace detected/\n    Clean, same Quantifiable/Trace/Negative SNR tiers used\n    everywhere else) -- this chart previously showed only a\n    binary detected/not-detected split, missing the Trace-\n    detected case entirely.\n(2) Section C's C3 (bracketing-blank check) previously showed\n    a binary clean/flagged split -- missing the Trace-detected\n    blank case, which the code treats as a caveat (like a WARN),\n    not a hard fail, distinct from a fully Contaminated blank.\nBoth are now corrected to match the live code exactly. All\nother sections (B, D, and the rest of C) were confirmed already\naccurate; only wording referencing a since-removed function\nname (compute_analysis_accepted()) and a since-removed '0.2ng\noverride' mechanism (D4) needed updating, not the underlying\nlogic itself."];
+
+    KEY -> NOTE1 -> NOTE2 -> NOTE3 -> NOTE3B -> NOTE3C -> NOTE4 -> NOTE5 -> NOTE6 -> NOTE7 -> NOTE8 -> NOTE9 -> NOTE10 [style=invis];
   }
 }
