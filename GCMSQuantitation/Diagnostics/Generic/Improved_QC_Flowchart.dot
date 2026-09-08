@@ -61,15 +61,24 @@ digraph GCMS_QC_Flow {
     B_NOSUB [label="No usable substitute in that\ndirection -- this bracket\nposition counts as MISSING", fillcolor="#f8d7da", fontcolor="#842029"];
     B1 [label="QC concentration level?", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
 
-    B2 [label="SNR ≥ 3 (LOD)?", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
-    B2b [label="SNR ≥ 10 also?\n(WARN tier -- applied uniformly to\nBOTH PETN and RDX)", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
-    B_SENS_FAIL [label="SENSITIVITY CHECK FAIL\nSystem LOD not met at this bracket.\nAny result relying on this bracket for\na negative/trace call must be reanalysed.", fillcolor="#f8d7da", fontcolor="#842029"];
-    B_SENS_WARN [label="SENSITIVITY CHECK WARN\n(3 ≤ SNR < 10)\nBracket usable; marginal sensitivity noted.", fillcolor="#fff3cd", fontcolor="#664d03"];
-    B_SENS_PASS [label="SENSITIVITY CHECK PASS", fillcolor="#d1e7dd", fontcolor="#0f5132"];
+    B2_SPLIT [label="0.2ng QC -- evaluated as TWO\nINDEPENDENT flags from the SAME\ninjection (added 2026-09-08, see NOTE3C):\nDETECTABILITY (SNR only) and\nQUANTIFICATION (SNR AND concentration>0)", shape=hexagon, fillcolor="#e2d9f3", fontcolor="#432874"];
+
+    B2D [label="DETECTABILITY --\nSNR ≥ 3 (LOD)?", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    B2Db [label="SNR ≥ 10 also?\n(WARN tier -- applied uniformly to\nBOTH PETN and RDX)", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    B_DET_FAIL [label="DETECTABILITY CHECK FAIL\nSystem LOD not met at this bracket.", fillcolor="#f8d7da", fontcolor="#842029"];
+    B_DET_WARN [label="DETECTABILITY CHECK WARN\n(3 ≤ SNR < 10)\nBracket usable; marginal sensitivity noted.", fillcolor="#fff3cd", fontcolor="#664d03"];
+    B_DET_PASS [label="DETECTABILITY CHECK PASS", fillcolor="#d1e7dd", fontcolor="#0f5132"];
+
+    B2Q [label="QUANTIFICATION --\nConcentration > 0?\n(does the fitted calibration curve\nresolve a positive value for this\ndrift-corrected response? A real,\ndetectable peak can still floor to\nexactly 0 here -- a curve-fitting-\nintercept artefact, not a non-detect;\nsee NOTE3C)", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    B2Qb [label="SNR ≥ 3 (LOD)?", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    B2Qc [label="SNR ≥ 10 also?\n(WARN tier)", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    B_QUANTFLAG_FAIL [label="QUANTIFICATION CHECK FAIL\n(concentration ≤ 0, OR SNR < 3)", fillcolor="#f8d7da", fontcolor="#842029"];
+    B_QUANTFLAG_WARN [label="QUANTIFICATION CHECK WARN\n(3 ≤ SNR < 10, concentration > 0)", fillcolor="#fff3cd", fontcolor="#664d03"];
+    B_QUANTFLAG_PASS [label="QUANTIFICATION CHECK PASS", fillcolor="#d1e7dd", fontcolor="#0f5132"];
 
     B3 [label="Quantitative bias\nwithin ±20%?", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
-    B_QUANT_PASS [label="QUANTITATION CHECK PASS", fillcolor="#d1e7dd", fontcolor="#0f5132"];
-    B_QUANT_FAIL [label="QUANTITATION CHECK FAIL\nAny quantified-positive result relying on\nthis bracket must be reanalysed.", fillcolor="#f8d7da", fontcolor="#842029"];
+    B_QUANT_PASS [label="6ng QUANTITATION\nCHECK PASS", fillcolor="#d1e7dd", fontcolor="#0f5132"];
+    B_QUANT_FAIL [label="6ng QUANTITATION CHECK FAIL\nAny quantified-positive result relying on\nthis bracket must be reanalysed.", fillcolor="#f8d7da", fontcolor="#842029"];
 
     B0 -> B_INJCHECK;
     B_INJCHECK -> B1 [label="Yes, injected OK"];
@@ -77,26 +86,35 @@ digraph GCMS_QC_Flow {
     B_HASMORE -> B_SUBSTITUTE [label="Yes"];
     B_HASMORE -> B_NOSUB [label="No"];
     B_SUBSTITUTE -> B_INJCHECK [label="re-check substitute"];
-    B1 -> B2 [label="0.2ng\n(sensitivity check)"];
+    B1 -> B2_SPLIT [label="0.2ng"];
     B1 -> B3 [label="6ng\n(quantitation check)"];
-    B2 -> B_SENS_FAIL [label="No"];
-    B2 -> B2b [label="Yes"];
-    B2b -> B_SENS_WARN [label="No"];
-    B2b -> B_SENS_PASS [label="Yes"];
+    B2_SPLIT -> B2D;
+    B2_SPLIT -> B2Q;
+    B2D -> B_DET_FAIL [label="No"];
+    B2D -> B2Db [label="Yes"];
+    B2Db -> B_DET_WARN [label="No"];
+    B2Db -> B_DET_PASS [label="Yes"];
+    B2Q -> B_QUANTFLAG_FAIL [label="No (conc ≤ 0)"];
+    B2Q -> B2Qb [label="Yes (conc > 0)"];
+    B2Qb -> B_QUANTFLAG_FAIL [label="No (SNR < 3)"];
+    B2Qb -> B2Qc [label="Yes"];
+    B2Qc -> B_QUANTFLAG_WARN [label="No"];
+    B2Qc -> B_QUANTFLAG_PASS [label="Yes"];
     B3 -> B_QUANT_PASS [label="Yes"];
     B3 -> B_QUANT_FAIL [label="No"];
   }
 
-  QC_REG [label="QC Bracket Status Register (per analyte, per level)\nEvaluated at BOTH the pre- and post- QC injection\n(after the injection-fallback substitution above):\n• Combined = PASS only if pre AND post are BOTH present\n   AND BOTH PASS\n• Combined = WARN only if BOTH present and at least one\n   is WARN (0.2ng only -- 6ng has no WARN tier)\n• Combined = FAIL if EITHER side is MISSING (incl. an\n   injection failure with no usable substitute) or FAILED\n   -- both sides are REQUIRED", shape=cylinder, fillcolor="#e2e3e5", fontcolor="#41464b", fontsize=10.5];
+  QC_REG [label="QC Bracket Status Register (per analyte, per level)\nEvaluated at BOTH the pre- and post- QC injection\n(after the injection-fallback substitution above).\n0.2ng now stores TWO independent bracket verdicts per\nanalyte from the SAME injection -- DETECTABILITY (read\nby Negative Control rows) and QUANTIFICATION (read by\nreal Sample rows); see Section C, C_ROWTYPE:\n• Combined = PASS only if pre AND post are BOTH present\n   AND BOTH PASS (for whichever register applies)\n• Combined = WARN only if BOTH present and at least one\n   is WARN (0.2ng only -- 6ng has no WARN tier)\n• Combined = FAIL if EITHER side is MISSING (incl. an\n   injection failure with no usable substitute) or FAILED\n   -- both sides are REQUIRED, for either register", shape=cylinder, fillcolor="#e2e3e5", fontcolor="#41464b", fontsize=10.5];
 
   BLANK_REG -> B0 [label="sequence continues"];
   B_NOSUB -> QC_REG;
-  B_SENS_FAIL -> QC_REG; B_SENS_WARN -> QC_REG; B_SENS_PASS -> QC_REG;
+  B_DET_FAIL -> QC_REG; B_DET_WARN -> QC_REG; B_DET_PASS -> QC_REG;
+  B_QUANTFLAG_FAIL -> QC_REG; B_QUANTFLAG_WARN -> QC_REG; B_QUANTFLAG_PASS -> QC_REG;
   B_QUANT_PASS -> QC_REG; B_QUANT_FAIL -> QC_REG;
 
   //////////////////////////////////////////////////////////////////
   subgraph cluster_C {
-    label="SECTION C -- Per-Analyte Evaluation (run INDEPENDENTLY for PETN and for RDX; NCs run the IDENTICAL tree -- no structural divergence)";
+    label="SECTION C -- Per-Analyte Evaluation (run INDEPENDENTLY for PETN and for RDX; NCs run the IDENTICAL tree EXCEPT at the 0.2ng bracket check -- see C_ROWTYPE, NOTE7)";
     style="filled"; color="#adb5bd"; fillcolor="#f8f9fa"; fontsize=13; fontcolor="#212529";
 
     C0 [label="Analyse sample/NC injection"];
@@ -117,8 +135,9 @@ digraph GCMS_QC_Flow {
     C6 [label="[Quantifiable tier ONLY]\nDo bracketing 6ng QCs\n(pre & post, BOTH required)\npass? (reads QC Bracket Register)", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
     C_6FAIL [label="6ng QC BRACKET FAILED OR UNAVAILABLE\nQuantitation accuracy not confirmed for this\npositive result -- reanalysis required.\nOnly checked when this analyte is Quantifiable;\nno override exists.", fillcolor="#f8d7da", fontcolor="#842029"];
 
-    C7 [label="[Trace or Negative tier ONLY]\nDo bracketing 0.2ng QCs\n(pre & post, BOTH required)\npass? (reads QC Bracket Register)", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
-    C_02FAIL [label="0.2ng QC BRACKET FAILED OR UNAVAILABLE\nSystem LOD not confirmed adequate at the time\nof this result -- reanalysis required.\nNo override, for samples OR NCs: a missing/\nfailed bracket always hard-fails here.", fillcolor="#f8d7da", fontcolor="#842029"];
+    C_ROWTYPE [label="Is this row a real Sample\nor a Negative Control (NC)?\n(added 2026-09-08 -- the ONE point where\nSamples and NCs now diverge structurally;\nsee NOTE7)", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    C7 [label="[Trace or Negative tier ONLY]\nDo bracketing 0.2ng QCs\n(pre & post, BOTH required) pass?\nSample -> reads QUANTIFICATION register.\nNC -> reads DETECTABILITY register.\n(Section B, B2_SPLIT)", shape=diamond, fillcolor="#cfe2ff", fontcolor="#084298"];
+    C_02FAIL [label="0.2ng QC BRACKET FAILED OR UNAVAILABLE\nSystem LOD (NC) or quantifiability (Sample) not\nconfirmed adequate at the time of this result --\nreanalysis required. No override, for samples OR\nNCs, against whichever register applies: a missing/\nfailed bracket always hard-fails here.", fillcolor="#f8d7da", fontcolor="#842029"];
     C_CAVEAT [label="CAVEAT NOTED\n(0.2ng bracket WARN -- both sides present,\nmarginal but usable)\nContributes to row-level PASS* in Section D.", fillcolor="#fff3cd", fontcolor="#664d03"];
 
     C_ROUTE [label="Route by THIS analyte's SNR tier\n(determined earlier at the peak-present /\nSNR-classification steps above, carried\nforward unchanged by the bracket checks)", shape=hexagon, fillcolor="#e2d9f3", fontcolor="#432874"];
@@ -131,15 +150,15 @@ digraph GCMS_QC_Flow {
     C1 -> C_ISLOW [label="Detected, low"];
     C1 -> C2 [label="OK"];
 
-    C2 -> C7 [label="No peak\n(tier = Negative,\npending LOD confirmation)"];
+    C2 -> C_ROWTYPE [label="No peak\n(tier = Negative,\npending LOD confirmation)"];
     C2 -> C3 [label="Yes, peak\npresent"];
 
     C3 -> C_CARRYOVER [label="No (flagged)"];
     C3 -> C4 [label="Yes (clean)"];
 
     C4 -> C4b [label="SNR ≥ 10\n(tier = Quantifiable /\n\"positive\" -> 6ng only)"];
-    C4 -> C7 [label="3 ≤ SNR < 10\n(tier = Trace -> 0.2ng only)"];
-    C4 -> C7 [label="SNR < 3\n(tier = Negative, pending\nLOD confirmation -> 0.2ng only)"];
+    C4 -> C_ROWTYPE [label="3 ≤ SNR < 10\n(tier = Trace -> 0.2ng only)"];
+    C4 -> C_ROWTYPE [label="SNR < 3\n(tier = Negative, pending\nLOD confirmation -> 0.2ng only)"];
 
     C4b -> C_NOCONFIRM [label="No"];
     C4b -> C6 [label="Yes\n(or check not applicable --\nqualifier columns absent)"];
@@ -147,6 +166,7 @@ digraph GCMS_QC_Flow {
     C6 -> C_6FAIL [label="No"];
     C6 -> C_ROUTE [label="Yes"];
 
+    C_ROWTYPE -> C7 [label="Sample or NC\n(routes which register C7 reads)"];
     C7 -> C_ROUTE [label="PASS (both sides)"];
     C7 -> C_CAVEAT [label="WARN (both present,\nneither missing/FAIL)"];
     C7 -> C_02FAIL [label="Missing or FAIL\n(either side) -- no override"];
@@ -160,8 +180,8 @@ digraph GCMS_QC_Flow {
 
   QC_REG -> C0 [label="sequence continues"];
   BLANK_REG -> C3 [style=dashed, color="#41464b", constraint=false, label="reads register"];
-  QC_REG -> C6 [style=dashed, color="#41464b", constraint=false, label="reads register"];
-  QC_REG -> C7 [style=dashed, color="#41464b", constraint=false, label="reads register"];
+  QC_REG -> C6 [style=dashed, color="#41464b", constraint=false, label="reads register\n(6ng)"];
+  QC_REG -> C7 [style=dashed, color="#41464b", constraint=false, label="reads register\n(0.2ng detect OR quant,\nper C_ROWTYPE)"];
 
   //////////////////////////////////////////////////////////////////
   subgraph cluster_D {
@@ -206,13 +226,16 @@ digraph GCMS_QC_Flow {
     NOTE1 [label="Every decision node shows BOTH outcomes\nexplicitly (no implicit 'pass' branch)."];
     NOTE2 [label="Carryover (bracketing-blank) check applies to\nANY detected peak, not only quantifiable ones --\na 'trace' result can also be carryover."];
     NOTE3 [label="Bracket checks are now CONDITIONAL on tier, not\nuniversal: 6ng (accuracy) is only checked when this\nanalyte is Quantifiable ('positive'); 0.2ng (LOD) is\nonly checked when this analyte is Trace or Negative.\nA missing pre- or post- QC counts as FAIL, not WARN\n(both required) -- UNLESS a same-level/analyte QC\nfurther from the sample block can be substituted for\nan injection-failed bracket QC (Section B fallback)."];
-    NOTE3B [label="CONFIRMED DESIGN DECISION: there is NO override at\neither bracket gate, for samples or NCs. Because\n0.2ng is only ever checked when an analyte's tier is\nTrace/Negative (never Quantifiable), the old 'sample's\nown peak is Quantifiable, so downgrade the 0.2ng FAIL'\nescape hatch no longer has a coherent trigger and has\nbeen removed entirely -- a missing/failed 0.2ng (or\n6ng) bracket is always a hard FAIL, with identical\ntreatment for samples and NCs."];
+    NOTE3B [label="CONFIRMED DESIGN DECISION: there is NO override at\neither bracket gate, for samples or NCs -- a missing/\nfailed bracket is always a hard FAIL, whichever\nregister it is checked against. UPDATED 2026-09-08:\nthe 6ng gate remains identical for samples and NCs\n(one register, one check). The 0.2ng gate now checks\nTWO different registers depending on row type (see\nNOTE3C, NOTE7) -- Samples and NCs no longer necessarily\nsee the SAME verdict from the SAME underlying QC\ninjection at 0.2ng, even though neither ever gets an\nescape-hatch override."];
+    NOTE3C [label="0.2ng split into DETECTABILITY vs QUANTIFICATION\n(added 2026-09-08): a real, detected peak's fitted\nconcentration can floor to exactly 0 even at good SNR --\nthe fitted calibration curve's own y-intercept (an\nartefact of a weighted quadratic fit through a handful\nof real standards, not a physical measurement) can sit\nABOVE a genuine low-level response, so no concentration\n>=0 on that curve reproduces it. This is a curve-fitting\nartefact, not evidence of a non-detect -- confirmed via\ndirect comparison against the raw response and against\nan identical, independently-documented RDX/Analysis1\ncalibration-floor case. DECISION: a Sample's own reported\nrecovery % still needs a real number, so Samples keep the\nstricter QUANTIFICATION flag (SNR AND concentration>0)\nunchanged from the pre-2026-09-08 behaviour. A Negative\nControl's contamination verdict only ever needs 'was\nsomething detected', so NCs use the new DETECTABILITY\nflag (SNR only) instead -- a real detection no longer\ngets silently reclassified as 'Not evaluated' purely\nbecause of where the calibration curve happens to\nintercept zero."];
     NOTE4 [label="PETN/RDX asymmetry -- justified vs. removed:\nKEPT (grounded in chemistry/instrumentation):\n IS-ratio quantification for RDX only (15N-RDX is\n not a valid drift proxy for PETN -- tested and\n rejected); drift correction for PETN only;\n noise-window position; per-analyte height/SNR\n floors.\nREMOVED (was an incidental implementation gap,\nnot a scientific requirement): the 0.2ng\nsensitivity WARN tier is now identical for both\nanalytes (Section B)."];
     NOTE5 [label="Row-level outcome (Section D) uses a FIXED,\nagreed check order -- IS, then PETN, then RDX --\nand reports ONLY the first blocking failure found.\nThe IS check short-circuits immediately at C1 (see\nC_NOINJECT / C_ISLOW -- BOTH IS outcomes are hard\nFAILs as of 2026-08-11) -- it does NOT wait for\nSection D; only PETN-vs-RDX ordering is resolved\nthere, since IS already gates entry to the\nper-analyte loop."];
     NOTE6 [label="CONFIRMED DESIGN DECISION: a bracket-confirmed\ntrace-level detection is a genuine, reportable\noutcome, not an automatic reanalysis trigger --\nthis is a deliberate departure from the current\nlive script, whose compute_analysis_accepted()\ntoday auto-FAILs ANY sample with a detected-but-\nnot-Quantifiable peak (Below_LOD or Below_LOQ);\ncurrently only a fully Quantifiable result or a\ntrue no-peak-at-all (NA) avoids FAIL. Under this\nchart, a Trace result ALWAYS carries a WARNING\ncaveat forward (Section D, D4) -- if every other\ncheck passes, the row is PASS*, never a plain\nPASS, reflecting the reduced confidence of an\nunquantified detection."];
-    NOTE7 [label="Negative Controls (NCs) now run the IDENTICAL tree\nas samples (Sections C, then D) with NO structural\ndifference -- the two points that used to distinguish\nthem (auto-fail on non-Quantifiable, and the 0.2ng\noverride) have both been removed/replaced above. NCs\nand samples diverge ONLY in reporting-label vocabulary\nat the very end (e.g. 'Negative (clean)', 'Positive:\ntrace detected' map onto C_NEGATIVE/C_TRACE/\nC_QUANTIFIED at reporting time; not separately\ndiagrammed here)."];
+    NOTE7 [label="UPDATED 2026-09-08: Negative Controls (NCs) and Samples\nrun the IDENTICAL tree EXCEPT for exactly ONE point --\nthe 0.2ng bracket check (Section C, C_ROWTYPE/C7): a\nSample reads the QUANTIFICATION register, an NC reads\nthe DETECTABILITY register (Section B, NOTE3C). This is\na deliberate, narrow divergence, not a return to the old\nasymmetric design -- both row types still go through the\nidentical carryover check, confirmatory-ion check, 6ng\nbracket, and Section D combination logic; only WHICH\n0.2ng verdict is consulted differs, and only because a\ncontamination check and a quantified-recovery check are\ngenuinely different questions with different evidence\nrequirements. NCs and samples otherwise still diverge\nonly in reporting-label vocabulary at the very end (e.g.\n'Negative (clean)', 'Positive: trace detected' map onto\nC_NEGATIVE/C_TRACE/C_QUANTIFIED at reporting time; not\nseparately diagrammed here)."];
     NOTE8 [label="Confirmatory ion check (C4b, added 2026-08-12):\nderived empirically from all 11 'Accepted Analysis'\ndatasets (Cal standards + real Sample/QC data).\nPETN's second monitored ion (m/z57) was tested and\nREJECTED as a confirmatory requirement -- only 18.2%\nof pure Cal standards ever reach a measurable SNR for\nit, so requiring it would fail most genuine detections,\nnot catch misidentifications. m/z76 alone is used.\nRDX requires BOTH its monitored ions (m/z46, m/z75) --\nboth are reliably detected (~100% in Cal standards) and\nrequiring both costs zero extra failures on any real\nSample/QC/Cal row in the study. A ratio-based check\n(qualifier/quantifier PA ratio) was also investigated\nand rejected: RDX's ratio showed real, significant\nconcentration-dependence (r=-0.72/-0.69, p<1e-10),\nso a single fixed ratio+tolerance would not be valid\nacross the calibration range -- a qualitative detection\ncheck (SNR ≥ 3) was used instead. A full-scan (m/z\n41-200) survey at PETN's RT found no better second\nqualifier candidate than the currently-monitored ions."];
 
-    KEY -> NOTE1 -> NOTE2 -> NOTE3 -> NOTE3B -> NOTE4 -> NOTE5 -> NOTE6 -> NOTE7 -> NOTE8 [style=invis];
+    NOTE9 [label="Reanalysis selection (NOT diagrammed above -- a separate\nstage that runs AFTER this per-injection acceptance chart,\nonce multiple physical re-analyses of the same Sample/NC\nexist): as of 2026-09-08, select_best_attempt() prefers the\naccepted attempt with the LOWEST 6ng-bracket %bias (Section\nB's B3/B_QUANT_PASS evidence) instead of the earliest date.\nA Negative Control's own genuinely clean result (no peak on\nEITHER analyte, i.e. both C_NEGATIVE) is trusted as the best\npossible outcome outright, rather than an unranked unknown --\nsince a clean result and a small-but-nonzero 6ng bias are not\notherwise on a directly comparable numeric scale. NOT applied\nto real Samples: a Sample's own no-peak result is not\nobviously a BETTER outcome than a low-bias detection the way\na clean NC result is, so Samples still fall through to the\ndate-based tie-break unchanged. See ASTRA/doe/CONTEXT.md and\nGCMSQuantitation/CONTEXT.md, \"Prefer Lowest QC Bracket Error\non Reanalysis\" session, for full detail."];
+
+    KEY -> NOTE1 -> NOTE2 -> NOTE3 -> NOTE3B -> NOTE3C -> NOTE4 -> NOTE5 -> NOTE6 -> NOTE7 -> NOTE8 -> NOTE9 [style=invis];
   }
 }
