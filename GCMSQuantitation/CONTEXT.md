@@ -1,5 +1,33 @@
 # GCMSQuantitation - Project Context
 
+## Session Summary (September 8, 2026, continued) — Extraction+Filtration Efficiency Simplified to a Single Combined Recovery-Efficiency Constant Per Analyte
+
+### Motivation
+
+User completed the spiked-swab recovery experiment (`20260903ExtractionTest`) referenced by the long-standing `GlobalCode.R` TODO ("Determine experimentally from spiked swab extraction recovery") and obtained real efficiency figures -- but the experiment's own design carries a spiked swab through extraction AND 0.45µm PTFE filtration together, so it only ever measures the two loss mechanisms combined, never separately. Asked to simplify the pipeline's two-constant-per-analyte (`extraction_efficiency * filtration_efficiency`) design down to a single measured constant per analyte, since the separate filtration-only figure was never determined and never will be from this experiment's design.
+
+Separately noted in passing (not part of this session's own edits): before this session, `GlobalCode.R`'s `DataFolder` block had a leftover unconditional hardcoded override immediately after the conditional `.preset_DataFolder` assignment -- exactly the kind of regression this file's own August 27, 2026 "Self-inflicted `DataFolder` regression" entry warns against, almost certainly left over from manually processing the `20260903ExtractionTest` raw data itself. Flagged to the user before any further `GlobalCode.R` edits; user fixed it themselves ahead of this session's changes.
+
+### Bug caught before applying: efficiency entered as a whole percentage, not a fraction
+
+User had already entered `petn_extraction_efficiency <- 57` / `rdx_extraction_efficiency <- 54` (with `filtration_efficiency` left at the neutral `1`). The recovery formula in `04_CollateStudyResults.R` divides directly by this product with no `/100`, so 57/54 (intended as 57%/54%) would have deflated every reported recovery% by ~57x/54x instead of erroring. Confirmed with the user these should be entered as fractions (`0.57`/`0.54`) before implementing anything.
+
+### Implementation
+
+- `GlobalCode.R` (~line 425-440): replaced the 4 per-analyte extraction/filtration constants with 2 combined constants, `petn_recovery_efficiency <- 0.57` / `rdx_recovery_efficiency <- 0.54`, with a comment explaining the combined-measurement rationale. Updated the section's header formula comment accordingly (`recovery (%) = (mass_measured / mass_deposited) / recovery_efficiency * 100`).
+- `GlobalCode.R`'s `validate_setup()`: added a guard rejecting `petn_recovery_efficiency`/`rdx_recovery_efficiency` outside `(0, 1]`, specifically to catch a future recurrence of the percentage-vs-fraction mixup above (previously there was no validation on these constants at all).
+- `FINEX/04_CollateStudyResults.R`: updated all 5 usage sites (recovery, drift-corrected recovery, drift-corrected recovery SE, and the RDX fallback-column recovery calc) to divide by the single combined constant instead of multiplying two separate ones. Confirmed via repo-wide search that no other file (`Code/02_PeakDetection.R`, `Code/03_Quantification.R`, `Code/InjectionAcceptance.R`, `05_StatisticalAnalysis.R`, `06_RDXCalendarDrift.R`, any `Diagnostics/` script) ever referenced the old 4 constants -- this is a fully self-contained, 2-file change.
+
+### Verification
+
+Backed up pre-change `FINEX_StudyResults.csv`/`.xlsx` (`%TEMP%\opencode\RecoveryEfficiency_PreCollation_Backup\`). Re-ran `04_CollateStudyResults.R` from a fresh Rscript session (no raw MS reprocessing needed -- confirmed these constants are consumed only in `04`'s recovery-column math, never in peak detection/calibration/PASS-FAIL logic). Confirmed: 318 sample rows preserved, every non-recovery column byte-identical to the pre-change backup, and `petn_recovery_dc`/`rdx_recovery` scaled by exactly `1/0.57` and `1/0.54` respectively across all rows (checked programmatically across all non-NA/non-zero rows, not just spot-checked visually) -- confirming the change affected only the intended columns, by exactly the intended factor. Also re-ran `05_StatisticalAnalysis.R` (by the user) and `06_RDXCalendarDrift.R` (read-only, consumes `FINEX_StudyResults.csv`'s `rdx_recovery` column) -- both completed without error, regenerating all recovery-dependent plots/stats with the corrected values.
+
+### Files Modified
+
+`GlobalCode.R` (4 constants -> 2, `validate_setup()` guard added), `FINEX/04_CollateStudyResults.R` (5 usage sites updated), `FINEX_StudyResults.csv`/`.xlsx` and all `Plots/` outputs (regenerated via `04`), `Plots/Statistical_Diagnostics/` outputs (regenerated via `06`). `CONTEXT.md` (this entry).
+
+---
+
 ## Session Summary (September 8, 2026) — 0.2ng QC "Sensitivity Check" Split Into Two Properly-Scoped Flags (Detectability vs Quantification); Reanalysis Tie-Break Changed From "Earliest Date" to "Lowest QC Bracket Error, Trusting a Clean NC Result"
 
 ### Motivation

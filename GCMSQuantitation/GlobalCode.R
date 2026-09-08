@@ -423,21 +423,21 @@ DepositConc <- 1000
 DepositMass <- DepositVol * DepositConc
 
 # =========================================================
-# Extraction and Filtration Efficiencies
+# Recovery Efficiency (combined extraction + filtration)
 # =========================================================
 # Used in CollateStudyResults to calculate true surface recovery:
-#   recovery (%) = (mass_measured / mass_deposited) / 
-#                  (extraction_efficiency * filtration_efficiency) * 100
-
-# Extraction efficiency: fraction recovered from swab into ethanol
-# TODO: Determine experimentally from spiked swab extraction recovery
-petn_extraction_efficiency <- 1  # 60%
-rdx_extraction_efficiency  <- 1  # 60%
-
-# Filtration efficiency: fraction recovered through 0.45 µm PTFE filter
-# Set to 1.0 for unfiltered samples (e.g., Lab30)
-petn_filtration_efficiency <- 1  # 90%
-rdx_filtration_efficiency  <- 1  # 90%
+#   recovery (%) = (mass_measured / mass_deposited) / recovery_efficiency * 100
+#
+# Measured directly via spiked-swab recovery experiment (20260903
+# ExtractionTest), which carries a spiked swab through the full
+# extraction + 0.45 µm PTFE filtration workflow before GCMS analysis --
+# so the resulting fraction already reflects both loss mechanisms
+# combined, and does not need to be decomposed into separate
+# extraction-only/filtration-only factors (previously two separate
+# constants per analyte, multiplied together below; superseded by this
+# single measured figure per analyte).
+petn_recovery_efficiency <- 0.57
+rdx_recovery_efficiency  <- 0.54
 
 #############################################################
 #####              QC Configuration                     #####
@@ -729,6 +729,18 @@ validate_setup <- function() {
 
   if (!is.numeric(Dilution) || Dilution <= 0 || Dilution > 1) {
     stop("Dilution must be between 0 and 1, got: ", Dilution)
+  }
+  
+  # --- Recovery efficiency (must be a 0-1 fraction, not a percentage) ---
+  # Guards against re-entering a measured efficiency as e.g. 57 instead of
+  # 0.57 -- the recovery formula in CollateStudyResults divides directly by
+  # this value with no /100, so a whole-percentage value would silently
+  # deflate every reported recovery% by ~100x instead of erroring.
+  if (!is.numeric(petn_recovery_efficiency) || petn_recovery_efficiency <= 0 || petn_recovery_efficiency > 1) {
+    stop("petn_recovery_efficiency must be a fraction between 0 and 1 (not a percentage), got: ", petn_recovery_efficiency)
+  }
+  if (!is.numeric(rdx_recovery_efficiency) || rdx_recovery_efficiency <= 0 || rdx_recovery_efficiency > 1) {
+    stop("rdx_recovery_efficiency must be a fraction between 0 and 1 (not a percentage), got: ", rdx_recovery_efficiency)
   }
   
   message("Input validation passed.")
