@@ -1,5 +1,35 @@
 # GCMSQuantitation - Project Context
 
+## Session Summary (September 8, 2026, continued) — Conditional Formatting Silently Dropped When Saving XLSX to a Live OneDrive-Synced Path; Defensive Local-Save-Then-Copy-Then-Verify Added
+
+### Motivation
+
+User reported that `FINEX_StudyResults.xlsx`'s conditional formatting (PASS/FAIL colour-coding etc.) had disappeared, and suspected it was an unintended regression from the September 3, 2026 thesis-wide colour-palette session. Investigated directly rather than assuming either explanation.
+
+### Investigation: ruled out the palette change, isolated the real cause
+
+Instrumented the live `wb` workbook object immediately before `saveWorkbook()`: confirmed `apply_formatting()` itself was working perfectly -- all 61 `conditionalFormatting` rule entries per data sheet and all 5 `dxf` styles were present and correct in memory, and this code path was never touched by the colour-palette session (it operates entirely downstream of `sheet_list` construction). So the bug was not in `04_CollateStudyResults.R`'s formatting logic at all.
+
+Isolated the real variable with a controlled comparison: saved the identical `wb` object once to a local (non-synced) path and once directly to the real OneDrive-synced destination (`.../FINEX Swabbing Study/Accepted Analysis/FINEX_StudyResults.xlsx`), then inspected each output's raw XML directly (unzipped, not just re-read via `openxlsx`). The local save was byte-correct (`<dxfs count="5">`, full `<conditionalFormatting>` blocks on every sheet); the OneDrive save produced `<dxfs count="0">` with zero conditional-formatting elements anywhere -- despite `saveWorkbook()` printing its normal "Excel workbook written" success message with no error or warning in either case, and in one test the destination file's own `LastWriteTime` didn't even update despite the "success" message. Also directly caught the destination file transiently locked ("used by another process") mid-investigation. Root cause: `saveWorkbook()`'s internal temp-file-then-swap-into-place write can silently lose (or entirely skip) against a live OneDrive-synced path when OneDrive's own sync/lock activity interferes with that swap -- the same general class of issue already documented twice elsewhere in this file (the August 19, 2026 ".xlsx Permission denied, left stale" incident; the `DualMethodProcess.R` OneDrive Files-On-Demand placeholder finding), just previously undiagnosed for this specific script/symptom.
+
+### Fix: local-save, verify, copy-with-retry, verify-again
+
+Replaced the single `saveWorkbook(wb, xlsx_path, overwrite = TRUE)` call in `04_CollateStudyResults.R` (Section 12) with a defensive four-step sequence:
+1. `saveWorkbook()` to a local `tempdir()` path (removes the OneDrive-sync race from the write itself).
+2. Immediately `loadWorkbook()` that local file back and assert `length(wb$styles$dxf) > 0` -- `stop()`s with a clear message if this fails, since a failure *here* is a genuine `apply_formatting()`/`openxlsx` bug, not the OneDrive issue, and should never be confused with it.
+3. `file.copy(..., overwrite = TRUE)` the verified-good local file over the real OneDrive destination, retrying up to 5 times with a 3s backoff if the destination is transiently locked (mirrors the existing documented workaround for the Aug 19, 2026 incident).
+4. Re-`loadWorkbook()` straight from the OneDrive destination itself (not the local copy) afterward and re-check `dxfs` -- this is the check that would have caught the original incident; the old code's success message was unconditional on this ever actually landing. Any failure at step 2 or 4 leaves the known-good local temp copy in place (not deleted) and `stop()`s with its path, rather than silently proceeding on a broken file.
+
+### Verification
+
+Parse-checked, then re-ran `04_CollateStudyResults.R` end-to-end against the real study data. Console now reports "Excel workbook written (with formatting, verified 5 conditional-format style(s) present after copy to destination)"; independently confirmed by unzipping the actual on-disk file afterward (not trusting the script's own report): `<dxfs count="5">` and full `<conditionalFormatting>` blocks present on `All Data`/`Steel`/`Glass`/`ABS-Smooth`/`ABS-Textured`/`Negative Controls` (26/26/26/26/26/18 rule entries respectively), correctly absent on `Summary`/`CalSummary`/`SampleSummary` (by design -- those sheets are skipped by `apply_formatting()`, unrelated to this fix).
+
+### Files Modified
+
+`FINEX/04_CollateStudyResults.R` (Section 12 save logic only). `CONTEXT.md` (this entry).
+
+---
+
 ## Session Summary (September 8, 2026, continued) — Extraction+Filtration Efficiency Simplified to a Single Combined Recovery-Efficiency Constant Per Analyte
 
 ### Motivation

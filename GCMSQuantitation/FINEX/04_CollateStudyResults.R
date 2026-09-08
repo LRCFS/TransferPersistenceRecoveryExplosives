@@ -1346,9 +1346,82 @@ for (sheet_name in names(sheet_list)) {
   }
 }
 
-# Save workbook
-saveWorkbook(wb, xlsx_path, overwrite = TRUE)
-print(paste0("Excel workbook written (with formatting): ", xlsx_path))
+# Save workbook: write to a LOCAL temp path first, then copy into place over
+# the OneDrive-synced destination, and verify at each stage -- see CONTEXT.md
+# "Conditional Formatting Silently Dropped on OneDrive-Synced Save" session.
+# saveWorkbook() can report success ("Excel workbook written") even when
+# writing directly to a live OneDrive-synced path intermittently fails to
+# actually update the file's contents, with no error or warning surfaced --
+# confirmed directly: saveWorkbook() straight to the OneDrive path produced
+# a file with dxfs count="0" and zero <conditionalFormatting> elements (all
+# formatting silently dropped), while the identical wb object saved to a
+# local path was byte-correct. Writing locally first avoids the temp-file-
+# swap-vs-cloud-sync race entirely; file.copy()'s return value plus a
+# post-hoc reload-and-check give a hard failure instead of a silently
+# stale/broken file.
+xlsx_tmp_path <- file.path(tempdir(), paste0("FINEX_StudyResults_", format(Sys.time(), "%Y%m%d%H%M%S"), ".xlsx"))
+saveWorkbook(wb, xlsx_tmp_path, overwrite = TRUE)
+
+# Verify formatting actually made it into the LOCAL temp file before touching
+# the OneDrive destination at all -- if THIS fails, it's a real openxlsx/
+# apply_formatting() bug, not the OneDrive-sync issue, and copying it over
+# would just relocate the problem rather than diagnose it.
+verify_wb_local <- loadWorkbook(xlsx_tmp_path)
+n_dxf_local <- length(verify_wb_local$styles$dxf)
+if (n_dxf_local == 0) {
+  stop("Conditional formatting styles (dxfs) are missing from the freshly-",
+       "written LOCAL temp workbook (", xlsx_tmp_path, ") before it was even ",
+       "copied to the OneDrive destination -- this points to a real ",
+       "openxlsx/apply_formatting() bug, NOT the known OneDrive-sync write ",
+       "issue. Investigate apply_formatting()/createStyle() directly; do ",
+       "not just retry.")
+}
+
+# Copy into place, retrying briefly in case the destination is transiently
+# locked (Excel open, OneDrive mid-sync) -- same class of issue as the
+# well-documented August 19, 2026 ".xlsx Permission denied, left stale"
+# incident (see CONTEXT.md).
+copy_ok <- FALSE
+max_copy_attempts <- 5
+for (attempt in seq_len(max_copy_attempts)) {
+  copy_ok <- file.copy(xlsx_tmp_path, xlsx_path, overwrite = TRUE)
+  if (copy_ok) break
+  message("Attempt ", attempt, "/", max_copy_attempts, ": could not copy workbook to ",
+          xlsx_path, " (likely open in Excel or mid-OneDrive-sync). Retrying in 3s...")
+  Sys.sleep(3)
+}
+if (!copy_ok) {
+  stop("Failed to copy the completed workbook to the OneDrive destination ",
+       "after ", max_copy_attempts, " attempts: ", xlsx_path, ". The ",
+       "correctly-formatted file is still available locally at: ",
+       xlsx_tmp_path, " -- copy it manually once the destination is free ",
+       "(close Excel / let OneDrive sync settle), or re-run this script.")
+}
+
+# Final check: re-read straight back from the OneDrive destination itself
+# (not the local temp copy) and confirm the conditional formatting actually
+# landed there -- file.copy() returning TRUE only means the OS-level copy
+# call succeeded, not that OneDrive's own sync/placeholder handling didn't
+# silently truncate or revert it afterward. This is the check that would
+# have caught the original incident (saveWorkbook()'s own "Excel workbook
+# written" message was misleadingly unconditional on this ever having
+# actually landed correctly).
+Sys.sleep(1)  # brief settle time before re-reading
+final_check_wb <- tryCatch(loadWorkbook(xlsx_path), error = function(e) NULL)
+n_dxf_final <- if (!is.null(final_check_wb)) length(final_check_wb$styles$dxf) else 0
+if (n_dxf_final == 0) {
+  stop("Workbook was copied to ", xlsx_path, " but re-reading it back shows ",
+       "ZERO conditional formatting styles (dxfs) -- the OneDrive-sync write ",
+       "issue this defensive save logic exists to catch has recurred. A ",
+       "correctly-formatted copy is still available locally at: ",
+       xlsx_tmp_path, ". Do NOT assume this run succeeded; do not delete the ",
+       "temp copy until this is resolved.")
+}
+
+unlink(xlsx_tmp_path)
+print(paste0("Excel workbook written (with formatting, verified ", n_dxf_final,
+             " conditional-format style(s) present after copy to destination): ",
+             xlsx_path))
 
 # =========================================================
 # 13. Generate Box Plots
