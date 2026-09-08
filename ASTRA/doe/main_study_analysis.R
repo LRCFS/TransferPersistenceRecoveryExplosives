@@ -446,11 +446,22 @@ collate_gcms_results <- function() {
       return(df)
     }
     df$..quality_ok <- quality_ok
+    # Tie-break order (see "Prefer Lowest QC Bracket Error on Reanalysis"
+    # session, CONTEXT.md): among attempts of equal quality_ok, prefer the
+    # one with the lowest qc_bracket_error (max abs %bias of whichever 6ng
+    # QC(s) actually gated it -- see compute_injection_acceptance() in
+    # Code/InjectionAcceptance.R) over an arbitrary date-based rule. NA
+    # (Trace/Negative-tier attempts, gated by the SNR-based 0.2ng bracket
+    # instead, which has no continuous error value) sorts last by dplyr's
+    # own default, i.e. loses to any attempt with a defined, in-tolerance
+    # error -- Date remains the final tie-break for genuine ties (equal
+    # error, or both NA).
+    if (!("qc_bracket_error" %in% names(df))) df$qc_bracket_error <- NA_real_
     df %>%
       group_by(SampleName_trimmed) %>%
       mutate(N_Attempts = n()) %>%
       ungroup() %>%
-      arrange(SampleName_trimmed, desc(..quality_ok), Date) %>%
+      arrange(SampleName_trimmed, desc(..quality_ok), qc_bracket_error, Date) %>%
       group_by(SampleName_trimmed) %>%
       slice(1) %>%
       ungroup() %>%
@@ -461,7 +472,7 @@ collate_gcms_results <- function() {
   report_multiple_attempts <- function(df, label) {
     ids <- unique(df$SampleName_trimmed[df$MultipleAttempts])
     if (length(ids) > 0) {
-      cat(length(ids), label, "had multiple analysis attempts -- using earliest accepted attempt:\n")
+      cat(length(ids), label, "had multiple analysis attempts -- using the accepted attempt with the lowest QC bracket error (earliest date as tie-break):\n")
       for (id in ids) cat("  ", id, "\n")
       cat("\n")
     }
@@ -474,7 +485,13 @@ collate_gcms_results <- function() {
     main_rows_raw %>% mutate(RowType = "Sample"),
     nc_rows_raw   %>% mutate(RowType = "NC")
   )
-  combined_for_accept <- compute_injection_acceptance(combined_for_accept)
+  # is_nc: gates which of the two 0.2ng QC flags a Trace/Negative-tier row's
+  # bracket check uses (see "Two Proper 0.2ng QC Flags" session, CONTEXT.md)
+  # -- NCs use the SNR-only "detect" flag (a contamination check only needs
+  # "was something detected"), real samples keep the stricter SNR+conc>0
+  # "quant" flag (a reported recovery % needs an actual number).
+  combined_for_accept <- compute_injection_acceptance(combined_for_accept,
+                                                       is_nc = combined_for_accept$RowType == "NC")
 
   main_rows <- combined_for_accept %>% filter(RowType == "Sample")
   nc_rows   <- combined_for_accept %>% filter(RowType == "NC")
@@ -590,7 +607,14 @@ collate_gcms_results <- function() {
   }
   design_data$SampleType <- ifelse(grepl(nc_pattern, design_data$RunID, ignore.case = TRUE), "NC", "Main")
 
+  # petn_qc_02ng_pre/post and rdx_qc_02ng_pre/post below display whichever
+  # of the two 0.2ng flags actually gated that row's own acceptance (see
+  # "Two Proper 0.2ng QC Flags" session, CONTEXT.md): the "_detect" (SNR
+  # only) flag for NC rows, the stricter "_quant" (SNR+concentration>0)
+  # flag for real samples -- NOT a fixed column, so this is resolved
+  # per-row via IsNCRow below rather than a single static column name.
   all_result_rows <- bind_rows(main_rows, nc_rows)
+  all_result_rows$IsNCRow <- c(rep(FALSE, nrow(main_rows)), rep(TRUE, nrow(nc_rows)))
 
   n_updated <- 0
   for (i in seq_len(nrow(all_result_rows))) {
@@ -606,12 +630,13 @@ collate_gcms_results <- function() {
       design_data$rdx_is_pa_flag[match_row]     <- if ("rdx_is_pa_flag" %in% names(all_result_rows)) all_result_rows$rdx_is_pa_flag[i] else NA_character_
       design_data$petn_qc_6ng_pre[match_row]    <- all_result_rows$petn_qc_6ng_pre[i]
       design_data$petn_qc_6ng_post[match_row]   <- all_result_rows$petn_qc_6ng_post[i]
-      design_data$petn_qc_02ng_pre[match_row]   <- all_result_rows$petn_qc_02ng_pre[i]
-      design_data$petn_qc_02ng_post[match_row]  <- all_result_rows$petn_qc_02ng_post[i]
+      suffix02 <- if (isTRUE(all_result_rows$IsNCRow[i])) "_detect" else "_quant"
+      design_data$petn_qc_02ng_pre[match_row]   <- all_result_rows[[paste0("petn_qc_02ng_pre", suffix02)]][i]
+      design_data$petn_qc_02ng_post[match_row]  <- all_result_rows[[paste0("petn_qc_02ng_post", suffix02)]][i]
       design_data$rdx_qc_6ng_pre[match_row]     <- all_result_rows$rdx_qc_6ng_pre[i]
       design_data$rdx_qc_6ng_post[match_row]    <- all_result_rows$rdx_qc_6ng_post[i]
-      design_data$rdx_qc_02ng_pre[match_row]    <- all_result_rows$rdx_qc_02ng_pre[i]
-      design_data$rdx_qc_02ng_post[match_row]   <- all_result_rows$rdx_qc_02ng_post[i]
+      design_data$rdx_qc_02ng_pre[match_row]    <- all_result_rows[[paste0("rdx_qc_02ng_pre", suffix02)]][i]
+      design_data$rdx_qc_02ng_post[match_row]   <- all_result_rows[[paste0("rdx_qc_02ng_post", suffix02)]][i]
       design_data$GCMS_Analysis_Date[match_row] <- all_result_rows$Date[i]
       design_data$AnalysisFolder[match_row]     <- all_result_rows$AnalysisFolder[i]
       design_data$N_Attempts[match_row]         <- all_result_rows$N_Attempts[i]

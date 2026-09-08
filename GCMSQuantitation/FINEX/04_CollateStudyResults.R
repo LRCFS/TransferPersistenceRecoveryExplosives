@@ -480,16 +480,16 @@ if ("petn_concentration_dc" %in% names(samples)) {
   samples$petn_mass_dc <- samples$petn_concentration_dc * SampleVol
 }
 
-# Recovery (%) = (mass / deposit) / (extraction * filtration) * 100
+# Recovery (%) = (mass / deposit) / recovery_efficiency * 100
 samples$petn_recovery <- (samples$petn_mass / DepositMass) / 
-                          (petn_extraction_efficiency * petn_filtration_efficiency) * 100
+                          petn_recovery_efficiency * 100
 samples$rdx_recovery  <- (samples$rdx_mass / DepositMass) / 
-                          (rdx_extraction_efficiency * rdx_filtration_efficiency) * 100
+                          rdx_recovery_efficiency * 100
 
 # Drift-corrected recovery
 if ("petn_mass_dc" %in% names(samples)) {
   samples$petn_recovery_dc <- (samples$petn_mass_dc / DepositMass) / 
-                               (petn_extraction_efficiency * petn_filtration_efficiency) * 100
+                               petn_recovery_efficiency * 100
 }
 
 # Drift-correction uncertainty, propagated one final (linear) step from
@@ -502,7 +502,7 @@ if ("petn_mass_dc" %in% names(samples)) {
 # files won't have it until reprocessed).
 if ("petn_concentration_dc_se" %in% names(samples)) {
   samples$petn_recovery_dc_se <- (samples$petn_concentration_dc_se * SampleVol / DepositMass) /
-                                   (petn_extraction_efficiency * petn_filtration_efficiency) * 100
+                                   petn_recovery_efficiency * 100
 }
 
 # RDX uses uncorrected concentration only (no drift correction applied)
@@ -518,7 +518,7 @@ rdx_conc_col <- if ("rdx_concentration" %in% names(samples)) {
 if (!is.na(rdx_conc_col)) {
   samples$rdx_mass <- samples[[rdx_conc_col]] * SampleVol
   samples$rdx_recovery <- (samples$rdx_mass / DepositMass) / 
-                          (rdx_extraction_efficiency * rdx_filtration_efficiency) * 100
+                          rdx_recovery_efficiency * 100
 }
 
 # =========================================================
@@ -531,7 +531,12 @@ if (!is.na(rdx_conc_col)) {
 # there is no more structural difference between them (the old 0.2ng-
 # bracket-FAIL override, the only thing that used to distinguish NC
 # handling, has been removed entirely; see Diagnostics/Improved_QC_Flowchart.dot).
-samples <- compute_injection_acceptance(samples)
+# is_nc: gates which of the two 0.2ng QC flags a Trace/Negative-tier row's
+# bracket check uses (see "Two Proper 0.2ng QC Flags" session, CONTEXT.md)
+# -- NCs use the SNR-only "detect" flag (a contamination check only needs
+# "was something detected"), real samples keep the stricter SNR+conc>0
+# "quant" flag (a reported recovery % needs an actual number).
+samples <- compute_injection_acceptance(samples, is_nc = samples$IsNegativeControl)
 
 # Print summary of acceptance. NCs are now excluded from these counts by
 # checking IsNegativeControl directly (previously they carried a literal
@@ -608,11 +613,22 @@ select_best_attempt <- function(df, quality_ok, key_cols) {
     return(df)
   }
   df$..quality_ok <- quality_ok
+  # Tie-break order (see "Prefer Lowest QC Bracket Error on Reanalysis"
+  # session, CONTEXT.md): among attempts of equal quality_ok, prefer the
+  # one with the lowest qc_bracket_error (max abs %bias of whichever 6ng
+  # QC(s) actually gated it -- see compute_injection_acceptance() in
+  # Code/InjectionAcceptance.R) over an arbitrary date-based rule. NA
+  # (Trace/Negative-tier attempts, gated by the SNR-based 0.2ng bracket
+  # instead, which has no continuous error value) sorts last by dplyr's own
+  # default, i.e. loses to any attempt with a defined, in-tolerance error --
+  # Date remains the final tie-break for genuine ties (equal error, or both
+  # NA).
+  if (!("qc_bracket_error" %in% names(df))) df$qc_bracket_error <- NA_real_
   df %>%
     group_by(across(all_of(key_cols))) %>%
     mutate(N_Attempts = n()) %>%
     ungroup() %>%
-    arrange(across(all_of(key_cols)), desc(..quality_ok), Date) %>%
+    arrange(across(all_of(key_cols)), desc(..quality_ok), qc_bracket_error, Date) %>%
     group_by(across(all_of(key_cols))) %>%
     slice(1) %>%
     ungroup() %>%
@@ -626,8 +642,8 @@ report_multiple_attempts <- function(df, label, key_cols) {
     filter(MultipleAttempts) %>%
     select(all_of(key_cols)) %>%
     distinct()
-  cat(nrow(dup_ids), label, "had multiple analysis attempts -- using earliest",
-      "accepted attempt (or earliest overall if none were accepted):\n")
+  cat(nrow(dup_ids), label, "had multiple analysis attempts -- using the",
+      "accepted attempt with the lowest QC bracket error (earliest date as tie-break; or earliest overall if none were accepted):\n")
   for (i in seq_len(nrow(dup_ids))) {
     cat("  ", paste(dup_ids[i, ], collapse = " / "), "\n")
   }
@@ -694,9 +710,11 @@ desired_cols <- c(
   "petn_qual76_snr_flag",
   # PETN recovery
   "petn_recovery_dc", "petn_recovery_dc_se",
-  # PETN QC brackets: 6ng first, then 0.2ng
+  # PETN QC brackets: 6ng first, then 0.2ng (samples are gated by the
+  # "_quant" flag -- SNR AND concentration>0, see "Two Proper 0.2ng QC
+  # Flags" session, CONTEXT.md -- so that is what's shown here for audit)
   "petn_qc_6ng_pre", "petn_qc_6ng_post",
-  "petn_qc_02ng_pre", "petn_qc_02ng_post",
+  "petn_qc_02ng_pre_quant", "petn_qc_02ng_post_quant",
   # PETN QC inherited flags: 6ng first, then 0.2ng
   "petn_qc_6ng_pre_inherited", "petn_qc_6ng_post_inherited",
   "petn_qc_02ng_pre_inherited", "petn_qc_02ng_post_inherited",
@@ -711,9 +729,10 @@ desired_cols <- c(
   "rdx_qual46_snr_flag", "rdx_qual75_snr_flag",
   # RDX recovery
   "rdx_recovery",
-  # RDX QC brackets: 6ng first, then 0.2ng
+  # RDX QC brackets: 6ng first, then 0.2ng (samples -> "_quant" flag, see
+  # comment on the PETN brackets above)
   "rdx_qc_6ng_pre", "rdx_qc_6ng_post",
-  "rdx_qc_02ng_pre", "rdx_qc_02ng_post",
+  "rdx_qc_02ng_pre_quant", "rdx_qc_02ng_post_quant",
   # RDX QC inherited flags: 6ng first, then 0.2ng
   "rdx_qc_6ng_pre_inherited", "rdx_qc_6ng_post_inherited",
   "rdx_qc_02ng_pre_inherited", "rdx_qc_02ng_post_inherited",
@@ -772,12 +791,15 @@ desired_cols_nc <- c(
   
   # QC/IS audit columns -- raw evidence behind nc_analysis_accepted
   # (IS first, then 6ng QC brackets, then 0.2ng QC brackets, matching the
-  # order those checks are evaluated in compute_injection_acceptance())
+  # order those checks are evaluated in compute_injection_acceptance()).
+  # NCs are gated by the "_detect" flag (SNR only -- a contamination check
+  # only needs "was something detected", see "Two Proper 0.2ng QC Flags"
+  # session, CONTEXT.md), so that is what's shown here for audit.
   "rdx_is_snr_flag", "rdx_is_pa_flag",
   "petn_qc_6ng_pre", "petn_qc_6ng_post",
   "rdx_qc_6ng_pre", "rdx_qc_6ng_post",
-  "petn_qc_02ng_pre", "petn_qc_02ng_post",
-  "rdx_qc_02ng_pre", "rdx_qc_02ng_post",
+  "petn_qc_02ng_pre_detect", "petn_qc_02ng_post_detect",
+  "rdx_qc_02ng_pre_detect", "rdx_qc_02ng_post_detect",
   
   # Source tracing
   "Date", "SampleName", "DataFile", "SourceFile"
@@ -1183,8 +1205,10 @@ apply_formatting <- function(wb, sheet_name, df) {
   # --- QC bracket columns: PASS=green, WARN=amber, FAIL=red ---
   qc_cols <- intersect(c("petn_qc_6ng_pre", "petn_qc_6ng_post",
                           "rdx_qc_6ng_pre", "rdx_qc_6ng_post",
-                          "petn_qc_02ng_pre", "petn_qc_02ng_post",
-                          "rdx_qc_02ng_pre", "rdx_qc_02ng_post"), col_names)
+                          "petn_qc_02ng_pre_detect", "petn_qc_02ng_post_detect",
+                          "petn_qc_02ng_pre_quant", "petn_qc_02ng_post_quant",
+                          "rdx_qc_02ng_pre_detect", "rdx_qc_02ng_post_detect",
+                          "rdx_qc_02ng_pre_quant", "rdx_qc_02ng_post_quant"), col_names)
   for (col in qc_cols) {
     col_idx <- which(col_names == col)
     conditionalFormatting(wb, sheet_name, cols = col_idx, rows = data_rows,

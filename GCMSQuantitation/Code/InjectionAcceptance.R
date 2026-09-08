@@ -34,7 +34,9 @@
 #   petn_concentration, petn_concentration_dc, rdx_concentration
 #   rdx_is_pa_flag, rdx_is_pa, rdx_is_snr_flag
 #   petn_percent_bias_dc (or petn_percent_bias), rdx_percent_bias
-#   petn_qc_flag_dc, rdx_qc_flag       (as written by 03_Quantification.R)
+#   petn_qc_flag_detect, petn_qc_flag_quant, rdx_qc_flag_detect,
+#     rdx_qc_flag_quant  (0.2ng-only; as written by 03_Quantification.R --
+#     see "Two Proper 0.2ng QC Flags" session, CONTEXT.md)
 #   tic_other_peak_count, _rt1/_height1 .. _rtN/_heightN
 #     (as written by 02_PeakDetection.R's find_other_tic_peaks();
 #     optional -- see evaluate_blanks() below, backward-compatible if
@@ -264,7 +266,10 @@ assign_qc_brackets <- function(all_data, petn_bias_col, rdx_bias_col,
 
   init_bracket_cols <- function(df) {
     for (col in c("petn_qc_6ng_pre", "petn_qc_6ng_post", "rdx_qc_6ng_pre", "rdx_qc_6ng_post",
-                  "petn_qc_02ng_pre", "petn_qc_02ng_post", "rdx_qc_02ng_pre", "rdx_qc_02ng_post")) {
+                  "petn_qc_02ng_pre_detect", "petn_qc_02ng_post_detect",
+                  "petn_qc_02ng_pre_quant",  "petn_qc_02ng_post_quant",
+                  "rdx_qc_02ng_pre_detect",  "rdx_qc_02ng_post_detect",
+                  "rdx_qc_02ng_pre_quant",   "rdx_qc_02ng_post_quant")) {
       df[[col]] <- NA_character_
     }
     for (col in c("petn_qc_6ng_pre_inherited", "petn_qc_6ng_post_inherited",
@@ -272,6 +277,15 @@ assign_qc_brackets <- function(all_data, petn_bias_col, rdx_bias_col,
                   "petn_qc_02ng_pre_inherited", "petn_qc_02ng_post_inherited",
                   "rdx_qc_02ng_pre_inherited", "rdx_qc_02ng_post_inherited")) {
       df[[col]] <- FALSE
+    }
+    # Raw %bias of the bracketing 6ng QC(s) (signed, NA if unavailable) --
+    # kept alongside the PASS/FAIL verdict above so downstream re-analysis
+    # tie-breaking (select_best_attempt()) can prefer the attempt with the
+    # smaller QC error instead of an arbitrary date-based rule. See "Prefer
+    # Lowest QC Bracket Error on Reanalysis" session, CONTEXT.md.
+    for (col in c("petn_qc_6ng_pre_bias", "petn_qc_6ng_post_bias",
+                  "rdx_qc_6ng_pre_bias", "rdx_qc_6ng_post_bias")) {
+      df[[col]] <- NA_real_
     }
     df$petn_blank_bracket <- NA_character_
     df$rdx_blank_bracket  <- NA_character_
@@ -284,41 +298,21 @@ assign_qc_brackets <- function(all_data, petn_bias_col, rdx_bias_col,
   }
 
   # -------------------------------------------------------
-  # 0.2ng symmetric 3-tier flag (PASS/WARN/FAIL), computed fresh here for
-  # BOTH analytes from petn_snr/petn_concentration_dc and
-  # rdx_snr/rdx_concentration respectively, so PETN and RDX get the
-  # identical tiering rule (concentration<=0 -> FAIL; SNR<detect -> FAIL;
-  # SNR<quant -> WARN; else PASS). Replaces the old asymmetric pairing
-  # (PETN's own petn_qc_flag_dc vs RDX's 2-tier-only rdx_qc_flag).
-  compute_sensitivity_tier <- function(snr_val, conc_val) {
-    if (is.na(snr_val) || is.na(conc_val)) return("SENSITIVITY_CHECK_FAIL")
-    if (conc_val <= 0) return("SENSITIVITY_CHECK_FAIL")
-    if (snr_val < snr_detect_threshold) return("SENSITIVITY_CHECK_FAIL")
-    if (snr_val < snr_quant_threshold) return("SENSITIVITY_CHECK_WARN")
-    return("SENSITIVITY_CHECK_PASS")
+  # 0.2ng QC flags: read directly from the two flags 03_Quantification.R
+  # already computes symmetrically for both analytes (see "Two Proper
+  # 0.2ng QC Flags" session, CONTEXT.md) -- NOT recomputed here any more:
+  #   {prefix}_qc_flag_detect -- SNR only (detectability)
+  #   {prefix}_qc_flag_quant  -- SNR + concentration>0 (quantification)
+  # Both bracket pairs are built below; compute_injection_acceptance()
+  # picks whichever is appropriate per row (quant for real Samples, detect
+  # for Negative Controls) via its own is_nc argument.
+  for (col in c("petn_qc_flag_detect", "petn_qc_flag_quant",
+                "rdx_qc_flag_detect", "rdx_qc_flag_quant")) {
+    if (!(col %in% names(all_data))) all_data[[col]] <- NA_character_
   }
 
-  petn_conc_col_for_02ng <- if ("petn_concentration_dc" %in% names(all_data)) {
-    "petn_concentration_dc"
-  } else {
-    "petn_concentration"
-  }
-
-  all_data$petn_qc_flag_symmetric <- NA_character_
-  all_data$rdx_qc_flag_symmetric  <- NA_character_
-  qc_02_idx <- which(all_data$Type == "QC" & all_data$CalLevel == 0.2)
-  for (i in qc_02_idx) {
-    petn_snr_i  <- if ("petn_snr" %in% names(all_data)) all_data$petn_snr[i] else NA_real_
-    rdx_snr_i   <- if ("rdx_snr" %in% names(all_data))  all_data$rdx_snr[i]  else NA_real_
-    petn_conc_i <- if (petn_conc_col_for_02ng %in% names(all_data)) all_data[[petn_conc_col_for_02ng]][i] else NA_real_
-    rdx_conc_i  <- if ("rdx_concentration" %in% names(all_data)) all_data$rdx_concentration[i] else NA_real_
-
-    all_data$petn_qc_flag_symmetric[i] <- compute_sensitivity_tier(petn_snr_i, petn_conc_i)
-    all_data$rdx_qc_flag_symmetric[i]  <- compute_sensitivity_tier(rdx_snr_i, rdx_conc_i)
-  }
-
-  # Extract QC rows with bias columns AND SNR columns AND the new
-  # symmetric 0.2ng flags
+  # Extract QC rows with bias columns AND SNR columns AND the two 0.2ng
+  # flags
   bias_cols_to_select <- c(petn_bias_col, rdx_bias_col)
   bias_cols_to_select <- bias_cols_to_select[!is.na(bias_cols_to_select)]
 
@@ -326,7 +320,8 @@ assign_qc_brackets <- function(all_data, petn_bias_col, rdx_bias_col,
     filter(Type == "QC") %>%
     select(SourceFile, Line, CalLevel,
            any_of(c(bias_cols_to_select, "petn_snr", "rdx_snr",
-                    "petn_qc_flag_symmetric", "rdx_qc_flag_symmetric",
+                    "petn_qc_flag_detect", "petn_qc_flag_quant",
+                    "rdx_qc_flag_detect", "rdx_qc_flag_quant",
                     "rdx_is_snr_flag")))
 
   # Determine which QCs actually injected (RDX IS detected)
@@ -445,6 +440,8 @@ assign_qc_brackets <- function(all_data, petn_bias_col, rdx_bias_col,
         if (!is.null(pre_result$row)) {
           all_data$petn_qc_6ng_pre[i] <- evaluate_qc_bias(pre_result$row[["petn_bias"]], qc_6ng_limit, pre_result$row[["petn_snr"]])
           all_data$rdx_qc_6ng_pre[i]  <- evaluate_qc_bias(pre_result$row[["rdx_bias"]], qc_6ng_limit, pre_result$row[["rdx_snr"]])
+          all_data$petn_qc_6ng_pre_bias[i] <- pre_result$row[["petn_bias"]]
+          all_data$rdx_qc_6ng_pre_bias[i]  <- pre_result$row[["rdx_bias"]]
           all_data$petn_qc_6ng_pre_inherited[i] <- pre_result$inherited
           all_data$rdx_qc_6ng_pre_inherited[i]  <- pre_result$inherited
         }
@@ -452,6 +449,8 @@ assign_qc_brackets <- function(all_data, petn_bias_col, rdx_bias_col,
         if (!is.null(post_result$row)) {
           all_data$petn_qc_6ng_post[i] <- evaluate_qc_bias(post_result$row[["petn_bias"]], qc_6ng_limit, post_result$row[["petn_snr"]])
           all_data$rdx_qc_6ng_post[i]  <- evaluate_qc_bias(post_result$row[["rdx_bias"]], qc_6ng_limit, post_result$row[["rdx_snr"]])
+          all_data$petn_qc_6ng_post_bias[i] <- post_result$row[["petn_bias"]]
+          all_data$rdx_qc_6ng_post_bias[i]  <- post_result$row[["rdx_bias"]]
           all_data$petn_qc_6ng_post_inherited[i] <- post_result$inherited
           all_data$rdx_qc_6ng_post_inherited[i]  <- post_result$inherited
         }
@@ -460,15 +459,19 @@ assign_qc_brackets <- function(all_data, petn_bias_col, rdx_bias_col,
       if (nrow(qc_02ng) > 0) {
         pre_result <- find_injected_qc_pre(qc_02ng, sample_line)
         if (!is.null(pre_result$row)) {
-          all_data$petn_qc_02ng_pre[i] <- evaluate_qc_flag(pre_result$row[["petn_qc_flag_symmetric"]])
-          all_data$rdx_qc_02ng_pre[i]  <- evaluate_qc_flag(pre_result$row[["rdx_qc_flag_symmetric"]])
+          all_data$petn_qc_02ng_pre_detect[i] <- evaluate_qc_flag(pre_result$row[["petn_qc_flag_detect"]])
+          all_data$rdx_qc_02ng_pre_detect[i]  <- evaluate_qc_flag(pre_result$row[["rdx_qc_flag_detect"]])
+          all_data$petn_qc_02ng_pre_quant[i]  <- evaluate_qc_flag(pre_result$row[["petn_qc_flag_quant"]])
+          all_data$rdx_qc_02ng_pre_quant[i]   <- evaluate_qc_flag(pre_result$row[["rdx_qc_flag_quant"]])
           all_data$petn_qc_02ng_pre_inherited[i] <- pre_result$inherited
           all_data$rdx_qc_02ng_pre_inherited[i]  <- pre_result$inherited
         }
         post_result <- find_injected_qc_post(qc_02ng, sample_line)
         if (!is.null(post_result$row)) {
-          all_data$petn_qc_02ng_post[i] <- evaluate_qc_flag(post_result$row[["petn_qc_flag_symmetric"]])
-          all_data$rdx_qc_02ng_post[i]  <- evaluate_qc_flag(post_result$row[["rdx_qc_flag_symmetric"]])
+          all_data$petn_qc_02ng_post_detect[i] <- evaluate_qc_flag(post_result$row[["petn_qc_flag_detect"]])
+          all_data$rdx_qc_02ng_post_detect[i]  <- evaluate_qc_flag(post_result$row[["rdx_qc_flag_detect"]])
+          all_data$petn_qc_02ng_post_quant[i]  <- evaluate_qc_flag(post_result$row[["petn_qc_flag_quant"]])
+          all_data$rdx_qc_02ng_post_quant[i]   <- evaluate_qc_flag(post_result$row[["rdx_qc_flag_quant"]])
           all_data$petn_qc_02ng_post_inherited[i] <- post_result$inherited
           all_data$rdx_qc_02ng_post_inherited[i]  <- post_result$inherited
         }
@@ -575,13 +578,27 @@ assign_blank_brackets <- function(all_data) {
 # RDX): the first FAIL-class result found is reported and everything
 # else is irrelevant; otherwise PASS* if any caveat exists anywhere
 # (IS-LOW, blank-trace, bracket-WARN, or a Trace-tier result), else PASS.
-compute_injection_acceptance <- function(df) {
+#
+# `is_nc` (logical vector, one per row of `df`, default all FALSE --
+# fully backward compatible for any caller that doesn't pass it): selects
+# which of the two 0.2ng QC flags (see "Two Proper 0.2ng QC Flags"
+# session, CONTEXT.md) gates a Trace/Negative-tier row's bracket check.
+# FALSE (real Sample) -> the `_quant` bracket (SNR AND concentration>0 --
+# a reported recovery % needs an actual number, so a peak that floors to
+# concentration=0 is still a FAIL here, same as before this change).
+# TRUE (Negative Control) -> the `_detect` bracket (SNR only -- a
+# contamination check only needs "was something detected"; "trace levels
+# present, quantification not possible" is itself a complete, useful
+# answer for an NC, so it is no longer hard-blocked by a curve-fitting
+# floor-to-zero artefact the way a real sample's result still is).
+compute_injection_acceptance <- function(df, is_nc = rep(FALSE, nrow(df))) {
 
   n <- nrow(df)
   accepted  <- character(n)
   outcome   <- character(n)
   petn_tier <- rep(NA_character_, n)
   rdx_tier  <- rep(NA_character_, n)
+  qc_bracket_error <- rep(NA_real_, n)
 
   classify_snr_tier <- function(snr_flag_value, snr_quant_threshold = IA_DEFAULT_SNR_QUANT) {
     if (is.na(snr_flag_value)) return("Negative")
@@ -590,9 +607,17 @@ compute_injection_acceptance <- function(df) {
     return("Negative")  # "Below_LOD"
   }
 
-  evaluate_analyte <- function(i, prefix) {
+  evaluate_analyte <- function(i, prefix, use_detect_bracket) {
     # Returns list(result = "Quantified"/"Trace"/"Negative"/NULL,
-    #               fail_reason = NULL or string, caveat = logical, tier = tier)
+    #               fail_reason = NULL or string, caveat = logical, tier = tier,
+    #               bracket_error = NA_real_ or the max abs %bias of this
+    #               analyte's own bracketing 6ng QC(s) -- only ever set at
+    #               the Quantifiable tier, since that's the only tier with a
+    #               continuous bias value at all (0.2ng bracketing is
+    #               SNR/detection-based, not bias-based). Feeds
+    #               select_best_attempt()'s "lowest QC error" tie-break --
+    #               see "Prefer Lowest QC Bracket Error on Reanalysis"
+    #               session, CONTEXT.md.
     snr_flag_col <- paste0(prefix, "_snr_flag")
     snr_flag <- if (snr_flag_col %in% names(df)) df[[snr_flag_col]][i] else NA_character_
     peak_present <- !is.na(snr_flag)
@@ -605,7 +630,7 @@ compute_injection_acceptance <- function(df) {
       if (!is.na(blank_bracket) && blank_bracket == "Contaminated") {
         return(list(result = NULL,
                      fail_reason = paste0(toupper(prefix), " peak may be due to carryover (bracketing blank contaminated)"),
-                     caveat = FALSE, tier = NA_character_))
+                     caveat = FALSE, tier = NA_character_, bracket_error = NA_real_))
       }
       if (!is.na(blank_bracket) && blank_bracket == "Trace") {
         caveat <- TRUE
@@ -632,7 +657,7 @@ compute_injection_acceptance <- function(df) {
                          fail_reason = paste0(toupper(prefix), " confirmatory ion not detected (",
                                                paste(missing_ions, collapse = ", "),
                                                ") -- identity not confirmed"),
-                         caveat = FALSE, tier = tier))
+                         caveat = FALSE, tier = tier, bracket_error = NA_real_))
           }
         }
       }
@@ -643,19 +668,27 @@ compute_injection_acceptance <- function(df) {
       if (!bracket_ok) {
         return(list(result = NULL,
                      fail_reason = paste0(toupper(prefix), " 6ng QC bracket FAILED or unavailable"),
-                     caveat = FALSE, tier = tier))
+                     caveat = FALSE, tier = tier, bracket_error = NA_real_))
       }
-      return(list(result = "Quantified", fail_reason = NULL, caveat = caveat, tier = tier))
+      pre_bias  <- df[[paste0(prefix, "_qc_6ng_pre_bias")]][i]
+      post_bias <- df[[paste0(prefix, "_qc_6ng_post_bias")]][i]
+      bracket_error <- suppressWarnings(max(abs(pre_bias), abs(post_bias), na.rm = TRUE))
+      if (!is.finite(bracket_error)) bracket_error <- NA_real_
+      return(list(result = "Quantified", fail_reason = NULL, caveat = caveat, tier = tier,
+                  bracket_error = bracket_error))
     }
 
-    # Trace or Negative -> 0.2ng bracket only
-    pre  <- df[[paste0(prefix, "_qc_02ng_pre")]][i]
-    post <- df[[paste0(prefix, "_qc_02ng_post")]][i]
+    # Trace or Negative -> 0.2ng bracket only. Which of the two 0.2ng
+    # flags gates this depends on use_detect_bracket (see header comment
+    # above compute_injection_acceptance()).
+    bracket_suffix <- if (use_detect_bracket) "_detect" else "_quant"
+    pre  <- df[[paste0(prefix, "_qc_02ng_pre", bracket_suffix)]][i]
+    post <- df[[paste0(prefix, "_qc_02ng_post", bracket_suffix)]][i]
 
     if (is.na(pre) || is.na(post) || pre == "FAIL" || post == "FAIL") {
       return(list(result = NULL,
                    fail_reason = paste0(toupper(prefix), " 0.2ng QC bracket FAILED or unavailable"),
-                   caveat = FALSE, tier = tier))
+                   caveat = FALSE, tier = tier, bracket_error = NA_real_))
     }
     if (pre == "WARN" || post == "WARN") {
       caveat <- TRUE
@@ -664,7 +697,7 @@ compute_injection_acceptance <- function(df) {
     result_label <- if (tier == "Trace") "Trace" else "Negative"
     if (tier == "Trace") caveat <- TRUE  # Trace ALWAYS carries a caveat
 
-    return(list(result = result_label, fail_reason = NULL, caveat = caveat, tier = tier))
+    return(list(result = result_label, fail_reason = NULL, caveat = caveat, tier = tier, bracket_error = NA_real_))
   }
 
   for (i in seq_len(n)) {
@@ -702,8 +735,8 @@ compute_injection_acceptance <- function(df) {
       next
     }
 
-    petn_eval <- evaluate_analyte(i, "petn")
-    rdx_eval  <- evaluate_analyte(i, "rdx")
+    petn_eval <- evaluate_analyte(i, "petn", is_nc[i])
+    rdx_eval  <- evaluate_analyte(i, "rdx", is_nc[i])
 
     petn_tier[i] <- petn_eval$tier
     rdx_tier[i]  <- rdx_eval$tier
@@ -723,12 +756,37 @@ compute_injection_acceptance <- function(df) {
     any_caveat <- isTRUE(petn_eval$caveat) || isTRUE(rdx_eval$caveat)
     accepted[i] <- if (any_caveat) "PASS*" else "PASS"
     outcome[i]  <- "Complete"
+
+    # Combined QC-bracket error for this row (see evaluate_analyte()'s own
+    # header comment) -- the worse (larger) of whichever analyte(s) actually
+    # went through the bias-based 6ng bracket; NA if neither analyte did
+    # (both Trace/Negative tier, gated by the SNR/detection-based 0.2ng
+    # bracket instead, which has no continuous error value to report).
+    qc_bracket_error[i] <- suppressWarnings(max(petn_eval$bracket_error, rdx_eval$bracket_error, na.rm = TRUE))
+    if (!is.finite(qc_bracket_error[i])) qc_bracket_error[i] <- NA_real_
+
+    # For Negative Controls specifically (NOT real samples -- see below), a
+    # genuinely clean result (no peak detected on EITHER analyte, i.e. both
+    # tiers "Negative") is trusted as the best possible outcome, not an
+    # unranked unknown: overridden to 0 so it always wins a reanalysis
+    # tie-break against any other accepted attempt, even one with a small
+    # but nonzero, in-tolerance 6ng bias. See "Prefer Lowest QC Bracket
+    # Error on Reanalysis" session, CONTEXT.md -- "trust a clean result"
+    # decision. Deliberately scoped to is_nc only: for a real Sample, "no
+    # peak detected" means nothing was recovered, which is not obviously a
+    # *better* outcome than a low-bias detection the way a clean NC is, so
+    # real samples keep the plain NA (falls through to the Date tie-break
+    # unchanged).
+    if (isTRUE(is_nc[i]) && identical(petn_eval$tier, "Negative") && identical(rdx_eval$tier, "Negative")) {
+      qc_bracket_error[i] <- 0
+    }
   }
 
   df$analysis_accepted <- accepted
   df$Outcome           <- outcome
   df$petn_result_tier  <- petn_tier   # "Quantifiable" / "Trace" / "Negative" / NA (IS failure)
   df$rdx_result_tier   <- rdx_tier
+  df$qc_bracket_error  <- qc_bracket_error   # max abs %bias of the 6ng bracket(s) actually used; NA if none
 
   return(df)
 }

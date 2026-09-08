@@ -1390,56 +1390,33 @@ Combined$petn_percent_bias_dc <- ifelse(
   NA_real_
 )
 
-# PETN drift-corrected QC flags (apply same logic as uncorrected)
+# PETN drift-corrected QC flags -- 6ng (bias-based, quantitative) ONLY.
+# The 0.2ng ("sensitivity check") level used to be evaluated here too, but
+# that logic has been consolidated below into two explicit, properly-named
+# flags shared symmetrically by both analytes (see "Two Proper 0.2ng QC
+# Flags" session, CONTEXT.md) -- petn_qc_flag_dc no longer gets a value at
+# CalLevel==0.2 at all (stays NA there); it is still exactly as before for
+# CalLevel==6.
 Combined$petn_qc_flag_dc <- NA_character_
 for (i in which(Combined$Type == "QC")) {
   cal_level <- Combined$CalLevel[i]
-  if (is.na(cal_level)) next
-  
-  if (cal_level == 0.2) {
-    # 0.2ng: Three-tier evaluation (concentration first, then SNR thresholds)
-    # Priority: conc <= 0 → FAIL (not quantifiable)
-    #           SNR < 3 → FAIL (below LOD)
-    #           SNR < 10 → WARN (detected but marginal)
-    #           SNR >= 10 AND conc > 0 → PASS (good sensitivity)
-    snr_val <- if ("petn_snr" %in% names(Combined)) Combined$petn_snr[i] else NA_real_
-    conc_dc_val <- Combined$petn_concentration_dc[i]
-    
-    if (is.na(snr_val) || is.na(conc_dc_val)) {
-      # No peak detected at all (non-detection) or concentration could not be
-      # computed -- per spec this is a sensitivity failure, not an unevaluated
-      # QC. Previously this silently produced NA, masking non-detection.
-      Combined$petn_qc_flag_dc[i] <- "SENSITIVITY_CHECK_FAIL"
-    } else if (conc_dc_val <= 0) {
-      # Concentration check FIRST: not quantifiable regardless of SNR
-      Combined$petn_qc_flag_dc[i] <- "SENSITIVITY_CHECK_FAIL"
-    } else if (snr_val < 3) {
-      # Below detection limit
-      Combined$petn_qc_flag_dc[i] <- "SENSITIVITY_CHECK_FAIL"
-    } else if (snr_val < 10) {
-      # Marginal: detected and quantifiable but SNR < 10
-      Combined$petn_qc_flag_dc[i] <- "SENSITIVITY_CHECK_WARN"
-    } else {
-      # SNR >= 10 AND conc > 0
-      Combined$petn_qc_flag_dc[i] <- "SENSITIVITY_CHECK_PASS"
-    }
+  if (is.na(cal_level) || cal_level == 0.2) next
+
+  # Higher QCs: Bias + SNR
+  bias_val_dc <- Combined$petn_percent_bias_dc[i]
+  snr_val <- if ("petn_snr" %in% names(Combined)) Combined$petn_snr[i] else NA_real_
+  if (is.na(bias_val_dc)) {
+    # No concentration available (typically non-detection, SNR/PA both NA) --
+    # general failure per spec, not an unevaluated QC.
+    Combined$petn_qc_flag_dc[i] <- "FAIL"
+  } else if (abs(bias_val_dc) <= qc_bias_limit && (!is.na(snr_val) && snr_val >= 10)) {
+    Combined$petn_qc_flag_dc[i] <- "PASS"
+  } else if (abs(bias_val_dc) > qc_bias_limit) {
+    Combined$petn_qc_flag_dc[i] <- "FAIL_BIAS"
+  } else if (!is.na(snr_val) && snr_val < 10) {
+    Combined$petn_qc_flag_dc[i] <- "FAIL_SNR"
   } else {
-    # Higher QCs: Bias + SNR
-    bias_val_dc <- Combined$petn_percent_bias_dc[i]
-    snr_val <- if ("petn_snr" %in% names(Combined)) Combined$petn_snr[i] else NA_real_
-    if (is.na(bias_val_dc)) {
-      # No concentration available (typically non-detection, SNR/PA both NA) --
-      # general failure per spec, not an unevaluated QC.
-      Combined$petn_qc_flag_dc[i] <- "FAIL"
-    } else if (abs(bias_val_dc) <= qc_bias_limit && (!is.na(snr_val) && snr_val >= 10)) {
-      Combined$petn_qc_flag_dc[i] <- "PASS"
-    } else if (abs(bias_val_dc) > qc_bias_limit) {
-      Combined$petn_qc_flag_dc[i] <- "FAIL_BIAS"
-    } else if (!is.na(snr_val) && snr_val < 10) {
-      Combined$petn_qc_flag_dc[i] <- "FAIL_SNR"
-    } else {
-      Combined$petn_qc_flag_dc[i] <- "FAIL"
-    }
+    Combined$petn_qc_flag_dc[i] <- "FAIL"
   }
 }
 
@@ -1454,36 +1431,27 @@ for (name in names(analytes)) {
   Combined[[qc_type_col]] <- NA_character_
   Combined[[flag_col]] <- NA_character_
 
-  # Evaluate QCs
+  # Evaluate QCs -- 6ng (bias-based, quantitative) ONLY. The 0.2ng branch
+  # that used to live here (crude 2-tier SNR>=3 PASS/FAIL, no WARN) has
+  # been removed -- see the symmetric detect/quant block below, which
+  # replaces it (and petn_qc_flag_dc's old 0.2ng branch above) with two
+  # properly-scoped flags instead of three overlapping ones.
   for (i in which(Combined$Type == "QC")) {
     cal_level <- Combined$CalLevel[i]
-    
+
     if (is.na(cal_level)) next
-    
+
     if (cal_level == 0.2) {
-      # 0.2ng QCs: SNR-based evaluation only (sensitivity check)
-      # PASS if SNR >= 3 (detectable), FAIL only if SNR < 3 (below LOD)
+      # qc_type is still recorded for reference; flag_col is left NA here
+      # (superseded by {prefix}_qc_flag_detect/_quant below).
       Combined[[qc_type_col]][i] <- "SENSITIVITY"
-      
-      snr_val <- if (snr_col %in% names(Combined)) Combined[[snr_col]][i] else NA_real_
-      
-      if (is.na(snr_val)) {
-        # No peak detected at all (non-detection) -- below LOD, worse than
-        # SNR < 3. Previously silently produced NA, masking non-detection.
-        Combined[[flag_col]][i] <- "SENSITIVITY_CHECK_FAIL"
-      } else if (snr_val >= 3) {
-        Combined[[flag_col]][i] <- "SENSITIVITY_CHECK_PASS"
-      } else {
-        Combined[[flag_col]][i] <- "SENSITIVITY_CHECK_FAIL"
-      }
-      
     } else {
       # Higher QCs (6ng): Bias + SNR evaluation (quantitative QCs)
       Combined[[qc_type_col]][i] <- "QUANTITATIVE"
-      
+
       bias_val <- if (bias_col %in% names(Combined)) Combined[[bias_col]][i] else NA_real_
       snr_val <- if (snr_col %in% names(Combined)) Combined[[snr_col]][i] else NA_real_
-      
+
       if (is.na(bias_val)) {
         # No concentration available (typically non-detection) -- general
         # failure per spec, not an unevaluated QC.
@@ -1499,6 +1467,78 @@ for (name in names(analytes)) {
       }
     }
   }
+}
+
+# =========================================================
+# 0.2ng QC "sensitivity check" -- TWO separate, symmetric flags per
+# analyte (see "Two Proper 0.2ng QC Flags" session, CONTEXT.md), replacing
+# the three overlapping/inconsistent flags this used to be split across
+# (PETN-only petn_qc_flag_dc's old 0.2ng branch; the generic 2-tier
+# {prefix}_qc_flag's old 0.2ng branch; and a THIRD, independent
+# recomputation that used to live in InjectionAcceptance.R's
+# assign_qc_brackets() and is now removed in favour of reading these two
+# columns directly):
+#
+#   {prefix}_qc_flag_detect -- pure SNR (detectability only): was a peak
+#     present at all, and strong enough to call quantifiable by SNR alone?
+#       FAIL  SNR < 3
+#       WARN  3 <= SNR < 10
+#       PASS  SNR >= 10
+#     Used (downstream, in InjectionAcceptance.R) to gate Negative
+#     Controls -- a contamination check only needs "was something
+#     detected", not a valid calibration-curve concentration.
+#
+#   {prefix}_qc_flag_quant -- SNR AND concentration > 0 (quantification
+#     adequacy): as above, but ALSO requires the calibration curve (and,
+#     for PETN, drift correction) to resolve a positive concentration --
+#     a real peak that floors to concentration=0 (below the fitted
+#     curve's own intercept -- a curve-fitting artefact, not evidence of
+#     "nothing there", see CONTEXT.md) still fails this flag.
+#       FAIL  concentration <= 0, OR SNR < 3
+#       WARN  3 <= SNR < 10 (concentration > 0)
+#       PASS  SNR >= 10 AND concentration > 0
+#     Used to gate real Samples -- a reported recovery % needs an actual
+#     number, so "detected but unquantifiable" is not a useful result
+#     there the way it is for an NC.
+#
+# Both are computed ONLY for CalLevel==0.2 QC rows. PETN uses its
+# drift-corrected concentration (petn_concentration_dc); RDX has no
+# drift-corrected variant (its internal-standard ratio already serves
+# that function -- see CONTEXT.md "RDX Drift Correction Determined
+# Unnecessary") so it uses rdx_concentration directly. Higher (6ng) QCs'
+# existing bias-based petn_qc_flag_dc/{prefix}_qc_flag logic above is
+# completely untouched by this block.
+# =========================================================
+compute_02ng_detect_tier <- function(snr_val) {
+  if (is.na(snr_val)) return("SENSITIVITY_CHECK_FAIL")
+  if (snr_val < 3) return("SENSITIVITY_CHECK_FAIL")
+  if (snr_val < 10) return("SENSITIVITY_CHECK_WARN")
+  return("SENSITIVITY_CHECK_PASS")
+}
+
+compute_02ng_quant_tier <- function(snr_val, conc_val) {
+  if (is.na(snr_val) || is.na(conc_val)) return("SENSITIVITY_CHECK_FAIL")
+  if (conc_val <= 0) return("SENSITIVITY_CHECK_FAIL")
+  if (snr_val < 3) return("SENSITIVITY_CHECK_FAIL")
+  if (snr_val < 10) return("SENSITIVITY_CHECK_WARN")
+  return("SENSITIVITY_CHECK_PASS")
+}
+
+Combined$petn_qc_flag_detect <- NA_character_
+Combined$petn_qc_flag_quant  <- NA_character_
+Combined$rdx_qc_flag_detect  <- NA_character_
+Combined$rdx_qc_flag_quant   <- NA_character_
+
+for (i in which(Combined$Type == "QC" & Combined$CalLevel == 0.2)) {
+  petn_snr_i  <- if ("petn_snr" %in% names(Combined)) Combined$petn_snr[i] else NA_real_
+  rdx_snr_i   <- if ("rdx_snr" %in% names(Combined))  Combined$rdx_snr[i]  else NA_real_
+  petn_conc_i <- if ("petn_concentration_dc" %in% names(Combined)) Combined$petn_concentration_dc[i] else NA_real_
+  rdx_conc_i  <- if ("rdx_concentration" %in% names(Combined)) Combined$rdx_concentration[i] else NA_real_
+
+  Combined$petn_qc_flag_detect[i] <- compute_02ng_detect_tier(petn_snr_i)
+  Combined$rdx_qc_flag_detect[i]  <- compute_02ng_detect_tier(rdx_snr_i)
+  Combined$petn_qc_flag_quant[i]  <- compute_02ng_quant_tier(petn_snr_i, petn_conc_i)
+  Combined$rdx_qc_flag_quant[i]   <- compute_02ng_quant_tier(rdx_snr_i, rdx_conc_i)
 }
 
 }  # end if (has_calibration)
@@ -1821,8 +1861,10 @@ qc_cols <- c("Date", "Line", "SampleName", "DataFile", "Vial", "CalLevel", "Cali
              # PETN drift correction
              "petn_drift_correction_factor", "petn_dc_cf_se",
              "petn_concentration_dc", "petn_concentration_dc_se", "petn_extrapolated_dc",
-             # PETN QC evaluation (drift-corrected only)
+             # PETN QC evaluation (drift-corrected 6ng bias only; the 0.2ng
+             # sensitivity check now lives in petn_qc_flag_detect/_quant below)
              "petn_percent_bias_dc", "petn_qc_flag_dc",
+             "petn_qc_flag_detect", "petn_qc_flag_quant",
              # === ALL RDX COLUMNS ===
              # RDX raw measurements
              "rdx_rt", "rdx_pa", "rdx_ph", "rdx_snr", "rdx_snr_flag", "rdx_ratio",
@@ -1832,8 +1874,10 @@ qc_cols <- c("Date", "Line", "SampleName", "DataFile", "Vial", "CalLevel", "Cali
              "rdx_concentration", "rdx_extrapolated",
              # RDX accuracy (uncorrected)
              "rdx_percent_bias",
-             # RDX QC evaluation
+             # RDX QC evaluation (6ng bias only; 0.2ng sensitivity check now
+             # lives in rdx_qc_flag_detect/_quant below)
              "rdx_qc_type", "rdx_qc_flag",
+             "rdx_qc_flag_detect", "rdx_qc_flag_quant",
              # True concentration (for both analytes)
              "TrueCalConcAdj",
              # "Other significant peak" TIC scan (see comment above)
@@ -1942,6 +1986,10 @@ if ("QC" %in% Combined$Type && has_calibration) {
   # QC export columns - streamlined for monitoring (DataPath added at end)
   # Note: RDX drift correction columns excluded (no DC applied to RDX)
   # Note: IS SNR, PETN concentration, and qc_type removed per user request
+  # Note: petn_qc_flag_dc/rdx_qc_flag are 6ng-only now (bias-based); the
+  # 0.2ng sensitivity check is petn/rdx_qc_flag_detect (SNR only) and
+  # petn/rdx_qc_flag_quant (SNR + concentration>0) -- see "Two Proper
+  # 0.2ng QC Flags" session, CONTEXT.md.
   qc_export_cols <- c(
     "Date", "Line", "SampleName", "DataFile", "Vial", "CalLevel", "CalibrationSet",
     # IS (15N-RDX) - PA only
@@ -1951,9 +1999,11 @@ if ("QC" %in% Combined$Type && has_calibration) {
     "petn_drift_correction_factor", "petn_dc_cf_se",
     "petn_concentration_dc", "petn_concentration_dc_se",
     "petn_percent_bias_dc", "petn_qc_flag_dc",
+    "petn_qc_flag_detect", "petn_qc_flag_quant",
     # RDX (no drift correction columns)
     "rdx_rt", "rdx_pa", "rdx_ph", "rdx_snr", "rdx_snr_flag", "rdx_ratio",
-    "rdx_concentration", "rdx_percent_bias", "rdx_qc_type", "rdx_qc_flag"
+    "rdx_concentration", "rdx_percent_bias", "rdx_qc_type", "rdx_qc_flag",
+    "rdx_qc_flag_detect", "rdx_qc_flag_quant"
   )
 
   # Only keep columns that actually exist in Combined dataframe
@@ -1971,22 +2021,24 @@ if ("QC" %in% Combined$Type && has_calibration) {
   QCResults_02ng <- QCResults %>% filter(CalLevel == 0.2)
   QCResults_6ng <- QCResults %>% filter(CalLevel == 6)
   
-  # For 0.2ng QCs: simplify drift-corrected flags to PASS/FAIL (sensitivity check only)
+  # For 0.2ng QCs: simplify the detect/quant flags to PASS/FAIL for a
+  # quick-glance monitoring view (petn_qc_flag_dc/rdx_qc_flag are NA at
+  # this level now -- nothing to simplify there any more).
   if (nrow(QCResults_02ng) > 0) {
+    simplify_tier <- function(x) {
+      case_when(
+        grepl("PASS", x, ignore.case = TRUE) ~ "PASS",
+        grepl("FAIL", x, ignore.case = TRUE) ~ "FAIL",
+        grepl("WARN", x, ignore.case = TRUE) ~ "FAIL",
+        TRUE ~ x
+      )
+    }
     QCResults_02ng <- QCResults_02ng %>%
       mutate(
-        petn_qc_flag_dc = case_when(
-          grepl("PASS", petn_qc_flag_dc, ignore.case = TRUE) ~ "PASS",
-          grepl("FAIL", petn_qc_flag_dc, ignore.case = TRUE) ~ "FAIL",
-          grepl("WARN", petn_qc_flag_dc, ignore.case = TRUE) ~ "FAIL",
-          TRUE ~ petn_qc_flag_dc
-        ),
-        rdx_qc_flag = case_when(
-          grepl("PASS", rdx_qc_flag, ignore.case = TRUE) ~ "PASS",
-          grepl("FAIL", rdx_qc_flag, ignore.case = TRUE) ~ "FAIL",
-          grepl("WARN", rdx_qc_flag, ignore.case = TRUE) ~ "FAIL",
-          TRUE ~ rdx_qc_flag
-        )
+        petn_qc_flag_detect = simplify_tier(petn_qc_flag_detect),
+        petn_qc_flag_quant  = simplify_tier(petn_qc_flag_quant),
+        rdx_qc_flag_detect  = simplify_tier(rdx_qc_flag_detect),
+        rdx_qc_flag_quant   = simplify_tier(rdx_qc_flag_quant)
       )
   }
 

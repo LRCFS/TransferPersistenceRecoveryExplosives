@@ -1,5 +1,54 @@
 # Design of Experiments: Trace Explosives Recovery
 
+## Session Summary (September 8, 2026) — Negative Control "Still Failing" Investigation: Root Cause Found in a Shared 0.2ng QC Flag, Fixed, and Applied Across Both Studies -- Main Study NCs Now Fully Resolved With a Clean Steel-vs-ABS Split
+
+### Motivation
+
+Follow-on from Analysis4 (04/09/2026, new Main Study GC data): user asked why the negative controls were still failing despite the new data. Investigation (this session) traced through several layers before reaching a real, fixable root cause -- full technical detail of the shared-code fix lives in `GCMSQuantitation/CONTEXT.md`'s own entry for this same date; this entry covers the ASTRA-specific investigation path, results, and a confounding discovery made (and fully disentangled) along the way.
+
+### 1. Diagnosis: `MAIN_ABSBatch1_NC`/`ABSBatch2_NC` genuinely contaminated; 4 more NCs blocked by a curve-fitting artefact, not real non-detects
+
+Read `main_study_results.xlsx`'s "Negative Controls" sheet directly: of 10 NCs, only 3 were both evaluable and clean (`SteelBatch3/4/5_NC`); 3 evaluable and positive (`ABSBatch1/2_NC` contaminated, plus a newly-resolved `SteelBatch1_NC` -- see below); 4 still `"Not evaluated (analysis failed)"` (`SteelBatch2`, `ABSBatch3/4/5_NC`).
+
+Traced the block precisely for Line 23 of Analysis4's own 0.2ng PETN QC: SNR=18.9 (comfortably above the SNR≥10 "quantifiable" threshold) but `petn_concentration_dc` floors to exactly 0, because the fitted calibration curve's own intercept (803.73 area units, an artefact of a weighted quadratic fit through 6 real standards, not a physical measurement) sits *above* this QC's actual drift-corrected response (723.31) -- no concentration ≥0 on that curve can produce a response that low, so `solve_concentration()`'s existing "no positive root exists -> floor at 0" rule (a real, working piece of code, functioning exactly as designed) fires. `compute_sensitivity_tier()`'s `conc≤0 → FAIL` rule then hard-blocked every NC bracketed by this QC, regardless of a perfectly good SNR.
+
+Confirmed via a systematic re-run of the same patched-function check against **all 30 datasets across both ASTRA studies and all 19 FINEX "Accepted Analysis" datasets**: this exact mechanism was blocking not just NCs but also **6 real samples** (`PILOT_013`/`017`/`021`, `Lab17 P1 S4`/`S1`, `Test Std 4 - 200ng`) -- i.e. the bug was silently suppressing real recovery data in both studies, not just NC bookkeeping.
+
+### 2. Fix (shared-code detail in `GCMSQuantitation/CONTEXT.md`): two properly-scoped flags, NC-vs-sample-aware bracket gating
+
+Per the user's explicit design decision, the 0.2ng "sensitivity check" was split into a pure-SNR **detectability** flag and an SNR+concentration **quantification** flag -- real samples keep the stricter quantification gate (a reported recovery % needs an actual number); NCs use the detectability gate only (a contamination check only needs "was something detected"). Verified in isolation (no live files touched) before implementing: confirmed exactly 22 NC rows resolve, zero real-sample rows are affected.
+
+### 3. Applied to all 30 real datasets + all 3 study-level result files, with backups at every stage
+
+Reprocessed all 30 datasets (isolated per-dataset driver scripts, never editing the shared `GlobalCode.R` in place -- 2 concurrent `rsession-utf8` processes were active, so this followed the established mitigation from prior sessions). Re-ran `main_study_analysis.R`, `pilot_analysis.R`, and FINEX's `04_CollateStudyResults.R`. Pre-change backups of every touched file retained in `%TEMP%\opencode\BatchRerun\`.
+
+### 4. A confounding, fully-disentangled discovery: the Pilot Study's stale datasets also picked up an unrelated backlog fix
+
+Real-sample recovery values in the **Main Study** and **FINEX** were confirmed byte-identical before/after (direct row-by-row diff). The **Pilot Study**'s real-sample values shifted for most samples by small amounts, and substantially for a few (`PILOT_002/003/022`). Traced with direct evidence (raw peak areas identical old vs new; only the fitted PETN drift-correction factor differed) to a completely separate, already-decided, already-complete fix ("item 19", a PETN drift-correction weighting change decided 29/08/2026 in an unrelated red-team review) that the Pilot Study's datasets had never picked up, because they hadn't been reprocessed since 18/08/2026 -- 11 days *before* that fix existed. Disclosed this explicitly to the user, with the exact mechanism (a 6ng PETN QC's bias crossing the ±20% tolerance purely due to the reweighted fit, flipping which of two real re-analysis attempts gets selected) verified before proceeding, rather than silently absorbing it into this session's own change.
+
+### 5. Reanalysis tie-break changed from "earliest date" to "lowest QC bracket error" (full mechanism in `GCMSQuantitation/CONTEXT.md`) -- at the user's explicit request, after noticing the date-based rule was arbitrary
+
+Investigating the `PILOT_002/003/022` shift exposed that `select_best_attempt()`'s tie-break (prefer the earliest-dated accepted attempt) had no connection to which attempt was actually more accurate. Changed to prefer the attempt with the lowest 6ng-bracket %bias, with a Negative Control's own genuinely clean result (no peak on either analyte) explicitly trusted as the best possible outcome rather than an unranked unknown -- otherwise a clean NC would lose a tie-break outright against any detection with a small but nonzero, in-tolerance bias, purely because "no error" and "small error" aren't on a directly comparable numeric scale.
+
+### 6. Final result: Main Study Negative Controls fully resolved, with a clean surface-specific pattern
+
+| Surface | Result (all 5 NCs per surface) |
+|---|---|
+| Steel | **Negative (clean)** |
+| ABS | **Positive: PETN trace detected, RDX contaminated** |
+
+Zero `"Not evaluated"` remain in the Main Study. This is a materially different, and more robust, conclusion than any interim state reached during this investigation (which at one point showed 3 Steel NCs as contaminated too, purely as an artefact of "any defined 6ng bias beats an undefined one" -- see the "trust a clean result" fix above) -- the current, evidence-based result cleanly supports investigating an ABS-specific contamination source (pre-contaminated stock, handling, or equipment specific to ABS batches) as a real, uncontested next step, not one clouded by unresolved or arbitrarily-tie-broken NCs.
+
+Pilot Study NCs: more mixed (mostly RDX trace detected, one Steel clean, one ABS fully contaminated) -- plausible given the pilot's less standardised conditions; the 2 remaining FINEX `"Not evaluated"` NCs each fail their own IS/6ng checks for reasons unrelated to this fix.
+
+**Not yet investigated further** (carried over, now on a much firmer evidentiary footing): the physical source of ABS-specific contamination (pre-contaminated stock vs handling/storage vs equipment carryover).
+
+### Files Modified
+
+`main_study_analysis.R` (`select_best_attempt()`/`report_multiple_attempts()` tie-break updated; `is_nc` passed into `compute_injection_acceptance()`; `design_data` 0.2ng-bracket-column population made NC/sample-aware). `pilot_analysis.R` (same three changes; `desired_cols`/`desired_cols_nc`/`apply_formatting()` updated to the new `_detect`/`_quant` column names). All 5 Main Study + 6 Pilot Study datasets' `*_GCMSResults.csv`/`.xlsx` regenerated. `main_study_results.xlsx`, `main_study_data_nested.csv`/`.xlsx`, `ASTRA_PilotStudyResults.xlsx`, `pilot_data_nested.csv`/`.xlsx` regenerated (twice -- once for the flag fix + tie-break change, once more for the "trust clean" refinement). See `GCMSQuantitation/CONTEXT.md` for the full shared-code implementation detail (`Code/InjectionAcceptance.R`, `Code/03_Quantification.R`, `FINEX/04_CollateStudyResults.R`). `CONTEXT.md` (this entry).
+
+---
+
 ## Session Summary (September 4, 2026) — Extraction Efficiency Measured from a New 12-Replicate Dataset (New Script; Not Yet Applied to GlobalCode.R)
 
 ### Motivation

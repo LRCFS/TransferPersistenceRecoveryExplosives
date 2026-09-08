@@ -564,11 +564,22 @@ collate_gcms_results <- function() {
       return(df)
     }
     df$..quality_ok <- quality_ok
+    # Tie-break order (see "Prefer Lowest QC Bracket Error on Reanalysis"
+    # session, CONTEXT.md): among attempts of equal quality_ok, prefer the
+    # one with the lowest qc_bracket_error (max abs %bias of whichever 6ng
+    # QC(s) actually gated it -- see compute_injection_acceptance() in
+    # Code/InjectionAcceptance.R) over an arbitrary date-based rule. NA
+    # (Trace/Negative-tier attempts, gated by the SNR-based 0.2ng bracket
+    # instead, which has no continuous error value) sorts last by dplyr's
+    # own default, i.e. loses to any attempt with a defined, in-tolerance
+    # error -- Date remains the final tie-break for genuine ties (equal
+    # error, or both NA).
+    if (!("qc_bracket_error" %in% names(df))) df$qc_bracket_error <- NA_real_
     df %>%
       group_by(SampleName_trimmed) %>%
       mutate(N_Attempts = n()) %>%
       ungroup() %>%
-      arrange(SampleName_trimmed, desc(..quality_ok), Date) %>%
+      arrange(SampleName_trimmed, desc(..quality_ok), qc_bracket_error, Date) %>%
       group_by(SampleName_trimmed) %>%
       slice(1) %>%
       ungroup() %>%
@@ -579,7 +590,7 @@ collate_gcms_results <- function() {
   report_multiple_attempts <- function(df, label) {
     ids <- unique(df$SampleName_trimmed[df$MultipleAttempts])
     if (length(ids) > 0) {
-      cat(length(ids), label, "had multiple analysis attempts -- using earliest accepted attempt (or earliest overall if none were accepted):\n")
+      cat(length(ids), label, "had multiple analysis attempts -- using the accepted attempt with the lowest QC bracket error (earliest date as tie-break; or earliest overall if none were accepted):\n")
       for (id in ids) cat("  ", id, "\n")
       cat("\n")
     }
@@ -600,7 +611,13 @@ collate_gcms_results <- function() {
     nc_rows_raw %>% mutate(RowType = "NC")
   )
 
-  combined_for_accept <- compute_injection_acceptance(combined_for_accept)
+  # is_nc: gates which of the two 0.2ng QC flags a Trace/Negative-tier row's
+  # bracket check uses (see "Two Proper 0.2ng QC Flags" session, CONTEXT.md)
+  # -- NCs use the SNR-only "detect" flag (a contamination check only needs
+  # "was something detected"), real samples keep the stricter SNR+conc>0
+  # "quant" flag (a reported recovery % needs an actual number).
+  combined_for_accept <- compute_injection_acceptance(combined_for_accept,
+                                                       is_nc = combined_for_accept$RowType == "NC")
 
   pilot_rows <- combined_for_accept %>% filter(RowType == "Sample")
   nc_rows    <- combined_for_accept %>% filter(RowType == "NC")
@@ -700,7 +717,11 @@ collate_gcms_results <- function() {
         conditionalFormatting(wb, sheet_name, cols = col_idx, rows = data_rows, type = "contains", rule = "FAIL", style = style_red)
       }
     }
-    for (col in c("petn_qc_02ng_pre", "petn_qc_02ng_post", "rdx_qc_02ng_pre", "rdx_qc_02ng_post")) {
+    for (col in c("petn_qc_02ng_pre", "petn_qc_02ng_post", "rdx_qc_02ng_pre", "rdx_qc_02ng_post",
+                  "petn_qc_02ng_pre_detect", "petn_qc_02ng_post_detect",
+                  "petn_qc_02ng_pre_quant", "petn_qc_02ng_post_quant",
+                  "rdx_qc_02ng_pre_detect", "rdx_qc_02ng_post_detect",
+                  "rdx_qc_02ng_pre_quant", "rdx_qc_02ng_post_quant")) {
       if (col %in% col_names) {
         col_idx <- which(col_names == col)
         conditionalFormatting(wb, sheet_name, cols = col_idx, rows = data_rows, type = "contains", rule = "PASS", style = style_green)
@@ -791,12 +812,12 @@ collate_gcms_results <- function() {
       design_data$rdx_is_pa_flag[match_row]    <- if ("rdx_is_pa_flag" %in% names(pilot_rows)) pilot_rows$rdx_is_pa_flag[i] else NA_character_
       design_data$petn_qc_6ng_pre[match_row]   <- pilot_rows$petn_qc_6ng_pre[i]
       design_data$petn_qc_6ng_post[match_row]  <- pilot_rows$petn_qc_6ng_post[i]
-      design_data$petn_qc_02ng_pre[match_row]  <- pilot_rows$petn_qc_02ng_pre[i]
-      design_data$petn_qc_02ng_post[match_row] <- pilot_rows$petn_qc_02ng_post[i]
+      design_data$petn_qc_02ng_pre[match_row]  <- pilot_rows$petn_qc_02ng_pre_quant[i]
+      design_data$petn_qc_02ng_post[match_row] <- pilot_rows$petn_qc_02ng_post_quant[i]
       design_data$rdx_qc_6ng_pre[match_row]    <- pilot_rows$rdx_qc_6ng_pre[i]
       design_data$rdx_qc_6ng_post[match_row]   <- pilot_rows$rdx_qc_6ng_post[i]
-      design_data$rdx_qc_02ng_pre[match_row]   <- pilot_rows$rdx_qc_02ng_pre[i]
-      design_data$rdx_qc_02ng_post[match_row]  <- pilot_rows$rdx_qc_02ng_post[i]
+      design_data$rdx_qc_02ng_pre[match_row]   <- pilot_rows$rdx_qc_02ng_pre_quant[i]
+      design_data$rdx_qc_02ng_post[match_row]  <- pilot_rows$rdx_qc_02ng_post_quant[i]
       design_data$GCMS_Analysis_Date[match_row] <- pilot_rows$Date[i]
       design_data$AnalysisFolder[match_row]    <- pilot_rows$AnalysisFolder[i]
       design_data$N_Attempts[match_row]        <- pilot_rows$N_Attempts[i]
@@ -841,12 +862,12 @@ collate_gcms_results <- function() {
       rdx_is_pa_flag         = if ("rdx_is_pa_flag" %in% names(nc_rows)) nc_rows$rdx_is_pa_flag else NA_character_,
       petn_qc_6ng_pre        = nc_rows$petn_qc_6ng_pre,
       petn_qc_6ng_post       = nc_rows$petn_qc_6ng_post,
-      petn_qc_02ng_pre       = nc_rows$petn_qc_02ng_pre,
-      petn_qc_02ng_post      = nc_rows$petn_qc_02ng_post,
+      petn_qc_02ng_pre       = nc_rows$petn_qc_02ng_pre_detect,
+      petn_qc_02ng_post      = nc_rows$petn_qc_02ng_post_detect,
       rdx_qc_6ng_pre         = nc_rows$rdx_qc_6ng_pre,
       rdx_qc_6ng_post        = nc_rows$rdx_qc_6ng_post,
-      rdx_qc_02ng_pre        = nc_rows$rdx_qc_02ng_pre,
-      rdx_qc_02ng_post       = nc_rows$rdx_qc_02ng_post,
+      rdx_qc_02ng_pre        = nc_rows$rdx_qc_02ng_pre_detect,
+      rdx_qc_02ng_post       = nc_rows$rdx_qc_02ng_post_detect,
       GCMS_Analysis_Date     = nc_rows$Date,
       AnalysisFolder         = nc_rows$AnalysisFolder,
       SampleType             = "NC",
@@ -890,9 +911,9 @@ collate_gcms_results <- function() {
     "Pressure_level", "Pressure_g", "Solvent_level", "Solvent_detail",
     "analysis_accepted", "Outcome", "rdx_is_pa_flag", "N_Attempts", "MultipleAttempts",
     "petn_snr_flag", "petn_concentration_dc", "PETN_Recovery_pct",
-    "petn_qc_6ng_pre", "petn_qc_6ng_post", "petn_qc_02ng_pre", "petn_qc_02ng_post",
+    "petn_qc_6ng_pre", "petn_qc_6ng_post", "petn_qc_02ng_pre_quant", "petn_qc_02ng_post_quant",
     "rdx_snr_flag", "rdx_concentration", "RDX_Recovery_pct",
-    "rdx_qc_6ng_pre", "rdx_qc_6ng_post", "rdx_qc_02ng_pre", "rdx_qc_02ng_post",
+    "rdx_qc_6ng_pre", "rdx_qc_6ng_post", "rdx_qc_02ng_pre_quant", "rdx_qc_02ng_post_quant",
     "petn_blank_bracket", "rdx_blank_bracket",
     "Date", "SampleName_trimmed", "DataFile", "Dataset", "AnalysisFolder", "SourceFile"
   )
@@ -915,7 +936,7 @@ collate_gcms_results <- function() {
     "rdx_snr_flag", "rdx_ph", "rdx_concentration", "RDX_Recovery_pct",
     "rdx_is_snr_flag", "rdx_is_pa_flag",
     "petn_qc_6ng_pre", "petn_qc_6ng_post", "rdx_qc_6ng_pre", "rdx_qc_6ng_post",
-    "petn_qc_02ng_pre", "petn_qc_02ng_post", "rdx_qc_02ng_pre", "rdx_qc_02ng_post",
+    "petn_qc_02ng_pre_detect", "petn_qc_02ng_post_detect", "rdx_qc_02ng_pre_detect", "rdx_qc_02ng_post_detect",
     "petn_blank_bracket", "rdx_blank_bracket",
     "Date", "SampleName_trimmed", "DataFile", "Dataset", "AnalysisFolder", "SourceFile"
   )

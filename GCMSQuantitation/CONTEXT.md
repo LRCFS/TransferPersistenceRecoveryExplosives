@@ -1,5 +1,74 @@
 # GCMSQuantitation - Project Context
 
+## Session Summary (September 8, 2026) — 0.2ng QC "Sensitivity Check" Split Into Two Properly-Scoped Flags (Detectability vs Quantification); Reanalysis Tie-Break Changed From "Earliest Date" to "Lowest QC Bracket Error, Trusting a Clean NC Result"
+
+### Motivation
+
+Started from an ASTRA-side question ("why are the negative controls still failing?" -- full investigation narrative in `ASTRA/doe/CONTEXT.md`, this entry covers only the shared-infrastructure fix). Traced to a real design conflation in the 0.2ng QC "sensitivity check": `InjectionAcceptance.R`'s `compute_sensitivity_tier()` (added Aug 10, 2026 consolidation) hard-failed any 0.2ng QC whose concentration floored to exactly 0 (a common calibration-curve-intercept artefact at the low end, not necessarily a real non-detect), **regardless of SNR** -- conflating two different questions ("was a peak detected at all?" vs "can we also trust a specific concentration number for it?"). This single flag was also the *third*, independently-recomputed version of a check that already existed twice more, inconsistently, in `03_Quantification.R` (`petn_qc_flag`/`rdx_qc_flag`, legacy 2-tier SNR-only; `petn_qc_flag_dc`, PETN-only 3-tier SNR+concentration, no RDX equivalent) -- neither of which the bracket-gating logic actually read.
+
+User's explicit design decision: for a **real sample**, "peak present but concentration floors to 0" is genuinely not a useful result (a reported 0% recovery would be misleading) -- keep the strict quantification-based gate. For a **Negative Control**, that same situation ("clearly detected, but too weak to reliably quantify") is itself a complete, useful answer ("trace levels present") -- the qualitative detectability check should be sufficient; concentration should not be able to hard-block an NC's own contamination verdict.
+
+### 1. Three overlapping flags collapsed into two, symmetric across PETN and RDX
+
+`03_Quantification.R`'s 0.2ng-level QC evaluation (previously split unevenly across a PETN-only `_dc` branch and a generic-but-crude 2-tier branch) rewritten into exactly two flags, computed identically for both analytes:
+
+- **`{prefix}_qc_flag_detect`** -- pure SNR, 3-tier (`FAIL` SNR<3 / `WARN` 3≤SNR<10 / `PASS` SNR≥10). Matches the domain-expert's original stated intent for what a "sensitivity check" should mean.
+- **`{prefix}_qc_flag_quant`** -- SNR **and** concentration>0 (`FAIL` if concentration≤0 or SNR<3 / `WARN` marginal SNR / `PASS` SNR≥10 and concentration>0). Behaviourally identical to the old PETN-only `petn_qc_flag_dc`'s 0.2ng branch, now extended symmetrically to RDX using `rdx_concentration` (RDX has no drift-corrected variant -- doesn't need one, per the "RDX Drift Correction Determined Unnecessary" session).
+
+6ng-level QC evaluation (bias-based, `petn_qc_flag_dc`/`{prefix}_qc_flag`) is completely untouched -- this fix is scoped entirely to the 0.2ng sensitivity check. The `SystemMonitoring.xlsx` QC export block updated to reference the new columns (and, as a side effect, fixed a pre-existing inconsistency where that sheet showed PETN's quantification-based flag next to RDX's detectability-based flag, unlabelled as different things).
+
+`InjectionAcceptance.R`'s independent third recomputation (`compute_sensitivity_tier()`/`petn_qc_flag_symmetric`) removed entirely -- `assign_qc_brackets()` now reads the two upstream columns directly, building two full sets of 0.2ng bracket columns (`{prefix}_qc_02ng_pre/post_detect`, `{prefix}_qc_02ng_pre/post_quant`). `compute_injection_acceptance()` gained an `is_nc` parameter (logical vector, default all-`FALSE` -- fully backward compatible for any caller that doesn't pass it): `evaluate_analyte()` picks the `_quant` bracket pair for real samples, `_detect` for NCs.
+
+**Verified in isolation before touching any live file**: patched a copy of `assign_qc_brackets()` and ran it against all 30 already-existing datasets across ASTRA (Main+Pilot) and FINEX (19 "Accepted Analysis" datasets) -- confirmed exactly 22 NC rows flip from `FAIL` to `PASS`/`PASS*`, and (critically) **zero** real-sample rows are affected, both before writing a single line to any shared file.
+
+### 2. Reanalysis tie-break: "lowest QC bracket error" instead of "earliest date", with a clean NC result explicitly trusted
+
+Applying fix #1 and regenerating real datasets surfaced a second, independent issue: `select_best_attempt()` (ASTRA's own reanalysis-dedup, duplicated identically in `04_CollateStudyResults.R` for FINEX) broke ties among multiple accepted attempts of the same physical sample/NC by **earliest date** -- an arbitrary rule with no connection to which attempt was actually more trustworthy. Once fix #1 let more attempts resolve to `PASS`/`PASS*`, several samples/NCs had *genuinely different* attempts newly tied on acceptance, and picking "earliest" could select a worse-quality run over a better one purely by chronology.
+
+- **`compute_injection_acceptance()`** now also returns `qc_bracket_error` per row: the larger (worse) of the two analytes' own 6ng-bracket %bias, for whichever analyte(s) actually went through that bias-based check (`NA` if both analytes were Trace/Negative-tier, gated by the SNR-based 0.2ng bracket instead, which has no continuous error value). Requires the raw %bias itself, not just the PASS/FAIL verdict -- `assign_qc_brackets()` now also stores `{prefix}_qc_6ng_pre/post_bias` alongside the existing PASS/FAIL columns.
+- **"Trust a clean result" (NC-scoped only)**: for a Negative Control specifically, a genuinely clean result (no peak on *either* analyte, i.e. both tiers "Negative") is treated as the best possible outcome (`qc_bracket_error` forced to `0`) rather than an unranked `NA` -- so it always wins a tie-break against another accepted attempt with a small but nonzero 6ng bias, instead of losing outright the way any `NA` would under plain "lowest value wins, `NA` sorts last" sorting. **Deliberately not applied to real samples**: "no peak detected" for a real sample means nothing was recovered, which is not obviously a *better* outcome than a low-bias detection the way a clean NC result is -- real samples keep the plain `NA` (falls through to the Date tie-break unchanged, exactly as before this session).
+- `select_best_attempt()` (both the ASTRA-side and FINEX-side copies) changed from `arrange(..., desc(quality_ok), Date)` to `arrange(..., desc(quality_ok), qc_bracket_error, Date)` -- Date remains the final tie-break for genuine ties (equal error, or both `NA`).
+
+**Verified against real data at each step** (not just simulated): re-ran all 3 study-level collation scripts twice (once for the tie-break change alone, once more after adding the "trust clean" refinement), diffing every real-sample recovery value against the immediately-prior state each time. Confirmed zero real-sample regressions throughout; the only rows that ever moved were ones already flagged as *expected* to move by the tie-break logic itself (e.g. a sample whose two candidate attempts have genuinely different QC quality).
+
+### 3. A confounding, entirely unrelated discovery made and fully disentangled along the way
+
+Regenerating ASTRA Pilot Study's datasets (last actually reprocessed 18 August 2026) as part of applying fix #1 also, unavoidably, applied every *other* accumulated change to `03_Quantification.R` since that date -- most consequentially the already-decided, already-complete "item 19" PETN drift-correction weighting fix (`weights = 1/Response^2`, decided 29/08/2026, entirely unrelated to this session). Traced with direct numeric evidence (raw peak areas identical old vs new; only the fitted drift-correction factor/QC bias differed) to confirm this was **not** caused by this session's own changes -- disclosed in full to the user before proceeding, rather than silently conflated with the intended fix. ASTRA Main Study and FINEX were unaffected (their datasets had already been regenerated after 29/08/2026 before this session started).
+
+### Files Modified
+
+`Code/InjectionAcceptance.R` (`compute_sensitivity_tier()` removed; `assign_qc_brackets()` reads two upstream flags, stores 6ng bracket %bias alongside PASS/FAIL; `compute_injection_acceptance()` gains `is_nc` param + `qc_bracket_error` output + "trust a clean NC" override). `Code/03_Quantification.R` (0.2ng QC evaluation rewritten into `{prefix}_qc_flag_detect`/`_quant`, symmetric PETN/RDX; `SystemMonitoring.xlsx` export block updated; main/QC export column lists updated). `FINEX/04_CollateStudyResults.R` (`select_best_attempt()`/`report_multiple_attempts()` tie-break updated; `is_nc` passed into `compute_injection_acceptance()`; `desired_cols`/`desired_cols_nc`/`apply_formatting()` updated to the new `_detect`/`_quant` column names). All 19 FINEX "Accepted Analysis" datasets' `*_GCMSResults.csv`/`.xlsx` and `FINEX_StudyResults.csv`/`.xlsx` regenerated and verified (pre-change backups retained in `%TEMP%\opencode\BatchRerun\`). See `ASTRA/doe/CONTEXT.md` for the full ASTRA-side investigation and results (Main Study Negative Controls sheet, Pilot Study, and the item-19 backlog disclosure). `CONTEXT.md` (this entry).
+
+---
+
+## Session Summary (September 7, 2026) — Extraction+Filtration Efficiency Simplified to a Single Combined Recovery-Efficiency Constant Per Analyte
+
+### Motivation
+
+User completed the spiked-swab recovery experiment (`20260903ExtractionTest`) referenced by the long-standing `GlobalCode.R` TODO ("Determine experimentally from spiked swab extraction recovery") and obtained real efficiency figures -- but the experiment's own design carries a spiked swab through extraction AND 0.45µm PTFE filtration together, so it only ever measures the two loss mechanisms combined, never separately. Asked to simplify the pipeline's two-constant-per-analyte (`extraction_efficiency * filtration_efficiency`) design down to a single measured constant per analyte, since the separate filtration-only figure was never determined and never will be from this experiment's design.
+
+Separately noted in passing (not part of this session's own edits): before this session, `GlobalCode.R`'s `DataFolder` block had a leftover unconditional hardcoded override immediately after the conditional `.preset_DataFolder` assignment -- exactly the kind of regression CONTEXT.md's own August 27, 2026 "Self-inflicted `DataFolder` regression" entry warns against, almost certainly left over from manually processing the `20260903ExtractionTest` raw data itself. Flagged to the user before any further `GlobalCode.R` edits; user fixed it themselves ahead of this session's changes.
+
+### Bug caught before applying: efficiency entered as a whole percentage, not a fraction
+
+User had already entered `petn_extraction_efficiency <- 57` / `rdx_extraction_efficiency <- 54` (with `filtration_efficiency` left at the neutral `1`). The recovery formula in `04_CollateStudyResults.R` divides directly by this product with no `/100`, so 57/54 (intended as 57%/54%) would have deflated every reported recovery% by ~57x/54x instead of erroring. Confirmed with the user these should be entered as fractions (`0.57`/`0.54`) before implementing anything.
+
+### Implementation
+
+- `GlobalCode.R` (~line 425-440): replaced the 4 per-analyte extraction/filtration constants with 2 combined constants, `petn_recovery_efficiency <- 0.57` / `rdx_recovery_efficiency <- 0.54`, with a comment explaining the combined-measurement rationale. Updated the section's header formula comment accordingly (`recovery (%) = (mass_measured / mass_deposited) / recovery_efficiency * 100`).
+- `GlobalCode.R`'s `validate_setup()`: added a guard rejecting `petn_recovery_efficiency`/`rdx_recovery_efficiency` outside `(0, 1]`, specifically to catch a future recurrence of the percentage-vs-fraction mixup above (previously there was no validation on these constants at all).
+- `FINEX/04_CollateStudyResults.R`: updated all 5 usage sites (recovery, drift-corrected recovery, drift-corrected recovery SE, and the RDX fallback-column recovery calc) to divide by the single combined constant instead of multiplying two separate ones. Confirmed via repo-wide search that no other file (`Code/02_PeakDetection.R`, `Code/03_Quantification.R`, `Code/InjectionAcceptance.R`, `05_StatisticalAnalysis.R`, `06_RDXCalendarDrift.R`, any `Diagnostics/` script) ever referenced the old 4 constants -- this is a fully self-contained, 2-file change.
+
+### Verification
+
+Backed up pre-change `FINEX_StudyResults.csv`/`.xlsx` (`%TEMP%\opencode\RecoveryEfficiency_PreCollation_Backup\`). Re-ran `04_CollateStudyResults.R` from a fresh Rscript session (no raw MS reprocessing needed -- confirmed these constants are consumed only in `04`'s recovery-column math, never in peak detection/calibration/PASS-FAIL logic). Confirmed: 318 sample rows preserved, every non-recovery column byte-identical to the pre-change backup, and `petn_recovery_dc`/`rdx_recovery` scaled by exactly `1/0.57` and `1/0.54` respectively across all rows (checked programmatically across all non-NA/non-zero rows, not just spot-checked visually) -- confirming the change affected only the intended columns, by exactly the intended factor. Also re-ran `05_StatisticalAnalysis.R` (by the user) and `06_RDXCalendarDrift.R` (this session -- read-only, consumes `FINEX_StudyResults.csv`'s `rdx_recovery` column) -- both completed without error, regenerating all recovery-dependent plots/stats with the corrected values.
+
+### Files Modified
+
+`GlobalCode.R` (4 constants -> 2, `validate_setup()` guard added), `FINEX/04_CollateStudyResults.R` (5 usage sites updated), `FINEX_StudyResults.csv`/`.xlsx` and all `Plots/` outputs (regenerated via `04`), `Plots/Statistical_Diagnostics/` outputs (regenerated via `05`/`06`). `CONTEXT.md` (this entry).
+
+---
+
 ## Session Summary (September 4, 2026, continued) — Red-Team Review Section D (Low-Priority Tidying) Closed Out
 
 ### Motivation
