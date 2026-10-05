@@ -143,17 +143,38 @@ ideal_concentration <- deposit_mass_ng / sample_vol_uL  # = 10 ng/uL at 100% rec
 # * filtration) * 100" exactly (mathematically: mass/deposit here ==
 # concentration/ideal_concentration, since ideal_concentration is already
 # deposit_mass_ng/sample_vol_uL -- see the Recovery_pct calculation below).
-# Both currently 1 (TODO: determine experimentally) in GlobalCode.R too --
-# these are LOCAL copies (this study doesn't source GlobalCode.R), kept in
-# sync MANUALLY with pilot_analysis.R and GlobalCode.R. If/when real
-# efficiency values are determined, update all three places, and confirm
-# whether the same values apply to both studies (same swab/extraction/
-# filtration protocol) before assuming so -- do not assume they're
-# interchangeable without checking.
-petn_extraction_efficiency <- 1  # TODO: determine experimentally (mirrors GlobalCode.R)
-rdx_extraction_efficiency  <- 1  # TODO: determine experimentally (mirrors GlobalCode.R)
-petn_filtration_efficiency <- 1  # TODO: determine experimentally (mirrors GlobalCode.R)
-rdx_filtration_efficiency  <- 1  # TODO: determine experimentally (mirrors GlobalCode.R)
+#
+# Updated 2026-09-10: GlobalCode.R's own two constants were simplified
+# (2026-09-07/08) into a single measured "recovery_efficiency" per analyte
+# (petn_recovery_efficiency <- 0.57, rdx_recovery_efficiency <- 0.54),
+# measured directly via a spiked-swab experiment carried through the FULL
+# extraction + 0.45um PTFE filtration workflow -- i.e. this figure already
+# reflects BOTH loss mechanisms combined, and was never meant to be
+# decomposed into separate extraction-only/filtration-only factors. This
+# script's own formula still has two separate terms (extraction *
+# filtration) rather than GlobalCode.R's one, so the combined 0.57/0.54
+# value is entered into the *_extraction_efficiency constant here, with
+# *_filtration_efficiency left at its neutral 1 (a no-op multiplier) --
+# numerically identical to GlobalCode.R's single combined constant
+# (0.57*1 == 0.57), without needing to restructure this formula. Do NOT
+# additionally discount by a separate filtration factor -- that loss is
+# already included in the 0.57/0.54 figure.
+#
+# NOTE: this is DIFFERENT from Extraction/ExtractionEfficiency.R's own
+# 49.3%/72.4% result (PETN/RDX) -- that measures extraction ONLY (no
+# filtration step), a genuinely different, non-comparable experiment, and
+# was deliberately never applied anywhere (see ASTRA/doe/CONTEXT.md,
+# September 4 2026 session). The 0.57/0.54 value used below is the later,
+# more complete combined-loss measurement that FINEX's own pipeline now
+# uses live.
+#
+# These are LOCAL copies (this study doesn't source GlobalCode.R), kept in
+# sync MANUALLY with pilot_analysis.R and GlobalCode.R -- if the measured
+# value is ever revised again, update all three places.
+petn_extraction_efficiency <- 0.57  # Combined extraction+filtration recovery efficiency (mirrors GlobalCode.R's petn_recovery_efficiency, measured 2026-09-03/04)
+rdx_extraction_efficiency  <- 0.54  # Combined extraction+filtration recovery efficiency (mirrors GlobalCode.R's rdx_recovery_efficiency, measured 2026-09-03/04)
+petn_filtration_efficiency <- 1  # Neutral (no-op) -- filtration loss already included in petn_extraction_efficiency above, see comment above
+rdx_filtration_efficiency  <- 1  # Neutral (no-op) -- filtration loss already included in rdx_extraction_efficiency above, see comment above
 
 # QC acceptance threshold (matches pilot_analysis.R's qc_6ng_bias_limit, the
 # code's actual applied +/-20% value)
@@ -389,8 +410,9 @@ collate_gcms_results <- function() {
   # + FINEX's 04_CollateStudyResults.R's "(mass / deposit) / (extraction *
   # filtration) * 100" formula exactly (concentration/ideal_concentration
   # IS mass/deposit here -- see USER CONFIGURATION comment above). Efficiency
-  # terms are both 1 currently, so this is numerically identical to the
-  # pre-existing formula until real values are determined.
+  # terms set 2026-09-10 -- combined 0.57/0.54 extraction+filtration recovery
+  # efficiency, matching GlobalCode.R's own measured petn_recovery_efficiency/
+  # rdx_recovery_efficiency.
   samples$PETN_Recovery_pct <- ifelse(
     petn_treat_as_zero, 0,
     ifelse(!is.na(samples$petn_concentration_dc) & samples$petn_concentration_dc > 0,
@@ -1415,11 +1437,15 @@ generate_categorical_hinge_plot <- function(data) {
   # 4 known cases, PILOT_015/020 x 2 analytes, ABS 200g wet) has no real
   # position to plot at and is excluded from the point layer below (still
   # counted in its group's mean_rec/se_rec/n, which use Recovery only).
+  # Study (Pilot/Main) carried through to long_data (Added per explicit
+  # request) so individual points can be shape-differentiated by which
+  # study they came from -- see scale_shape_manual() below (Pilot = hollow
+  # circle, Main = solid circle).
   long_data <- bind_rows(
     data %>% filter(!is.na(PETN_Recovery_pct), !is.na(Pressure_g)) %>%
-      transmute(Surface_type, Pressure_g, Mean_Pressure, Recovery = PETN_Recovery_pct, Analyte = "PETN"),
+      transmute(Surface_type, Pressure_g, Mean_Pressure, Study, Recovery = PETN_Recovery_pct, Analyte = "PETN"),
     data %>% filter(!is.na(RDX_Recovery_pct), !is.na(Pressure_g)) %>%
-      transmute(Surface_type, Pressure_g, Mean_Pressure, Recovery = RDX_Recovery_pct, Analyte = "RDX")
+      transmute(Surface_type, Pressure_g, Mean_Pressure, Study, Recovery = RDX_Recovery_pct, Analyte = "RDX")
   )
   if (nrow(long_data) == 0) {
     cat("  Skipping categorical+hinge plot -- no data with both a recovery value and Pressure_g yet\n")
@@ -1450,19 +1476,7 @@ generate_categorical_hinge_plot <- function(data) {
   # -- only the line's PLOTTED x-position (PlotX below) is remapped to each
   # level's own actual mean achieved mass, so the line lands among the
   # points/diamonds it's meant to describe rather than at the nominal target.
-  #
-  # Also computes, per Surface_type x Analyte (added 2026-09-02, so this
-  # plot reports the hinge model's own fit quality directly on the figure,
-  # the same way the Unified linear/quadratic/logarithmic plots annotate
-  # their own curve's R^2/p per panel):
-  #   - R^2 (marginal, Nakagawa) -- same measure as report_r2() elsewhere.
-  #   - An overall p-value via likelihood-ratio test against a NULL model
-  #     with the pressure terms (Pre100/Post100) removed but Study kept --
-  #     "does the hinge shape improve the fit at all", the fairest analogue
-  #     to the Unified plots' own overall-model p-value (their lm()-based
-  #     equivalent of "is this curve better than nothing").
   hinge_lines <- list()
-  hinge_stats <- list()
   for (an in c("PETN", "RDX")) {
     recovery_col <- paste0(an, "_Recovery_pct")
     for (surf in c("steel", "abs")) {
@@ -1497,63 +1511,42 @@ generate_categorical_hinge_plot <- function(data) {
       pred_df$PlotX <- ifelse(is.na(pred_df$mean_actual), pred_df$Pressure_g, pred_df$mean_actual)
 
       hinge_lines[[paste(an, surf)]] <- pred_df
-
-      r2_val <- tryCatch(performance::r2(m)$R2_marginal, error = function(e) NA_real_)
-
-      m_ml   <- tryCatch(lmer(as.formula(paste0(recovery_col, " ~ Pre100 + Post100 + Study + (1|SurfaceID_nested)")), data = sub, REML = FALSE), error = function(e) NULL)
-      m_null <- tryCatch(lmer(as.formula(paste0(recovery_col, " ~ Study + (1|SurfaceID_nested)")), data = sub, REML = FALSE), error = function(e) NULL)
-      lrt_p <- if (!is.null(m_ml) && !is.null(m_null)) {
-        tryCatch(anova(m_null, m_ml)[2, "Pr(>Chisq)"], error = function(e) NA_real_)
-      } else NA_real_
-
-      hinge_stats[[paste(an, surf)]] <- data.frame(
-        Analyte = an, Surface_type = surf,
-        label = sprintf("%s: R\u00B2=%.2f, p=%s", ifelse(surf == "steel", "Steel", "ABS"),
-                         as.numeric(r2_val), if (is.na(lrt_p)) "n/a" else sprintf("%.3g", lrt_p))
-      )
     }
   }
   hinge_lines_df <- bind_rows(hinge_lines)
   if (nrow(hinge_lines_df) > 0) hinge_lines_df$Analyte <- factor(hinge_lines_df$Analyte, levels = c("PETN", "RDX"))
 
-  hinge_stats_df <- bind_rows(hinge_stats)
-  if (nrow(hinge_stats_df) > 0) {
-    hinge_stats_df$Analyte <- factor(hinge_stats_df$Analyte, levels = c("PETN", "RDX"))
-    # Stack the Steel/ABS annotation lines in the top-left corner of each
-    # Analyte panel -- y-position computed from the actual data range so it
-    # sits just under the panel's own top edge regardless of scale.
-    y_range <- max(means_data$mean_rec + means_data$se_rec, na.rm = TRUE) -
-               min(means_data$mean_rec - means_data$se_rec, na.rm = TRUE)
-    y_top <- max(means_data$mean_rec + means_data$se_rec, na.rm = TRUE) + 0.12 * y_range
-    hinge_stats_df$y_pos <- y_top - ifelse(hinge_stats_df$Surface_type == "steel", 0, 0.07 * y_range)
-    hinge_stats_df$x_pos <- min(long_data$Mean_Pressure, na.rm = TRUE)
-  }
+  # Diamond (categorical mean) fill uses pal_surface_type_mean (a lighter
+  # variant of pal_surface_type, shared via thesis_palette.R) rather than
+  # the same hues as the individual sample points -- Added per explicit
+  # request (both layers previously shared the exact same steel/abs hues,
+  # distinguished only by shape, which made the two layers hard to tell
+  # apart at a glance). Same steel/abs hue identity is kept (still
+  # blue-ish=steel/orange-ish=abs), just lighter/more pastel, so the
+  # diamonds read as a distinct "summary" layer sitting on top of the more
+  # saturated individual points.
 
   p <- ggplot(means_data, aes(x = mean_actual, y = mean_rec, color = Surface_type)) +
-    geom_point(data = long_data, aes(x = Mean_Pressure, y = Recovery, color = Surface_type),
-               shape = 19, size = 2.1, alpha = 0.85, inherit.aes = FALSE) +
+    geom_point(data = long_data, aes(x = Mean_Pressure, y = Recovery, color = Surface_type, shape = Study),
+               size = 2.1, alpha = 0.85, inherit.aes = FALSE) +
     geom_point(aes(fill = Surface_type), shape = 23, size = 3.8, color = "black", stroke = 0.6) +
-    geom_errorbar(aes(ymin = mean_rec - se_rec, ymax = mean_rec + se_rec), width = 8) +
+    geom_errorbar(aes(ymin = mean_rec - se_rec, ymax = mean_rec + se_rec), width = 8, color = "black") +
     geom_text(aes(label = paste0("n=", n), y = mean_rec + se_rec + 1.5), size = 2.5, show.legend = FALSE) +
     { if (nrow(hinge_lines_df) > 0) {
         geom_line(data = hinge_lines_df, aes(x = PlotX, y = fitted, color = Surface_type),
                   linetype = "dashed", linewidth = 0.7, inherit.aes = FALSE)
       } else NULL } +
     geom_vline(xintercept = PRESSURE_BREAKPOINT, linetype = "dotted", color = "gray50", linewidth = 0.4) +
-    { if (nrow(hinge_stats_df) > 0) {
-        geom_text(data = hinge_stats_df, aes(x = x_pos, y = y_pos, label = label, color = Surface_type),
-                  hjust = 0, size = 3, fontface = "italic", inherit.aes = FALSE, show.legend = FALSE)
-      } else NULL } +
     scale_x_continuous(breaks = pressure_levels) +
     scale_color_manual(values = pal_surface_type,
                        labels = c(steel = "Steel", abs = "ABS")) +
-    scale_fill_manual(values = pal_surface_type, guide = "none") +
+    scale_fill_manual(values = pal_surface_type_mean, guide = "none") +
+    scale_shape_manual(values = c(Pilot = 1, Main = 19), name = "Study") +
     facet_wrap(~ Analyte, ncol = 1) +
     labs(
       title = paste0("Categorical means + hinge model fit -- Pilot + Main Study (n=", nrow(long_data), ")"),
-      subtitle = paste0("Circles = individual samples at their own ACTUAL achieved mass | Diamonds/error bars = group mean +/- SE at the group's mean ACTUAL achieved mass\n",
-                        "Dashed line = hinge model fit (nominal breakpoint ", PRESSURE_BREAKPOINT, "g, dotted vertical line) | x-axis breaks = nominal design targets (10/50/100/200/300g), for reference only\n",
-                        "R\u00B2 = marginal (Nakagawa, fixed effects only) | p = likelihood-ratio test, hinge vs. a no-mass-effect null model"),
+      subtitle = paste0("Circles = individual samples at their own ACTUAL achieved mass (hollow = Pilot, solid = Main) | Diamonds (lighter fill) + black error bars = group mean +/- SE at the group's mean ACTUAL achieved mass\n",
+                        "Dashed line = hinge model fit (nominal breakpoint ", PRESSURE_BREAKPOINT, "g, dotted vertical line) | x-axis breaks = nominal design targets (10/50/100/200/300g), for reference only"),
       x = "Actual Applied Mass (g)", y = "Recovery (%)", color = "Surface"
     ) +
     theme_bw(base_size = 12) +

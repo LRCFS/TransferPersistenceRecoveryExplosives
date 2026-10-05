@@ -84,9 +84,9 @@ study_type <- if (!is.null(.preset_study_type)) .preset_study_type else "ASTRA"
 DataFolder <- if (!is.null(.preset_DataFolder)) {
   .preset_DataFolder
 } else {
-  "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/ASTRA Swabbing/Main Study/GC Data/Analysis2"
+  "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/ASTRA Swabbing/Main Study/GC Data/Analysis4"
 }
-#DataFolder <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/FINEX Swabbing Study/Accepted Analysis/G and T 1"
+#DataFolder <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/Extraction/20260904ExtractionTest"
 rm(.preset_DataFolder, .preset_study_type)
 ParentFolder <- sub(".*/", "", DataFolder)
 

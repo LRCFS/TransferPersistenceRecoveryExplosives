@@ -43,10 +43,7 @@
 analysis_mode <- "full"
 
 # QC acceptance filter for the statistical analysis (mixed-effects model,
-# ANOVA, effect sizes, power analysis, and the main QC-filtered box plots/
-# bar charts -- everything EXCEPT the "_alldata" plots below, which always
-# ignore this and show every sample regardless, as a permanent QC-audit
-# comparison view):
+# ANOVA, effect sizes, power analysis, and the QC-filtered box plots):
 #   TRUE  = only QC-accepted samples (analysis_accepted %in% c("PASS",
 #           "PASS*")) are included (the default, and the previous
 #           unconditional behaviour). Mirrors GCMSQuantitation's July 2026
@@ -56,8 +53,8 @@ analysis_mode <- "full"
 #           QC acceptance (QC-failed samples included). Negative controls
 #           are still excluded either way -- they have no Surface_type/
 #           Pressure_level/Solvent_level to fit against, so lmer() drops
-#           them from the model automatically (NA design factors), and the
-#           box/bar/repeat-chart functions drop them for the same reason.
+#           them from the model automatically (NA design factors), and
+#           generate_boxplots() drops them for the same reason.
 use_qc_filtered_data <- TRUE
 
 # Input directory (design files, this script)
@@ -154,16 +151,38 @@ ideal_concentration <- deposit_mass_ng / sample_vol_uL  # ng/uL at 100% recovery
 # * filtration) * 100" exactly (mathematically: mass/deposit here ==
 # concentration/ideal_concentration, since ideal_concentration is already
 # deposit_mass_ng/sample_vol_uL -- see the Recovery_pct calculation below).
-# Both currently 1 (TODO: determine experimentally) in GlobalCode.R too --
-# these are LOCAL copies (this study doesn't source GlobalCode.R), kept in
-# sync MANUALLY. If/when real efficiency values are determined, update
-# BOTH places, and confirm whether the same values apply to both studies
-# (same swab/extraction/filtration protocol) before assuming so -- do not
-# assume they're interchangeable without checking.
-petn_extraction_efficiency <- 1  # TODO: determine experimentally (mirrors GlobalCode.R)
-rdx_extraction_efficiency  <- 1  # TODO: determine experimentally (mirrors GlobalCode.R)
-petn_filtration_efficiency <- 1  # TODO: determine experimentally (mirrors GlobalCode.R)
-rdx_filtration_efficiency  <- 1  # TODO: determine experimentally (mirrors GlobalCode.R)
+#
+# Updated 2026-09-10: GlobalCode.R's own two constants were simplified
+# (2026-09-07/08) into a single measured "recovery_efficiency" per analyte
+# (petn_recovery_efficiency <- 0.57, rdx_recovery_efficiency <- 0.54),
+# measured directly via a spiked-swab experiment carried through the FULL
+# extraction + 0.45um PTFE filtration workflow -- i.e. this figure already
+# reflects BOTH loss mechanisms combined, and was never meant to be
+# decomposed into separate extraction-only/filtration-only factors. This
+# script's own formula still has two separate terms (extraction *
+# filtration) rather than GlobalCode.R's one, so the combined 0.57/0.54
+# value is entered into the *_extraction_efficiency constant here, with
+# *_filtration_efficiency left at its neutral 1 (a no-op multiplier) --
+# numerically identical to GlobalCode.R's single combined constant
+# (0.57*1 == 0.57), without needing to restructure this formula. Do NOT
+# additionally discount by a separate filtration factor -- that loss is
+# already included in the 0.57/0.54 figure.
+#
+# NOTE: this is DIFFERENT from Extraction/ExtractionEfficiency.R's own
+# 49.3%/72.4% result (PETN/RDX) -- that measures extraction ONLY (no
+# filtration step), a genuinely different, non-comparable experiment, and
+# was deliberately never applied anywhere (see ASTRA/doe/CONTEXT.md,
+# September 4 2026 session). The 0.57/0.54 value used below is the later,
+# more complete combined-loss measurement that FINEX's own pipeline now
+# uses live.
+#
+# These are LOCAL copies (this study doesn't source GlobalCode.R), kept in
+# sync MANUALLY with main_study_analysis.R and GlobalCode.R -- if the
+# measured value is ever revised again, update all three places.
+petn_extraction_efficiency <- 0.57  # Combined extraction+filtration recovery efficiency (mirrors GlobalCode.R's petn_recovery_efficiency, measured 2026-09-03/04)
+rdx_extraction_efficiency  <- 0.54  # Combined extraction+filtration recovery efficiency (mirrors GlobalCode.R's rdx_recovery_efficiency, measured 2026-09-03/04)
+petn_filtration_efficiency <- 1  # Neutral (no-op) -- filtration loss already included in petn_extraction_efficiency above, see comment above
+rdx_filtration_efficiency  <- 1  # Neutral (no-op) -- filtration loss already included in rdx_extraction_efficiency above, see comment above
 
 # Study-wide expected totals (for the SampleSummary "Complete %" column)
 expected_total_per_surface <- 16   # 4 surfaces x 4 conditions x 1 rep, per surface type
@@ -443,9 +462,10 @@ collate_gcms_results <- function() {
   # filtration) * 100" formula exactly (concentration/ideal_concentration
   # IS mass/deposit here: ideal_concentration = deposit_mass_ng /
   # sample_vol_uL, so concentration/ideal_concentration = concentration *
-  # sample_vol_uL / deposit_mass_ng = mass/deposit). Efficiency terms are
-  # both 1 currently (see USER CONFIGURATION above), so this is numerically
-  # identical to the pre-existing formula until real values are determined.
+  # sample_vol_uL / deposit_mass_ng = mass/deposit). Efficiency terms set
+  # 2026-09-10 (see USER CONFIGURATION above) -- combined 0.57/0.54
+  # extraction+filtration recovery efficiency, matching GlobalCode.R's own
+  # measured petn_recovery_efficiency/rdx_recovery_efficiency.
   samples$PETN_Recovery_pct <- ifelse(
     petn_treat_as_zero,
     0,
@@ -1065,7 +1085,7 @@ tryCatch({
 #===============================================================================
 
 generate_boxplots <- function(data, analyte_name, recovery_col, output_dir,
-                               file_suffix = "", title_suffix = "", show_points = FALSE) {
+                               file_suffix = "", title_suffix = "") {
 
   # Filter to rows with valid recovery data
   data_valid <- data[!is.na(data[[recovery_col]]), ]
@@ -1079,39 +1099,10 @@ generate_boxplots <- function(data, analyte_name, recovery_col, output_dir,
     return(invisible(NULL))
   }
 
-  # When show_points is set (the "all data" plots -- QC filter ignored),
-  # drop NC and "Untested" rows entirely (Updated 2026-08-06, per explicit
-  # request) rather than plotting them: NC has no real factorial Condition
-  # to begin with, and "Untested" (analysis_accepted is NA) isn't part of
-  # the design either. Restricts these plots to PASS/PASS*/FAIL pilot
-  # samples only -- still shows every QC outcome for the actual factorial
-  # design, just not NC/Untested rows that were never really part of it.
-  # Computed BEFORE Condition/means_df/counts_df below so those are also
-  # built only from the retained rows.
-  # NC is identified via SampleType (not analysis_accepted -- under the
-  # unified compute_injection_acceptance(), NC rows get a real PASS/PASS*/
-  # FAIL value like everyone else, so a literal "NC" string is never
-  # produced any more; SampleType is the authoritative identifier).
-  if (show_points) {
-    is_untested <- "analysis_accepted" %in% names(data_valid) & is.na(data_valid$analysis_accepted)
-    is_nc <- if ("SampleType" %in% names(data_valid)) {
-      data_valid$SampleType == "NC"
-    } else {
-      rep(FALSE, nrow(data_valid))
-    }
-    data_valid <- data_valid[!(is_untested | is_nc), ]
-  }
-
-  if (nrow(data_valid) == 0) {
-    cat(sprintf("  Skipping %s box plots - no data available after excluding NC/Untested\n\n", analyte_name))
-    return(invisible(NULL))
-  }
-
   # Create condition labels from Pressure and Solvent levels. NC rows (no
-  # Pressure/Solvent -- not part of the factorial design) are already
-  # excluded above when show_points is set; for the non-show_points calls
-  # NC never appears in the input data in the first place (already excluded
-  # upstream by the QC acceptance filter), so no special-case is needed here.
+  # Pressure/Solvent -- not part of the factorial design) never appear in
+  # the input data in the first place (already excluded upstream by the QC
+  # acceptance filter), so no special-case is needed here.
   condition_raw <- paste0(
     ifelse(data_valid$Pressure_level == "low", "50g", "200g"),
     "/",
@@ -1140,49 +1131,9 @@ generate_boxplots <- function(data, analyte_name, recovery_col, output_dir,
   )
   names(counts_df)[3] <- "n"
 
-  # Outlier flag per Condition x Surface_type group (standard 1.5xIQR rule --
-  # matches what the box itself would flag if outlier.shape weren't
-  # suppressed below), needed by geom_jitter's aes(shape=...) further down.
-  # MUST be computed before the ggplot(data_valid, ...) call immediately
-  # below -- ggplot() captures data_valid by value at call time, so adding
-  # a column to data_valid afterward would not propagate into the already-
-  # built plot object (same pitfall previously documented for
-  # AcceptanceStatus in this file's July 30, 2026 bug-fix session).
-  if (show_points) {
-    compute_outlier_flag <- function(x) {
-      q1 <- quantile(x, 0.25, na.rm = TRUE)
-      q3 <- quantile(x, 0.75, na.rm = TRUE)
-      iqr <- q3 - q1
-      lower <- q1 - 1.5 * iqr
-      upper <- q3 + 1.5 * iqr
-      x < lower | x > upper
-    }
-    data_valid$IsOutlier <- as.logical(ave(data_valid[[recovery_col]],
-                                 data_valid$Condition, data_valid$Surface_type,
-                                 FUN = compute_outlier_flag))
-  }
-
   # Generate box plot: faceted by Surface_type, 4 boxes per facet
   p <- ggplot(data_valid, aes(x = Condition, y = .data[[recovery_col]])) +
     geom_boxplot(outlier.shape = NA, width = 0.5)
-
-  # Overlay individual points (Updated 2026-08-11: smaller, blue points for
-  # clarity, with outliers -- per the standard 1.5xIQR box plot rule computed
-  # above -- shown as a different shape (triangle) from normal points
-  # (circle) so they're visually distinguishable at a glance. NC/Untested
-  # rows are already excluded above, so PASS/PASS*/FAIL points are shown
-  # without distinguishing colour by QC status (per the prior, still-
-  # standing "uniform colour" decision).
-  if (show_points) {
-    p <- p +
-      geom_jitter(aes(shape = IsOutlier), width = 0.15, height = 0,
-                  size = 1.3, alpha = 0.85, colour = "blue") +
-      scale_shape_manual(
-        values = c(`FALSE` = 16, `TRUE` = 17),
-        labels = c(`FALSE` = "Normal", `TRUE` = "Outlier (>1.5xIQR)"),
-        name = "Sample"
-      )
-  }
 
   # Fixed y-axis range (Added August 2026): 0-50% recovery, hardcoded rather
   # than the previous 0-100%. Real pilot data currently tops out around
@@ -1225,246 +1176,6 @@ generate_boxplots <- function(data, analyte_name, recovery_col, output_dir,
   cat(sprintf("  Saved: %s\n", out_file))
   return(invisible(p))
 }
-
-#===============================================================================
-# BAR CHARTS WITH SEM ERROR BARS (per condition, per analyte)
-#
-# Companion to the box plots above: one bar per condition (Pressure x
-# Solvent), faceted by Surface_type, height = mean recovery, error bar =
-# standard error of the mean (SEM = SD / sqrt(n)) for quick visual
-# comparison of which conditions differ. SEM is only drawn when n > 1 (a
-# single-replicate condition has an undefined SD, so no error bar is shown
-# for it rather than a misleading zero-width one -- same convention used
-# for the by-participant bar charts in GCMSQuantitation's
-# Code/04_CollateStudyResults.R).
-#===============================================================================
-
-generate_barchart <- function(data, analyte_name, recovery_col, output_dir,
-                                file_suffix = "", title_suffix = "") {
-
-  data_valid <- data[!is.na(data[[recovery_col]]), ]
-
-  if (nrow(data_valid) == 0) {
-    cat(sprintf("  Skipping %s bar chart - no data available\n\n", analyte_name))
-    return(invisible(NULL))
-  }
-
-  condition_raw <- paste0(
-    ifelse(data_valid$Pressure_level == "low", "50g", "200g"),
-    "/",
-    ifelse(data_valid$Solvent_level == "absent", "dry", "wet")
-  )
-  data_valid$Condition <- factor(
-    condition_raw,
-    levels = c("50g/dry", "50g/wet", "200g/dry", "200g/wet")
-  )
-  # Negative controls have no Pressure/Solvent level, so Condition is NA for
-  # them -- drop rather than plot an "NA" bar (mirrors generate_boxplots(),
-  # which gives NC an explicit category only when show_points is requested).
-  data_valid <- data_valid[!is.na(data_valid$Condition), ]
-
-  if (nrow(data_valid) == 0) {
-    cat(sprintf("  Skipping %s bar chart - no non-NC data available\n\n", analyte_name))
-    return(invisible(NULL))
-  }
-
-  summary_df <- data_valid %>%
-    group_by(Surface_type, Condition) %>%
-    summarise(
-      Mean = mean(.data[[recovery_col]], na.rm = TRUE),
-      SD   = sd(.data[[recovery_col]], na.rm = TRUE),
-      N    = sum(!is.na(.data[[recovery_col]])),
-      SEM  = ifelse(N > 1, SD / sqrt(N), NA_real_),
-      .groups = "drop"
-    )
-
-  ymax <- max(summary_df$Mean + ifelse(is.na(summary_df$SEM), 0, summary_df$SEM), na.rm = TRUE)
-
-  p <- ggplot(summary_df, aes(x = Condition, y = Mean)) +
-    geom_bar(stat = "identity", fill = "#4472C4", width = 0.6) +
-    geom_errorbar(aes(ymin = Mean - SEM, ymax = Mean + SEM), width = 0.2, na.rm = TRUE) +
-    geom_text(aes(label = paste0("n=", N),
-                  y = Mean + ifelse(is.na(SEM), 0, SEM) + 0.03 * ymax),
-              size = 3, vjust = 0) +
-    facet_wrap(~ Surface_type, labeller = labeller(Surface_type = c("steel" = "Steel", "abs" = "ABS"))) +
-    coord_cartesian(ylim = c(0, ymax * 1.15)) +
-    labs(
-      title = paste0(analyte_name, " Mean Recovery by Condition (\u00b1 SEM)", title_suffix),
-      x = "Condition",
-      y = "Mean Recovery (%)"
-    ) +
-    theme_bw(base_size = 12) +
-    theme(
-      strip.text = element_text(size = 12, face = "bold"),
-      axis.text.x = element_text(size = 10),
-      plot.title = element_text(size = 14, face = "bold")
-    )
-
-  out_file <- file.path(output_dir, paste0(analyte_name, "_pilot_barchart", file_suffix, ".png"))
-  ggsave(out_file, p, width = 8, height = 4, dpi = 300)
-
-  cat(sprintf("  Saved: %s\n", out_file))
-  return(invisible(p))
-}
-
-#===============================================================================
-# INDIVIDUAL-VALUE BAR CHARTS BY REPEAT (per condition, per analyte)
-#
-# Companion to generate_barchart() above (which plots the MEAN recovery per
-# condition +/- SEM, one bar per condition). This version plots every
-# individual sample's own recovery value directly with no aggregation --
-# one bar per (Repeat, Condition) combination, faceted by Surface_type,
-# with Condition as the dodged fill series and the physical surface
-# replicate number along the x-axis. In this design each of the 4 physical
-# surfaces per type (e.g. Steel_01..04) is tested under all 4 conditions
-# exactly once, so "Repeat" (parsed from the numeric suffix of SurfaceID,
-# e.g. "Steel_02" -> 2) is the natural per-condition replicate identifier --
-# there is no independent within-surface replication of the same condition
-# to plot instead. Useful for seeing surface-to-surface variability within
-# a condition directly, rather than only its mean/SEM.
-#===============================================================================
-
-generate_repeat_barchart <- function(data, analyte_name, recovery_col, output_dir,
-                                      file_suffix = "", title_suffix = "") {
-
-  data_valid <- data[!is.na(data[[recovery_col]]), ]
-
-  if (nrow(data_valid) == 0) {
-    cat(sprintf("  Skipping %s by-repeat bar chart - no data available\n\n", analyte_name))
-    return(invisible(NULL))
-  }
-
-  condition_raw <- paste0(
-    ifelse(data_valid$Pressure_level == "low", "50g", "200g"),
-    "/",
-    ifelse(data_valid$Solvent_level == "absent", "dry", "wet")
-  )
-  data_valid$Condition <- factor(
-    condition_raw,
-    levels = c("50g/dry", "50g/wet", "200g/dry", "200g/wet")
-  )
-  # Negative controls have no Pressure/Solvent level (Condition NA) and no
-  # SurfaceID-based repeat number -- drop rather than plot a spurious bar
-  # (mirrors generate_barchart()'s NC handling above).
-  data_valid <- data_valid[!is.na(data_valid$Condition) & !is.na(data_valid$SurfaceID), ]
-
-  if (nrow(data_valid) == 0) {
-    cat(sprintf("  Skipping %s by-repeat bar chart - no non-NC data available\n\n", analyte_name))
-    return(invisible(NULL))
-  }
-
-  # Repeat number = the physical surface replicate that produced this
-  # measurement (e.g. "Steel_02" -> 2, "ABS_04" -> 4).
-  data_valid$Repeat <- factor(
-    as.integer(sub(".*_", "", as.character(data_valid$SurfaceID))),
-    levels = 1:4
-  )
-
-  # Guard against genuine duplicate (Surface_type, Repeat, Condition) rows
-  # (e.g. a reanalysed sample not yet deduplicated) -- geom_bar(stat=
-  # "identity") does not aggregate, so >1 row per dodge group would draw
-  # overlapping bars rather than a single combined value. Warn loudly
-  # rather than silently producing a misleading plot.
-  dup_check <- data_valid %>%
-    dplyr::count(Surface_type, Repeat, Condition) %>%
-    dplyr::filter(n > 1)
-  if (nrow(dup_check) > 0) {
-    warning(analyte_name, " by-repeat bar chart: ", nrow(dup_check),
-            " (Surface_type, Repeat, Condition) combination(s) have more than one row -- ",
-            "bars will overlap rather than represent a single value. Check for duplicate/",
-            "reanalysed samples not yet deduplicated.")
-  }
-
-  ymax <- suppressWarnings(max(data_valid[[recovery_col]], na.rm = TRUE))
-  if (!is.finite(ymax) || ymax <= 0) ymax <- 1
-
-  # Sample size label per bar (Surface_type x Repeat x Condition). Normally
-  # n=1 -- this design has exactly one physical measurement per (repeat,
-  # condition) cell -- but shown directly on the plot for transparency/
-  # consistency with the n= labels already used on the box plots and mean
-  # bar charts above, and as a visible flag (alongside the dup_check
-  # warning() above) if a cell ever does contain >1 row (e.g. duplicate/
-  # reanalysed samples not yet deduplicated, most likely to surface in the
-  # "all data" call which does not restrict to QC-passed samples).
-  label_df <- data_valid %>%
-    dplyr::group_by(Surface_type, Repeat, Condition) %>%
-    dplyr::summarise(
-      BarTop = max(.data[[recovery_col]], na.rm = TRUE),
-      n      = dplyr::n(),
-      .groups = "drop"
-    )
-
-  p <- ggplot(data_valid, aes(x = Repeat, y = .data[[recovery_col]], fill = Condition)) +
-    geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
-    geom_text(
-      data = label_df,
-      aes(x = Repeat, y = BarTop, label = paste0("n=", n), group = Condition),
-      position = position_dodge(width = 0.8),
-      size = 2.6, vjust = -0.4, inherit.aes = FALSE
-    ) +
-    scale_fill_manual(values = c(
-      "50g/dry"  = "#8da0cb",
-      "50g/wet"  = "#66c2a5",
-      "200g/dry" = "#fc8d62",
-      "200g/wet" = "#e78ac3"
-    ), name = "Condition", drop = FALSE) +
-    facet_wrap(~ Surface_type, labeller = labeller(Surface_type = c("steel" = "Steel", "abs" = "ABS"))) +
-    coord_cartesian(ylim = c(0, ymax * 1.18)) +
-    labs(
-      title = paste0(analyte_name, " Recovery by Repeat and Condition", title_suffix),
-      x = "Repeat (Surface Replicate #)",
-      y = "Recovery (%)"
-    ) +
-    theme_bw(base_size = 12) +
-    theme(
-      strip.text = element_text(size = 12, face = "bold"),
-      axis.text.x = element_text(size = 10),
-      plot.title = element_text(size = 14, face = "bold")
-    )
-
-  out_file <- file.path(output_dir, paste0(analyte_name, "_pilot_byrepeat_barchart", file_suffix, ".png"))
-  ggsave(out_file, p, width = 8, height = 4, dpi = 300)
-
-  cat(sprintf("  Saved: %s\n", out_file))
-  return(invisible(p))
-}
-
-#===============================================================================
-# ALL-DATA BOX PLOTS (ignores QC acceptance filtering entirely)
-#
-# Shows every sample that has a recovery value -- PASS, PASS*, FAIL, and
-# negative controls (NC) alike -- colour-coded by analysis_accepted status.
-# Useful for visually reviewing what the QC filter is excluding, independent
-# of analysis_mode ("boxplots_only" or "full").
-#===============================================================================
-
-generate_all_data_boxplots <- function(data, output_dir) {
-  cat("\n========================================\n")
-  cat("ALL-DATA BOX PLOTS (QC acceptance filter ignored)\n")
-  cat("========================================\n\n")
-
-  generate_boxplots(data, "PETN", "PETN_Recovery_pct", output_dir,
-                     file_suffix = "_alldata",
-                     title_suffix = " \u2014 All Data",
-                     show_points = TRUE)
-  generate_boxplots(data, "RDX", "RDX_Recovery_pct", output_dir,
-                     file_suffix = "_alldata",
-                     title_suffix = " \u2014 All Data",
-                     show_points = TRUE)
-
-  # By-repeat individual-value bar charts, also run unfiltered (every
-  # sample with a recovery value, including QC FAIL -- NC is still dropped
-  # inside generate_repeat_barchart() itself, since NCs have no
-  # Pressure/Solvent condition or factorial SurfaceID to plot against).
-  generate_repeat_barchart(data, "PETN", "PETN_Recovery_pct", output_dir,
-                            file_suffix = "_alldata",
-                            title_suffix = " \u2014 All Data")
-  generate_repeat_barchart(data, "RDX", "RDX_Recovery_pct", output_dir,
-                            file_suffix = "_alldata",
-                            title_suffix = " \u2014 All Data")
-  cat("\n")
-}
-
 
 #===============================================================================
 # DATA LOADING AND VALIDATION
@@ -1510,16 +1221,6 @@ if (has_batch_info) {
   cat("  - Batch-organized format detected\n")
   cat("  - Batches:", paste(levels(pilot_data$BatchNumber), collapse=", "), "\n")
 }
-
-# Keep an unfiltered copy (post factor-conversion) for the all-data box plots
-# below, before the QC acceptance filter narrows pilot_data down further.
-pilot_data_all <- pilot_data
-
-# All-data box plots: every sample with a recovery value (PASS, PASS*, FAIL,
-# and negative controls alike), colour-coded by QC status. Runs unconditionally,
-# independent of analysis_mode, so it's always available for reviewing what
-# the QC filter below is excluding.
-generate_all_data_boxplots(pilot_data_all, output_dir)
 
 # =========================================================
 # QC ACCEPTANCE FILTER (mirrors GCMSQuantitation FINEX pipeline fix, July 2026:
@@ -1613,10 +1314,6 @@ if (analysis_mode == "boxplots_only") {
 
   generate_boxplots(pilot_data, "PETN", "PETN_Recovery_pct", output_dir)
   generate_boxplots(pilot_data, "RDX", "RDX_Recovery_pct", output_dir)
-  generate_barchart(pilot_data, "PETN", "PETN_Recovery_pct", output_dir)
-  generate_barchart(pilot_data, "RDX", "RDX_Recovery_pct", output_dir)
-  generate_repeat_barchart(pilot_data, "PETN", "PETN_Recovery_pct", output_dir)
-  generate_repeat_barchart(pilot_data, "RDX", "RDX_Recovery_pct", output_dir)
 
   cat("\n========================================\n")
   cat("BOX PLOTS COMPLETE\n")
@@ -1883,10 +1580,8 @@ analyze_analyte <- function(data, analyte_name, recovery_col) {
   # 7. GENERATE PLOTS
   #-----------------------------------------------------------------------------
 
-  # Box plots (replaces bar charts)
+  # Box plots
   generate_boxplots(data_clean, analyte_name, recovery_col, output_dir)
-  generate_barchart(data_clean, analyte_name, recovery_col, output_dir)
-  generate_repeat_barchart(data_clean, analyte_name, recovery_col, output_dir)
 
   # Interaction plots
   means_data <- data_clean %>%
@@ -2473,13 +2168,27 @@ tryCatch({
 
     cat("NEXT STEPS:\n")
     cat("  1. Review pilot results and diagnostics\n")
-    cat(sprintf("  2. Prepare %d steel + %d abs surfaces for a wet-only, Pressure-focused\n",
-                if (exists("recommended_n_wet")) recommended_n_wet else NA_integer_,
-                if (exists("recommended_n_wet")) recommended_n_wet else NA_integer_))
-    cat("     main study (recommended plan above) -- or the full factorial\n")
-    cat(sprintf("     alternative (%d steel + %d abs) if you prefer to also gather more\n",
-                recommended_n, recommended_n))
-    cat("     Solvent/dry-swab data for other reasons\n")
+    if (exists("recommended_n_wet")) {
+      cat(sprintf("  2. Prepare %d steel + %d abs surfaces for a wet-only, Pressure-focused\n",
+                  recommended_n_wet, recommended_n_wet))
+      cat("     main study (recommended plan above) -- or the full factorial\n")
+      cat(sprintf("     alternative (%d steel + %d abs) if you prefer to also gather more\n",
+                  recommended_n, recommended_n))
+      cat("     Solvent/dry-swab data for other reasons\n")
+    } else {
+      # recommended_n_wet is only ever created when the wet-only literature-
+      # informed search (above) finds an n within max_surfaces_per_type that
+      # reaches target_power for BOTH analytes. When it doesn't (e.g. the
+      # noise floor is large relative to pressure_literature_effect_pct),
+      # that case is already explained in detail earlier in this section --
+      # this branch just avoids re-stating a sample size that doesn't exist
+      # (previously fell back to inserting the literal string "NA" here).
+      cat("  2. The wet-only recommended plan's own sample size could not be pinned\n")
+      cat("     down (see \"Could not reach the target power...\" above) -- consider\n")
+      cat(sprintf("     the full factorial alternative instead (%d steel + %d abs, below),\n",
+                  recommended_n, recommended_n))
+      cat("     or revisit pressure_literature_effect_pct/max_surfaces_per_type\n")
+    }
     cat("  3. Refine protocol based on pilot learnings\n")
     cat("  4. Generate main study design matrix using doe_nested_design.R\n")
     cat("  5. Execute main study\n\n")

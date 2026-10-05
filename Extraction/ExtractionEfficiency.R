@@ -57,9 +57,9 @@ SPIKE_AMOUNT_RDX  <- 2000  # ng per swab (40 uL x 50 ng/uL)
 SAMPLE_VOLUME     <- 1000  # uL (extraction solvent volume; matches run_metadata.yaml)
 
 # Set file paths
-data_file <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/Extraction/20260903ExtractionTest/Results/20260903ExtractionTest_GCMSResults.csv"
+data_file <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/Extraction/20260904ExtractionTest/Results/20260904ExtractionTest_GCMSResults.csv"
 
-output_dir <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/Extraction/20260903ExtractionTest/Results/"
+output_dir <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/Extraction/20260904ExtractionTest/Results/"
 
 # Verify files/directories exist
 if (!file.exists(data_file)) {

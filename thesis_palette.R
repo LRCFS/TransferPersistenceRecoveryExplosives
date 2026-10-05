@@ -79,6 +79,14 @@ neutral_grey <- "#999999"
 # Surface_type: steel vs abs
 pal_surface_type <- c(steel = okabe_ito[["blue"]], abs = okabe_ito[["orange"]])
 
+# Lighter tint of pal_surface_type, for "summary" markers (categorical means/
+# diamonds) that need to visually sit apart from individual-sample points
+# using the full-saturation pal_surface_type colours in the SAME figure --
+# used by ASTRA/doe/main_study_analysis.R's categorical hinge plot and
+# ASTRA/plot_recovery_boxplot_actualpressure.R's boxplot (both show
+# individual points AND a group-mean marker together, Surface-coloured).
+pal_surface_type_mean <- c(steel = "#80B9D9", abs = "#F3CF80")
+
 # Study: Pilot vs Main
 pal_study <- c(Pilot = okabe_ito[["reddish_purple"]], Main = okabe_ito[["bluish_green"]])
 
