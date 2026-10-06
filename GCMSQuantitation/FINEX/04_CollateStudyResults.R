@@ -250,12 +250,23 @@ if (length(cal_stats_files) > 0) {
   id_cols <- c("Dataset", "Date", "CalibrationSet")
   
   # All PETN columns (in logical order)
-  petn_cols <- grep("^(N_Standards|N_Excluded_LOD|R2|AdjR2).*PETN", 
-                    names(all_cal_stats), value = TRUE)
-  
+  petn_cols <- c(
+    grep("^(N_Standards|N_Excluded_LOD|R2|AdjR2).*PETN",
+         names(all_cal_stats), value = TRUE),
+    # QC-replicate-based LOD/LOQ (added Oct 2026 -- reporting/validation
+    # metric only, see GCMSQuantitation/CONTEXT.md "Independent ICH Q2(R2)
+    # Calibration-Curve LOD/LOQ" session) -- named PETN_LOD_QCReplicate_ng/
+    # PETN_LOQ_QCReplicate_ng by Code/03_Quantification.R, so PETN is a
+    # prefix here rather than a suffix like the columns above.
+    grep("^PETN_(LOD|LOQ)_QCReplicate_ng$", names(all_cal_stats), value = TRUE)
+  )
+
   # All RDX columns (same order)
-  rdx_cols <- grep("^(N_Standards|N_Excluded_LOD|R2|AdjR2).*RDX", 
-                   names(all_cal_stats), value = TRUE)
+  rdx_cols <- c(
+    grep("^(N_Standards|N_Excluded_LOD|R2|AdjR2).*RDX",
+         names(all_cal_stats), value = TRUE),
+    grep("^RDX_(LOD|LOQ)_QCReplicate_ng$", names(all_cal_stats), value = TRUE)
+  )
   
   # IS columns
   is_cols <- grep("^RDX_IS_RSD", names(all_cal_stats), value = TRUE)

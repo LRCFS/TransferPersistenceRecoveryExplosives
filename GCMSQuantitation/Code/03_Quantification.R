@@ -1754,6 +1754,101 @@ if (nrow(qc_plot_data) > 0 && has_calibration) {
 }
 
 # =========================================================
+# QC-Replicate-Based LOD/LOQ (reporting/validation metric only --
+# added October 2026, see CONTEXT.md "Independent ICH Q2(R2)
+# Calibration-Curve LOD/LOQ" session for the full investigation)
+# =========================================================
+# Does NOT gate any sample's acceptance, PASS/FAIL status, or
+# reported recovery/concentration value -- purely an additional
+# column in *_CalibrationStats.xlsx, alongside the existing
+# R2/N_Standards/etc.
+#
+# Rationale: the full-range (0.2-10ng) weighted quadratic
+# calibration curve's own residual SD + local derivative (the
+# "global curve" method, e.g. the one Item 19's uncertainty
+# propagation already uses) is a poor characterisation of
+# low-end repeatability specifically -- its residual scatter is
+# dominated by the much higher-concentration points even under
+# 1/x weighting. Confirmed empirically across all 30 real
+# datasets in both studies (CONTEXT.md): this QC-replicate
+# method gives a 1.7-2.0x TIGHTER, independently-justified
+# LOD/LOQ than the global-curve method, and "rescues" 35-43% of
+# real-sample results previously flagged below the global-curve
+# LOQ, with zero new data or reanalysis. Alternatives tested and
+# rejected (did not improve on this): different calibration
+# weighting schemes, pooling the QC replicates directly into the
+# curve fit itself, pooling calibration data across datasets
+# (RDX's own low-end curve shape varies ~33% CV across datasets,
+# consistent with the separately-documented RDX calendar-drift
+# finding -- pooling would blend genuinely different run-to-run
+# behaviour into a misleading average).
+#
+# Method: ICH Q2(R2) Section 3.2.3's first listed approach
+# ("based on the standard deviation of the response"), applied
+# directly in concentration units to the ALREADY-ACQUIRED 0.2ng
+# QC replicate injections (5-6 per calibration set, run
+# throughout every sequence for routine QC purposes -- the exact
+# same physical measurement as the 0.2ng Cal standard; "QC" vs
+# "Cal" is only a sequence-log role label):
+#   LOD = 3.3 x SD(replicate concentrations)
+#   LOQ = 10  x SD(replicate concentrations)
+# No slope term is needed -- the QC is at a known fixed
+# concentration, so this sidesteps the quadratic-local-slope
+# question the global-curve method requires entirely.
+#
+# Requires >=4 usable (non-NA) 0.2ng QC replicates in a given
+# CalibrationSet for a minimally reliable SD estimate; NA
+# otherwise (not a fabricated number) -- PETN in particular has a
+# higher NA rate here (~8.7% across the study) than RDX (~3.4%),
+# itself a visible symptom of PETN's already-documented lack of
+# internal-standard correction.
+if (nrow(cal_stats_df) > 0 && exists("cal_stats_wide") && "CalLevel" %in% names(Combined)) {
+
+  qc_02ng <- Combined[Combined$Type == "QC" & Combined$CalLevel == 0.2 &
+                       !is.na(Combined$CalibrationSet), , drop = FALSE]
+
+  if (nrow(qc_02ng) > 0) {
+    for (analyte_name in names(analytes)) {
+      prefix <- tolower(analyte_name)
+      conc_col <- if (analyte_name == "PETN" && "petn_concentration_dc" %in% names(Combined)) {
+        "petn_concentration_dc"
+      } else {
+        paste0(prefix, "_concentration")
+      }
+      if (!conc_col %in% names(qc_02ng)) next
+
+      per_set <- qc_02ng %>%
+        dplyr::group_by(CalibrationSet) %>%
+        dplyr::summarise(
+          N_usable_02ng_QC = sum(!is.na(.data[[conc_col]])),
+          SD_ng = if (sum(!is.na(.data[[conc_col]])) >= 4) sd(.data[[conc_col]], na.rm = TRUE) else NA_real_,
+          .groups = "drop"
+        )
+      per_set[[paste0(analyte_name, "_LOD_QCReplicate_ng")]] <- 3.3 * per_set$SD_ng
+      per_set[[paste0(analyte_name, "_LOQ_QCReplicate_ng")]] <- 10  * per_set$SD_ng
+      per_set <- per_set[, c("CalibrationSet",
+                              paste0(analyte_name, "_LOD_QCReplicate_ng"),
+                              paste0(analyte_name, "_LOQ_QCReplicate_ng"))]
+
+      cal_stats_wide <- cal_stats_wide %>% dplyr::left_join(per_set, by = "CalibrationSet")
+    }
+
+    # Re-write CalibrationStats.xlsx with the new columns added -- this
+    # overwrites the earlier, incomplete write from the "Calibration
+    # Statistics Excel Export" section above, which runs before PETN's
+    # drift correction finalises petn_concentration_dc, so this metric
+    # could not be computed there.
+    writexl::write_xlsx(
+      cal_stats_wide,
+      path = file.path(Results.dir, paste0(ParentFolder, "_CalibrationStats.xlsx"))
+    )
+    message("  QC-replicate-based LOD/LOQ added to ", paste0(ParentFolder, "_CalibrationStats.xlsx"),
+            " (reporting/validation metric only -- does not affect sample acceptance).")
+  }
+}
+
+
+# =========================================================
 # Export final results
 # =========================================================
 outfile <- file.path(

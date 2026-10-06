@@ -1,0 +1,71 @@
+"Study","Dataset","Analyte","N_real_samples","N_currently_Quantifiable","N_downgraded_under_strict_SNR","N_below_ICH_LOQ"
+"FINEX","20260813","PETN",29,25,0,15
+"FINEX","20260813","RDX",29,28,2,25
+"FINEX","ABS-S-1","PETN",28,24,1,22
+"FINEX","ABS-S-1","RDX",28,25,6,23
+"FINEX","ABS-S-2","PETN",29,24,0,8
+"FINEX","ABS-S-2","RDX",29,25,23,24
+"FINEX","G and T 1","PETN",29,25,0,5
+"FINEX","G and T 1","RDX",29,26,2,11
+"FINEX","Lab10-1","PETN",29,25,4,0
+"FINEX","Lab10-1","RDX",29,28,3,12
+"FINEX","Lab17-1","PETN",29,22,7,9
+"FINEX","Lab17-1","RDX",29,26,12,25
+"FINEX","Lab29","PETN",28,24,1,9
+"FINEX","Lab29","RDX",28,25,1,19
+"FINEX","Lab33","PETN",28,24,1,3
+"FINEX","Lab33","RDX",28,26,1,16
+"FINEX","Lab9","PETN",29,24,5,5
+"FINEX","Lab9","RDX",29,26,2,15
+"FINEX","Outstanding samples 2","PETN",29,25,0,6
+"FINEX","Outstanding samples 2","RDX",29,23,6,20
+"FINEX","Outstanding samples 3","PETN",29,25,1,9
+"FINEX","Outstanding samples 3","RDX",29,27,7,26
+"FINEX","Outstanding samples 4","PETN",22,19,0,7
+"FINEX","Outstanding samples 4","RDX",22,19,1,13
+"FINEX","Outstanding samples 5","PETN",24,23,0,11
+"FINEX","Outstanding samples 5","RDX",24,24,2,8
+"FINEX","Outstanding samples","PETN",23,9,0,3
+"FINEX","Outstanding samples","RDX",23,20,7,17
+"FINEX","Steel-1","PETN",29,23,7,10
+"FINEX","Steel-1","RDX",29,27,2,4
+"FINEX","Steel 2","PETN",29,24,1,2
+"FINEX","Steel 2","RDX",29,25,1,11
+"FINEX","Steel 3","PETN",29,25,0,0
+"FINEX","Steel 3","RDX",29,27,3,13
+"FINEX","Steel 4","PETN",29,25,0,0
+"FINEX","Steel 4","RDX",29,25,3,13
+"FINEX","Steel 5","PETN",29,24,4,15
+"FINEX","Steel 5","RDX",29,27,2,16
+"ASTRA","Analysis1","PETN",25,25,0,0
+"ASTRA","Analysis1","PETN_NC",4,2,2,NA
+"ASTRA","Analysis1","RDX",25,25,0,0
+"ASTRA","Analysis1","RDX_NC",4,2,0,NA
+"ASTRA","Analysis2","PETN",21,21,0,0
+"ASTRA","Analysis2","PETN_NC",6,3,3,NA
+"ASTRA","Analysis2","RDX",21,21,0,0
+"ASTRA","Analysis2","RDX_NC",6,2,0,NA
+"ASTRA","Analysis3","PETN",16,4,0,0
+"ASTRA","Analysis3","PETN_NC",5,4,2,NA
+"ASTRA","Analysis3","RDX",16,4,0,0
+"ASTRA","Analysis3","RDX_NC",5,5,1,NA
+"ASTRA","Analysis4","PETN",2,2,0,0
+"ASTRA","Analysis4","PETN_NC",5,5,4,NA
+"ASTRA","Analysis4","RDX",2,2,0,0
+"ASTRA","Analysis4","RDX_NC",5,5,0,NA
+"ASTRA","Oustanding samples 5","PETN",24,23,0,0
+"ASTRA","Oustanding samples 5","RDX",24,24,2,0
+"ASTRA","Analysis1","PETN",18,12,0,0
+"ASTRA","Analysis1","RDX",18,15,2,0
+"ASTRA","Analysis3","PETN",8,7,2,0
+"ASTRA","Analysis3","PETN_NC",1,0,0,NA
+"ASTRA","Analysis3","RDX",8,8,4,0
+"ASTRA","Analysis3","RDX_NC",1,1,1,NA
+"ASTRA","Analysis4","PETN",20,11,2,0
+"ASTRA","Analysis4","RDX",20,15,3,0
+"ASTRA","Analysis5","PETN",10,5,1,0
+"ASTRA","Analysis5","RDX",10,6,2,0
+"ASTRA","Analysis6","PETN",9,4,0,0
+"ASTRA","Analysis6","RDX",9,4,0,0
+"ASTRA","Analysis7","PETN",14,11,0,0
+"ASTRA","Analysis7","RDX",14,13,1,0

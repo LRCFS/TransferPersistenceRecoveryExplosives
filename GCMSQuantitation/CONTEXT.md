@@ -1,5 +1,159 @@
 # GCMSQuantitation - Project Context
 
+## Session Summary (October 6, 2026) — Independent ICH Q2(R2) Calibration-Curve LOD/LOQ Added as a Cross-Check Against the Live SD-Based SNR System
+
+### Motivation
+
+Follow-on from an investigation into the live pipeline's `snr_detect=3`/`snr_quant=10` thresholds (`ModPeaks.R::calculate_snr()`, SD-based). Confirmed empirically (176 real noise-region measurements across 2 FINEX datasets, both analytes) that the peak-to-peak noise range in this instrument's data is consistently ~3.7-3.9x the SD -- meaning the live thresholds are considerably more lenient than the traditional peak-to-peak-based "3:1/10:1" chromatography convention (USP ⟨621⟩, Ph. Eur. 2.2.46: `S/N = 2H/h`, h = peak-to-peak). ICH Q2(R2) §3.2.3 itself doesn't mandate either convention. Rather than retroactively rescale `snr_detect`/`snr_quant` (which would reclassify results across both completed studies -- a decision deliberately deferred), implemented ICH's **third**, independent LOD/LOQ approach (`LOD = 3.3*sigma/S`, `LOQ = 10*sigma/S`, based on the calibration curve itself) as a separate, defensible, ng-denominated validation number.
+
+### Methodology decision: evaluating S for a *quadratic* (not linear) calibration curve
+
+Every calibration curve in this pipeline is a weighted quadratic (`Code/03_Quantification.R`'s `quad_formula`), but ICH's formula assumes a constant linear slope. Resolved by evaluating S as the **local derivative** (`2*a*x+b`) of the fitted quadratic at the **lowest calibration standard's concentration** -- consistent with (a) Cuadros-Rodriguez L. et al., "An IUPAC-based approach to estimate the detection limit in co-extraction-based optical sensors for anions with sigmoidal response calibration curves," *Anal. Bioanal. Chem.* 2011, 401(9), 2881-2889 (DOI: 10.1007/s00216-011-5366-8) -- a published precedent for adapting the same IUPAC/ICH methodology to a different nonlinear calibration shape -- and (b) the delta-method/first-order Taylor expansion (JCGM 100:2008, GUM), the same technique this codebase's own Item 19 PETN drift-correction uncertainty propagation already uses (`local_slope <- 2 * qa * res$value + qb`, `Code/03_Quantification.R`). sigma was taken as the residual standard error of the weighted fit (`summary(model)$sigma`), per Dolan JW, "Chromatographic Measurements, Part 5: Determining LOD and LOQ Based on the Calibration Curve," *Separation Science* (sepscience.com/hplc-solutions-126).
+
+### Implementation: `Diagnostics/Generic/ICH_CalibrationCurve_LODLOQ.R` (new, standalone, read-only)
+
+Does not touch any live pipeline file, model object, or results CSV -- reads only already-exported `*_GCMSResults.csv` files plus each dataset's own `run_metadata.yaml` (for `Dilution`, `use_15nrdx_for_petn`/`use_is_for_rdx`, `cal_exclude_lines`, needed to reproduce the exact production fit per dataset). Auto-discovers every dataset across both FINEX ("Accepted Analysis") and ASTRA (Main + Pilot Study "GC Data") roots, re-fits the identical weighted quadratic (`weights = 1/CalLevelAdj`) per `CalibrationSet`, applies the same `Below_LOD` filter and any per-dataset `cal_exclude_lines`, then computes LOD/LOQ in ng. A lightweight cross-check (no raw-signal reprocessing needed) reports, per calibration set, the lowest real Sample/QC concentration the *live* pipeline already calls `Quantifiable` (SNR>=10) -- directly comparable in the same ng units.
+
+**Dataset-label fix along the way**: ASTRA's Main Study and Pilot Study folders both reuse `Analysis1`/`Analysis3`/`Analysis4` as folder names -- the underlying numbers were always correctly distinct (kept by full path throughout), but the plain folder name alone was ambiguous in the printed/exported tables. Added a `(Main)`/`(Pilot)` display-label suffix to disambiguate.
+
+### Result (real data, 30 datasets, 60 dataset x CalibrationSet x analyte combinations, R² 0.978-0.9999)
+
+| | ICH LOQ (ng), median | Live system's own empirical "Quantifiable" floor (ng), median |
+|---|---|---|
+| PETN, FINEX | 0.94 | 0.084 |
+| PETN, ASTRA | 0.79 | 0.079 |
+| RDX, FINEX | 0.84 | 0.032 |
+| RDX, ASTRA | 1.13 | 0.042 |
+
+**The live SNR-based system is calling results "Quantifiable" at concentrations roughly 10-20x below where the independent ICH calibration-curve method would place the LOQ**, consistent across virtually every one of the 30 datasets and both analytes (see `ICH_LODLOQ_Comparison.png` -- the ICH-LOQ circle sits clearly above its corresponding empirical-boundary X in nearly every panel). This corroborates, with a second independent method, the earlier finding that the SD-based SNR convention is substantially more lenient than a traditional peak-to-peak-equivalent reading.
+
+### Not yet decided (deliberately deferred, same as the SNR-convention investigation)
+
+This script does **not** change `snr_detect`/`snr_quant` or any live acceptance logic -- it produces a second, independent, defensible number to report in the thesis methods/validation section. Whether to (a) report both numbers as a disclosed limitation, (b) tighten the operational SNR thresholds to match (would require full reprocessing + reclassification across both studies), or (c) treat the ICH number as the primary citable LOD/LOQ and the SNR tiers as an operational-only QC gate, remains an open decision for the user.
+
+### Files Modified
+
+`Diagnostics/Generic/ICH_CalibrationCurve_LODLOQ.R` (new). Outputs (new, in `Diagnostics/Generic/ICH_LODLOQ_Output/`): `ICH_LODLOQ_PerCalibrationSet.csv` (60 rows, full per-calibration-set detail), `ICH_LODLOQ_Summary.csv` (per-analyte x per-study + pooled aggregates), `ICH_LODLOQ_Comparison.png`. `CONTEXT.md` (this entry).
+
+---
+
+### Follow-up (same day): Quantified Real-Data Impact of Tightening SNR Thresholds to Their Peak-to-Peak-Equivalent Values
+
+New script, same read-only/non-invasive design: `Diagnostics/Generic/SNR_Threshold_Impact_Simulation.R`. Reuses already-exported per-row SNR/concentration columns (no reprocessing) plus the ICH LOQ table above, to quantify -- in real numbers, not speculation -- what tightening `snr_detect`/`snr_quant` to their measured peak-to-peak-equivalent values (~3.7-3.9x stricter, i.e. snr_detect ~11, snr_quant ~37-39) would actually touch, across all 697 real sample rows / 149 QC injections per level per analyte in all 30 datasets.
+
+**Explicit scope limitation**: this counts row-level tier reclassifications and QC-level SNR-component flips; it does NOT re-run the full bracket-gating cascade (`assign_qc_brackets()`/`compute_injection_acceptance()`), so it is a directionally reliable lower bound, not an exact "N additional samples get Outcome=Reanalyse" figure.
+
+**Key findings**:
+- **6ng (quantitative) QC level is essentially unaffected**: 0/142 PETN, 1/143 RDX 6ng QCs would newly fail the SNR-component -- the backbone of the bracket-acceptance system doesn't depend on this ambiguity.
+- **0.2ng (sensitivity) QC level is heavily affected, especially PETN**: 57 of 90 currently-passing PETN 0.2ng QCs (63.3%) would newly fail the SNR-component; RDX 0.2ng less severely (14 of 144, 9.7%).
+- **Real sample SNR tiers rarely flip** (PETN 6.6%, RDX 16.2% of currently-"Quantifiable" rows downgrade), but **reported concentrations sitting below the independent ICH calibration-curve LOQ are far more common**: 24.6% of PETN and fully 50.5% of RDX "Quantifiable" results are below their own dataset's ICH LOQ already, with zero threshold change needed to notice this.
+- **Negative controls**: PETN trace-detection calls are fragile (11 of 14 currently-detected PETN NC rows would flip to "clean" under the stricter threshold); the headline **RDX contamination finding on ABS NCs is robust** (only 2 of 15 currently-detected RDX NC rows would flip) -- the thesis's main contamination narrative does not hinge on this threshold ambiguity.
+
+**Files**: `Diagnostics/Generic/SNR_Threshold_Impact_Simulation.R` (new). Outputs (new, in `ICH_LODLOQ_Output/`): `SNRThreshold_Impact_PerDataset.csv`, `SNRThreshold_Impact_QC_PerDataset.csv`. `CONTEXT.md` (this entry).
+
+---
+
+### Follow-up (same day): Below-ICH-LOQ Breakdown by Surface -- RDX/ABS Solvent Issue Confirmed as a Real, Significant Contributor, but NOT the Full Explanation
+
+Hypothesis tested: does the already-documented RDX/ABS acetonitrile-solvent compatibility issue (RedTeam_Findings.md item #17 -- RDX standards spiked in acetonitrile damage/interact with ABS, artifactually suppressing RDX recovery on ABS-Smooth/ABS-Textured; already excluded from FINEX's statistical interpretation via `rdx_surface_exclude`) account for most/all of the 50.5% RDX below-ICH-LOQ finding above?
+
+New script `Diagnostics/Generic/RDX_PETN_BelowLOQ_BySurface.R` (read-only, same design). Attaches Surface to each real-sample row via the IDENTICAL FINEX parsing regex/map `04_CollateStudyResults.R` itself uses (`sample_pattern`/`surface_map`) for FINEX, and a RunID join against the already-collated `main_study_data_nested.csv`/`pilot_data_nested.csv` for ASTRA (885 of 903 Quantifiable rows matched a Surface).
+
+**Result: the ABS/solvent issue is real and makes ABS substantially worse, but it is NOT the full explanation for RDX --- Steel alone still has roughly half its own RDX results below the ICH LOQ:**
+
+| Analyte | ABS-Smooth | ABS-Textured | Steel | Glass |
+|---|---|---|---|---|
+| PETN below-ICH-LOQ rate | 53.5% | 41.7% | **17.4%** | 0.0% |
+| RDX below-ICH-LOQ rate | 93.7% | 84.6% | **51.3%** | 0.0% |
+
+- **PETN's below-LOQ problem is predominantly ABS-driven** (71.9% of all below-LOQ PETN rows are ABS surfaces) -- consistent with the hypothesis.
+- **RDX's below-LOQ problem is only partially ABS-driven**: ABS surfaces are disproportionately worse (93.7%/84.6% vs Steel's 51.3%), and 61.1% of all below-LOQ RDX rows are ABS -- but Steel's own 51.3% below-LOQ rate is not negligible and cannot be explained by a surface-matrix/solvent-compatibility mechanism that is specific to ABS. This points to a second, surface-independent contributor to RDX's below-LOQ rate -- most likely the RDX calibration curve's own low-end (quadratic) shape/local-slope characteristics, exactly the kind of thing the ICH calibration-curve LOD/LOQ method is designed to surface, rather than a second matrix effect.
+- Glass (n=12 per analyte, small) is never below LOQ for either analyte -- consistent with Glass's already-documented high raw-PA/recovery.
+
+**Conclusion**: the known RDX/ABS solvent issue should be cited as a real, significant, quantified contributor (and the ABS-vs-Steel contrast is itself a useful quotable statistic), but should NOT be presented as explaining "most or all" of the RDX below-LOQ finding -- the Steel-only 51.3% figure needs its own explanation, independent of the ABS/solvent story.
+
+**Files**: `Diagnostics/Generic/RDX_PETN_BelowLOQ_BySurface.R` (new). Output (new, in `ICH_LODLOQ_Output/`): `BelowLOQ_BySurface_Detail.csv`. `CONTEXT.md` (this entry).
+
+---
+
+### Follow-up (same day): A Fix Requiring No Reanalysis -- Using Already-Acquired 0.2ng QC Replicates Directly, Instead of the Global Quadratic Curve's Residual + Local Slope
+
+User's question: since the below-LOQ problem traces to the calibration curve itself (not sample quality), is there anything addressable without physically reanalysing samples? Investigated whether the ALREADY-ACQUIRED 0.2ng QC replicate injections (5-6 per dataset, run throughout each sequence for routine QC purposes, confirmed via `Code/03_Quantification.R`'s `CalSets <- split(CalData, rep(seq_len(nrow(CalData)/n_levels), each=n_levels))` -- exactly 1 point per Cal level per set, i.e. the full-range quadratic has NO replication at the low end at all) could give a tighter, independently-justified LOD/LOQ than extrapolating from the full 0.2-10ng curve's own residual SD and local slope.
+
+**Method tested** (new script `Diagnostics/Generic/ReplicateQC_LowLevel_LODLOQ.R`, read-only): ICH Q2(R2)'s own first-listed approach, "based on the standard deviation of the response" -- taken directly in concentration units from the 0.2ng QC replicates' own already-computed, back-calculated concentrations (no new slope term needed; the QC is at a known fixed concentration, so this sidesteps the whole quadratic-local-slope question entirely):
+```
+LOD = 3.3 x SD(replicate concentrations)      LOQ = 10 x SD(replicate concentrations)
+```
+
+**Result (all 30 datasets)**:
+- RDX: median LOQ drops from 0.844 ng (quadratic-curve method) to 0.223 ng (QC-replicate method) -- a **2.0x improvement**. 25 of 30 datasets had >=4 usable 0.2ng QC replicates (NA rate only 3.4%).
+- PETN: median LOQ drops from 0.953 ng to 0.566 ng -- a **1.7x improvement**, smaller than RDX's and with a higher NA rate (8.7%, 23 of 30 datasets usable) -- consistent with PETN's already-documented lack of IS correction making its own low-level repeatability noisier.
+- **Re-evaluating the same real-sample rows flagged "below ICH LOQ" in the earlier analysis**: switching to the QC-replicate method RESCUES 43.1% of PETN's and 35.0% of RDX's previously-below-LOQ rows (i.e. they are now above the new, tighter, better-justified LOQ with zero new data). RDX still has a substantial residual below-LOQ rate even after rescue (45.1%, down from 68.8%) -- this method helps materially but does not fully resolve the RDX finding on its own.
+
+**Why this is legitimate, not circular**: the back-calculated concentration for each 0.2ng QC replicate still passes through the same quadratic model, so any systematic bias in the curve's shape/local slope affects all 5-6 replicates similarly (a bias question) -- the SD across replicates specifically isolates the RANDOM scatter (repeatability) at the concentration that actually matters for LOD/LOQ, which is a more direct, better-targeted measurement than inferring low-end noise indirectly from a global fit dominated by residuals from the much more concentrated high end.
+
+**Scope/limitation**: this is a reporting/validation-level change only -- it produces a different, better-justified LOD/LOQ *number* for the thesis. It does **not** change `solve_concentration()`, any sample's own reported recovery value, or any live acceptance/QC logic, all of which remain untouched.
+
+**Files**: `Diagnostics/Generic/ReplicateQC_LowLevel_LODLOQ.R` (new). Outputs (new, in `ICH_LODLOQ_Output/`): `ReplicateQC_vs_QuadCurve_LODLOQ.csv`, `BelowLOQ_Rescue_Comparison.csv`. `CONTEXT.md` (this entry).
+
+---
+
+### Follow-up (same day): Would a Differently-Characterised Calibration Curve Fix This? Tested 5 Candidate Fits -- Answer Differs by Analyte
+
+User's question: is the below-LOQ problem fixable by using a different calibration fit (weighting scheme, or model order) rather than just a different LOD/LOQ formula? New script `Diagnostics/Generic/CalibrationModel_Comparison.R` (read-only). Critically, judged candidates NOT by R² on the same 6 calibration points they were fit on (meaningless here -- a 3-parameter quadratic through 6 points will always look excellent regardless of how well-constrained the low end actually is), but by **held-out prediction**: each candidate model (fit on the Cal standards only) was used to back-calculate concentration from the already-acquired 0.2ng QC replicates' own RAW response (never seen by the fit), then judged on bias-vs-true-concentration and precision across those predictions.
+
+**Candidates tested** (all using only already-acquired Cal standards, no new data): `QuadX1` (current production: quadratic, weights=1/x), `QuadX2` (quadratic, weights=1/x²), `LinX1`/`LinX2` (linear, same two weighting schemes), `QuadOLS` (quadratic, unweighted, for comparison).
+
+**Result -- genuinely different conclusions per analyte**:
+
+| Analyte | Best model (lowest |bias|) | Median signed bias | Current production (QuadX1) bias |
+|---|---|---|---|
+| RDX | **QuadX1 (current)** | +4.7% | +4.7% (already best of the 5) |
+| PETN | **LinX1** (linear, weights=1/x) | -44.7% | **-64.7%** (worst of the 5) |
+
+- **RDX: the current model is already the best-performing of the 5 candidates tested.** No curve-fitting change is likely to meaningfully help RDX's residual below-LOQ rate -- it is very likely intrinsic to the measurement (non-proportional low-level signal loss, consistent with this project's own long-documented trace-level adsorption literature), not a model-choice artifact. `QuadOLS` (unweighted) is dramatically worse (-46.3% bias) -- confirms the existing 1/x inverse-concentration weighting is doing real, necessary work preventing the high-concentration points from dominating the fit.
+- **PETN: a real, actionable improvement exists.** Dropping the quadratic term entirely (`LinX1`, still weights=1/x) cuts the systematic low-end bias from -64.7% to -44.7% -- roughly a third smaller error, using the exact same already-acquired calibration standards, zero new data. The quadratic term appears to introduce curvature-driven distortion specifically in the low-concentration region it is least constrained by (same general mechanism as the previously-documented "fitted calibration curve's own intercept sits above the real low-end response" artifact). **This does not fully solve PETN's problem** -- even the best model (`LinX1`) still leaves a -44.7% systematic underestimate at 0.2ng, consistent with PETN's already-documented lack of internal-standard correction being a deeper reliability limit that no amount of curve-fitting alone can fully correct.
+
+**Recommendation arising from this**: leave RDX's calibration model as-is (already optimal among tested alternatives). For PETN, switching from quadratic to linear is worth considering as a documented refinement (smaller, not zero, bias) -- but this would be a live-pipeline model change (not just a reporting-level LOD/LOQ recalculation like the QC-replicate fix above), so it needs the same explicit-decision treatment as every other threshold/model change in this project before being adopted, including full reprocessing impact assessment.
+
+**Files**: `Diagnostics/Generic/CalibrationModel_Comparison.R` (new). Output (new, in `ICH_LODLOQ_Output/`): `CalibrationModel_Comparison_Detail.csv`. `CONTEXT.md` (this entry).
+
+---
+
+### Follow-up (same day): Exhaustive Check -- Nothing Further Reduces RDX's Below-LOQ Rate Without Reanalysis
+
+User's decision: PETN's calibration stays quadratic (not changed). Explicit follow-up question: is there ANYTHING else (short of physical reanalysis) that could reduce RDX's residual below-LOQ rate, beyond the QC-replicate LOD/LOQ fix already found (which rescued 35.0% of previously-flagged rows but left 45.1% still below)? Two further, previously-untested avenues checked:
+
+**1. Augmenting the quadratic fit itself with the 0.2ng QC replicates** (`Diagnostics/Generic/RDX_AugmentedCalibration_Test.R`, new) -- rather than using the QC replicates only as an independent SD estimate (the already-adopted fix), this pools them directly INTO the regression as extra low-end data points, scientifically legitimate since "QC" vs "Cal" is a sequence-log role label, not a different physical measurement. **Result: no reliable improvement** -- median LOQ improves only 1.13x, and the direction is inconsistent (16 of 30 calibration sets improve, 14 of 30 get WORSE). The global-curve-residual LOD/LOQ formula remains dominated by scatter across the whole 0.2-10ng range regardless of how many points sit at the low end -- confirming this is a structural limitation of that formula, not a data-quantity problem, and reinforcing why the QC-replicate-SD method (which bypasses the global residual entirely) was the one approach that actually worked.
+
+**2. Pooling calibration data across datasets** (to statistically borrow strength from ~30 datasets' worth of 0.2ng Cal standards instead of 1 per dataset) -- checked for viability first by testing whether the RDX low-end curve SHAPE (ratio of the 0.2ng Cal response to the 6ng Cal response, a dimensionless measure of curvature independent of absolute drift level) is actually stable across datasets. **Result: not viable** -- CV = 33.4% across all 30 datasets (range 0.035-0.091), confirming the low-end shape itself varies substantially run-to-run. This is consistent with (and reinforces) the already-documented, separately-investigated RDX calendar-drift finding (item #15, closed 04/09/2026) -- pooling would blend genuinely different calibration behaviours from different time points into a misleading average, not a legitimate strengthening of the estimate.
+
+**Conclusion: the realistic, non-reanalysis option space for RDX is exhausted.** The three real, available levers are: (a) the QC-replicate-based LOD/LOQ reporting fix (adopted, 2.0x tighter, rescues 35% of flagged rows), (b) the already-known ABS/solvent exclusion (real, substantial, but leaves Steel's own 51.3% below-LOQ rate unexplained), and nothing else moves the needle. The remaining residual below-LOQ rate (45.1% even after the QC-replicate fix) should be documented as a genuine, intrinsic sensitivity/non-proportionality limitation of RDX quantification at trace levels -- consistent with this project's own extensively-documented trace-level adsorption/signal-loss literature (see "Filtering Study Results" and the RDX calendar-drift closure elsewhere in this file) -- not a fixable statistical or curve-fitting artifact.
+
+**Files**: `Diagnostics/Generic/RDX_AugmentedCalibration_Test.R` (new). Output (new, in `ICH_LODLOQ_Output/`): `RDX_AugmentedCalibration_Detail.csv`. `CONTEXT.md` (this entry).
+
+---
+
+### Follow-up (same day): QC-Replicate LOD/LOQ Added to the Live Pipeline (Reporting-Only); Consolidated Narrative Written
+
+User's decision: add the QC-replicate-based LOD/LOQ to the live pipeline, but only as an additional **reported** metric -- not a new acceptance/gating criterion (operational SNR-based acceptance and the ICH-defensible validation LOD/LOQ stay deliberately separate, consistent with every other threshold-question resolution in this investigation).
+
+**Implementation** (`Code/03_Quantification.R`): new block inserted immediately before "Export final results" (i.e. after BOTH PETN drift correction and RDX's own concentration are fully finalised -- the pre-existing "Calibration Statistics Excel Export" block, ~line 760, runs too early for `petn_concentration_dc` to exist yet). Computes `{Analyte}_LOD_QCReplicate_ng`/`{Analyte}_LOQ_QCReplicate_ng` per `CalibrationSet` from the 0.2ng QC rows' already-computed concentrations (requires >=4 usable replicates, else `NA` -- not fabricated), merges into the already-built `cal_stats_wide` object (still in memory from the earlier export), and re-writes `*_CalibrationStats.xlsx`.
+
+**A real near-miss caught during testing**: the first test run was intended against `Lab9` but silently processed `Analysis4` (ASTRA Main Study) instead -- `.preset_DataFolder`/`.preset_study_type` were set directly in the test script, but `GlobalCode.R`'s own preamble (`.preset_DataFolder <- if (exists("DataFolder", inherits=FALSE)) DataFolder else NULL; rm(list=setdiff(ls(), c(...)))`) immediately overwrites them by checking for a variable literally named `DataFolder`, not `.preset_DataFolder` -- the correct pattern (matching `RunAllDatasets.R`) is to set `DataFolder`/`study_type` directly, which `GlobalCode.R` itself then captures into `.preset_*` before its own reset. Caught immediately from the console output (wrong dataset name in every log line); verified **zero regression** before proceeding further (Analysis4's own pre-existing `_GCMSResults.csv`, automatically backed up before the overwrite per the established mechanism, diffed byte-identical across all 89 columns against the post-run file) -- the new code's own correctness was unaffected by the mistake, but it's recorded here as a cautionary note for future one-off interactive test runs, same category as this file's own prior "self-inflicted DataFolder regression" entries.
+
+**Re-tested correctly against Lab9** (FINEX): zero regression (90/90 columns byte-identical), new RDX LOD/LOQ = 0.0470/0.1423 ng, exactly matching the standalone diagnostic script's own hand-verified figure for this same dataset. PETN came back `NA` (Lab9 has only 3 of 5 0.2ng QC replicates with a non-NA concentration, below the 4-replicate minimum) -- correct, conservative behaviour, not a bug.
+
+**`FINEX/04_CollateStudyResults.R`'s `CalSummary` sheet updated** to retain the new columns -- its existing column-reorganisation step does a hard `select(all_of(c(id_cols, petn_cols, rdx_cols, is_cols)))` that would otherwise have silently dropped them (neither `PETN_LOD_QCReplicate_ng` nor `PETN_LOQ_QCReplicate_ng` match the existing `petn_cols`/`rdx_cols` grep patterns, which look for the keyword at the *start* of the column name). ASTRA's own `main_study_analysis.R`/`pilot_analysis.R` CalSummary-equivalents read calibration stats files via a plain `bind_rows()` with no equivalent hard select -- confirmed these pick up the new columns automatically, no changes needed there.
+
+**Not yet done**: a full reprocessing run across all 30 datasets to populate this column everywhere (currently populated only for the 2 datasets touched during testing, Lab9 and Analysis4). Purely additive and low-risk whenever convenient -- not done this session since it wasn't explicitly requested.
+
+**Consolidated narrative**: `Diagnostics/Generic/ICH_LODLOQ_Output/LODLOQ_Investigation_Narrative.md` (new) -- a single, thesis-ready write-up of the entire investigation (motivation, SD-vs-peak-to-peak measurement, ICH calibration-curve validation, real-data impact simulation, surface breakdown, the adopted QC-replicate fix, the calibration-model-comparison and exhaustive-check follow-ups, live-pipeline integration, full reference list), superseding the need to read through the 7 separate chronological session entries above for citation purposes.
+
+**Files**: `Code/03_Quantification.R` (new QC-replicate LOD/LOQ block before "Export final results"), `FINEX/04_CollateStudyResults.R` (`petn_cols`/`rdx_cols` extended to retain the new columns in `CalSummary`), `Lab9`/`Analysis4`'s `_CalibrationStats.xlsx` (regenerated with the new columns; `_GCMSResults.csv`/`.xlsx` unchanged, confirmed byte-identical), `Diagnostics/Generic/ICH_LODLOQ_Output/LODLOQ_Investigation_Narrative.md` (new). `CONTEXT.md` (this entry).
+
+---
+
 ## Session Summary (September 8, 2026, continued) — Conditional Formatting Silently Dropped When Saving XLSX to a Live OneDrive-Synced Path; Defensive Local-Save-Then-Copy-Then-Verify Added
 
 ### Motivation
