@@ -116,7 +116,7 @@ extension <- ".csv"
 cit.path.InterpolInputs <- "InterpolInputs/"
 cit.path.InterpolOutputs <- "InterpolOutputs/"
 cit.path.ScopusInputs <- "ScopusInputs/"
-cit.path.ScopusOutputs <- "Scopusoutputs/"
+cit.path.ScopusOutputs <- "ScopusOutputs/"
 
 # where the generated figures are saved, create folder if not existing
 Results.dir <- "Results/"

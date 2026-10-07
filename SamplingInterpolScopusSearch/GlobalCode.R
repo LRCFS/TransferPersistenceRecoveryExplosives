@@ -90,7 +90,7 @@ removeDiacritics <- function(string) {
 # set extension and Citation
 extension <- ".csv"
 cit.path.INTERPOL <- "INTERPOL/"
-cit.path.SCOPUS <- "Scopus/"
+cit.path.SCOPUS <- "SCOPUS/"
 
 # where the generated figures are saved, create folder if not existing
 Results.dir <- "Results/"
