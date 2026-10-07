@@ -19,7 +19,7 @@ source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/
 # ColourPalette: legacy, no longer referenced anywhere in this study -- left
 # defined (not deleted) in case any old/archived script still expects it.
 ColourPalette <- c("red", "orange", "yellow2", "limegreen", "darkgreen", "skyblue", "blue", "violet", "darkmagenta", "lightpink", "hotpink")
-# ColourPalette2: used by 06-RecoveryAnalysis.R for the Blank/Before/After
+# ColourPalette2: used by 06_RecoveryAnalysis.R for the Blank/Before/After
 # area comparison. Previously an UNNAMED/positional vector (c("red",
 # "limegreen","blue")), relying on the factor's alphabetical level order
 # (AfterArea, BeforeArea, BlankArea) to line up correctly with the colours --
@@ -36,13 +36,13 @@ Base.dir <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/S
 # Source images
 SourceImages.dir <- paste0(Base.dir, "Images/")
 
-# Organized images (output of 01-OrganizeImages.R)
+# Organized images (output of 01_OrganizeImages.R)
 OrganizedImages.dir <- paste0(Base.dir, "OrganizedImages/")
 
 # ImageJ results (where you save ImageJ macro outputs)
 ImageJResults.dir <- paste0(Base.dir, "ImageJResults/")
 
-# Combined threshold results (output of 02-CombineResults.R)
+# Combined threshold results (output of 02_CombineResults.R)
 ThresholdResults.dir <- paste0(Base.dir, "ThresholdResults/")
 
 # Analysis output directory

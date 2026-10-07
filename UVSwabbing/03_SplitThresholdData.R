@@ -3,8 +3,8 @@
 # into separate Blank and Before files for individual analysis
 #
 # PREREQUISITE:
-#   1. Run 00-GlobalCode.R first
-#   2. Run 02-CombineResults.R to create Summary.csv files
+#   1. Run 00_GlobalCode.R first
+#   2. Run 02_CombineResults.R to create Summary.csv files
 
 ####Read results from directory####
 filenameFolders <- list.dirs(path = ThresholdResults.dir, full.names = TRUE, recursive = FALSE)

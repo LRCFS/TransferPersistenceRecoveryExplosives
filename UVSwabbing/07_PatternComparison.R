@@ -5,9 +5,9 @@
 # - Ratchet
 #
 # PREREQUISITE:
-#   1. Run 00-GlobalCode.R first
-#   2. Run 01-OrganizeImages.R (creates ImageMapping.csv)
-#   3. Run 06-RecoveryAnalysis.R (creates AverageRecovery.csv)
+#   1. Run 00_GlobalCode.R first
+#   2. Run 01_OrganizeImages.R (creates ImageMapping.csv)
+#   3. Run 06_RecoveryAnalysis.R (creates AverageRecovery.csv)
 
 # === LOAD REQUIRED LIBRARIES ===
 library(dplyr)
@@ -16,19 +16,19 @@ library(tidyverse)
 
 # === READ INPUT DATA ===
 
-# Read recovery results (Pattern column already added by 06-RecoveryAnalysis.R)
+# Read recovery results (Pattern column already added by 06_RecoveryAnalysis.R)
 recovery_data <- read.csv(paste0(AnalysisOutput.dir, "AverageRecovery.csv"))
 
 # Check if Pattern column exists
 if (!"Pattern" %in% names(recovery_data)) {
-  stop("Pattern column not found in AverageRecovery.csv. Run updated 06-RecoveryAnalysis.R first.")
+  stop("Pattern column not found in AverageRecovery.csv. Run updated 06_RecoveryAnalysis.R first.")
 }
 
 # Define custom Pattern order for consistent plotting
 pattern_order <- c("50g_BackandForth", "50g_Snake", "50g_Ratchet")
 recovery_data$Pattern <- factor(recovery_data$Pattern, levels = pattern_order)
 
-# Filter to valid data (RSD <= 50, matching 06-RecoveryAnalysis.R threshold)
+# Filter to valid data (RSD <= 50, matching 06_RecoveryAnalysis.R threshold)
 recovery_filtered <- recovery_data %>%
   filter(RSD >= 0 & RSD <= 50)
 

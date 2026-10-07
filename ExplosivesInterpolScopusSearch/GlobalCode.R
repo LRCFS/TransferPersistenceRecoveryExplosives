@@ -181,7 +181,7 @@ KeywordCorrectionList <- as.data.frame(KeywordCorrectionList)
 ExplosiveList <- read.csv("ReferenceLists/ExplosiveDatabase.csv", header = TRUE)
 
 # Format the Corpus to remove special characters etc.
-source("Code/1-Explosive_Corpus_Prep.R")
+source("Code/01_Explosive_Corpus_Prep.R")
 
 #############################################################
 #####           Figure Settings                         #####
@@ -227,7 +227,7 @@ if (file.exists("InterpolOutputs/Interpol_Processed_Data.csv",recursive = TRUE))
     ExplosivesCountSubset <- read.csv(file = "InterpolOutputs/Full_Text_Top20_Explo.csv")
   }else{print("Full text data unavailable")} 
   print("Interpol data already processed")
-}else{ source("Code/2-Interpol_Data_Prep.R")
+}else{ source("Code/02_Interpol_Data_Prep.R")
 
 }
 
@@ -263,7 +263,7 @@ if (file.exists("ScopusOutputs/Scopus_Processed_Data.csv",recursive = TRUE)){
   print("Scopus processed data extracted")
 
 #If the Scopus processed data is not present,  this will run the code to process the data
-}else{source("Code/3-Scopus_Data_Prep.R")
+}else{source("Code/03_Scopus_Data_Prep.R")
   
 }
 
@@ -274,41 +274,41 @@ if (file.exists("ScopusOutputs/Scopus_Processed_Data.csv",recursive = TRUE)){
 # These codes can be run subsequently or independently
 
 # # Figure 1, Scopus Keywords as a function of year
-source("Code/4-Figure1_Scopus_Keywords.R")
+source("Code/04_Figure1_Scopus_Keywords.R")
 
 # # Figure 2, Interpol Keywords as a function of year
-source("Code/5-Figure2_Interpol_Keywords.R")
+source("Code/05_Figure2_INTERPOL_Keywords.R")
 
 # # Figure 3, Interpol Explosive Country
-source("Code/6-Figure3_Interpol_Explosive_Country.R")
+source("Code/06_Figure3_Interpol_Explosive_Country.R")
 
 # # Figure 4, Full Text Mining Comparison
-source("Code/7-Figure4_Full_Text_Mining.R")
+source("Code/07_Figure4_Full_Text_Mining.R")
 
 
 ##Other Code
 ## For data analysis in paper
-#source("Code/8-Data_Analysis.R")
+#source("Code/08_Data_Analysis.R")
 
 ## To compare keywords between evidence types
-#source("Code/9-Evidence_Comparison.R")
+#source("Code/09_Evidence_Comparison.R")
 
 ## To determine the most used journal and download papers using the Wiley API
-#source("Code/10-Journal_Paper_Downloads.R")
+#source("Code/10_Journal_Paper_Downloads.R")
 
 
 ####Unused Figures#####
 ##To illustrate countries publishing papers included in Interpol reviews
-#source("Code/11-Interpol_Country_Affiliation_Figure.R")
+#source("Code/11_Interpol_Country_Affiliation_Figure.R")
 
 ##To illustrate countries publishing papers included in Scopus dataset
-#source("Code/12-Scopus_Country_Affiliation_Figure.R")
+#source("Code/12_Scopus_Country_Affiliation_Figure.R")
 
 ##To illustrate the most-mentioned explosives by country in Scopus dataset
-#source("Code/13-Scopus_Explosive_Country_Figure.R")
+#source("Code/13_Scopus_Explosive_Country_Figure.R")
 
 ##To illustrate the occurrence of explosives by year in Interpol reviews
-#source("Code/14-Interpol_Explosive_Year_Figure.R")
+#source("Code/14_Interpol_Explosive_Year_Figure.R")
 
 ##To illustrate the occurrence of explosives by year in Scopus dataset
-#source("Code/15-Scopus_Explosive_Year_Figure.R")
+#source("Code/15_Scopus_Explosive_Year_Figure.R")

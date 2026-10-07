@@ -3,9 +3,9 @@
 # Blank, Before, and After measurements
 #
 # PREREQUISITE:
-#   1. Run 00-GlobalCode.R first
-#   2. Run 02-CombineResults.R to create Summary.csv files
-#   3. Run 03-SplitThresholdData.R (optional - for scripts 04-05)
+#   1. Run 00_GlobalCode.R first
+#   2. Run 02_CombineResults.R to create Summary.csv files
+#   3. Run 03_SplitThresholdData.R (optional - for scripts 04-05)
 
 # Get list of Surface/Rep folders
 filenameFolders <- list.dirs(path = ThresholdResults.dir, full.names = TRUE, recursive = FALSE)
@@ -244,7 +244,7 @@ AverageRecovery <- bind_rows(AverageRecoveryValues)
 mapping_file <- paste0(OrganizedImages.dir, "ImageMapping.csv")
 
 if (!file.exists(mapping_file)) {
-  stop("ImageMapping.csv not found. Run 01-OrganizeImages.R first.")
+  stop("ImageMapping.csv not found. Run 01_OrganizeImages.R first.")
 }
 
 mapping_data <- read.csv(mapping_file)

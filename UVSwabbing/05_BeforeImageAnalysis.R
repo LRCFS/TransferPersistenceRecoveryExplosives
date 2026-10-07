@@ -2,8 +2,8 @@
 # This script analyzes the Before threshold data and generates plots
 #
 # PREREQUISITE:
-#   1. Run 00-GlobalCode.R first
-#   2. Run 03-SplitThresholdData.R to create _Before.csv files
+#   1. Run 00_GlobalCode.R first
+#   2. Run 03_SplitThresholdData.R to create _Before.csv files
 
 ###### For analysis of Befores ########
 # List all CSV files in the BeforeThresholdResults folder

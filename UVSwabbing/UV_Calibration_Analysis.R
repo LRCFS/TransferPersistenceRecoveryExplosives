@@ -15,7 +15,7 @@
 #
 # OUTPUT: Calibration_Output/ folder with results, plots, and recommendations
 #
-# NO DEPENDENCIES on 00-GlobalCode.R - this script is self-contained.
+# NO DEPENDENCIES on 00_GlobalCode.R - this script is self-contained.
 
 library(dplyr)
 library(ggplot2)

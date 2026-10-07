@@ -3,7 +3,7 @@
 # Uses ImageMapping.csv to match original filenames to Surface/Rep/State
 #
 # PREREQUISITE:
-#   1. Run 01-OrganizeImages.R first (creates ImageMapping.csv)
+#   1. Run 01_OrganizeImages.R first (creates ImageMapping.csv)
 #   2. Process images in ImageJ using the threshold macro
 #   3. Save all output CSVs to the ImageJResults folder
 
@@ -20,7 +20,7 @@ dir.create(ThresholdResults.dir, recursive = TRUE, showWarnings = FALSE)
 mapping_file <- paste0(OrganizedImages.dir, "ImageMapping.csv")
 
 if (!file.exists(mapping_file)) {
-  stop("ImageMapping.csv not found. Run 01-OrganizeImages.R first.")
+  stop("ImageMapping.csv not found. Run 01_OrganizeImages.R first.")
 }
 
 mapping <- read.csv(mapping_file)

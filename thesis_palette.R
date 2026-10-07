@@ -275,7 +275,7 @@ pal_ion_classification <- c(
 # DIFFERENT colours in different files (Diagnostic_ThresholdPlots.R used
 # blue/green/red; UV_Recovery_Reprocessing.R used blue/red/green3 -- Before
 # and After were literally swapped between the two). Also covers
-# 06-RecoveryAnalysis.R's "BlankArea"/"BeforeArea"/"AfterArea" column-name
+# 06_RecoveryAnalysis.R's "BlankArea"/"BeforeArea"/"AfterArea" column-name
 # variant of the same three stages.
 pal_image_stage <- c(
   Blank = okabe_ito[["blue"]],          BlankArea  = okabe_ito[["blue"]],
@@ -283,7 +283,7 @@ pal_image_stage <- c(
   After = okabe_ito[["bluish_green"]],  AfterArea  = okabe_ito[["bluish_green"]]
 )
 
-# Swabbing pattern (06-RecoveryAnalysis.R, 07-PatternComparison.R -- already
+# Swabbing pattern (06_RecoveryAnalysis.R, 07_PatternComparison.R -- already
 # consistent between these two files, previously hardcoded Brewer-Set1-
 # equivalent hex; tightened to Okabe-Ito hex here). Deliberately disjoint
 # from pal_image_stage's blue/orange/bluish-green so the two headline
@@ -322,7 +322,7 @@ pal_method_uv <- c(
   BlankNormalised  = okabe_ito[["reddish_purple"]]
 )
 
-# Surface x replicate identity (04-BlankImageAnalysis.R, 05-BeforeImageAnalysis.R,
+# Surface x replicate identity (04_BlankImageAnalysis.R, 05_BeforeImageAnalysis.R,
 # "source" column, 6-level: Surface{1,2,3}_Rep{1,2}). Paired by "family" --
 # each Surface gets its own hue, Rep1/Rep2 of the same Surface share a
 # related pair from that hue's neighbourhood in the Okabe-Ito wheel.

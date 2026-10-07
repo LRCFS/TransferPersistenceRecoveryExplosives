@@ -2,7 +2,7 @@
 # This script copies and renames images from the source folder
 # into an organized structure for ImageJ processing
 #
-# PREREQUISITE: Run 00-GlobalCode.R first
+# PREREQUISITE: Run 00_GlobalCode.R first
 
 # === IMAGE MAPPING ===
 # Images are in sequence: A_blank, B_blank, C_blank, A_before, B_before, C_before, A_after, B_after, C_after

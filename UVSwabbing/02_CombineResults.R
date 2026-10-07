@@ -3,8 +3,8 @@
 # and combines them into a single Summary.csv file (300 rows) for each Surface/Rep
 #
 # PREREQUISITE: 
-#   1. Run 00-GlobalCode.R first
-#   2. Run 01-OrganizeImages.R to organize images
+#   1. Run 00_GlobalCode.R first
+#   2. Run 01_OrganizeImages.R to organize images
 #   3. Process images in ImageJ using the corrected macro (ImageJ_ThresholdMacro.txt)
 #      which saves the Summary table (not individual particle results)
 

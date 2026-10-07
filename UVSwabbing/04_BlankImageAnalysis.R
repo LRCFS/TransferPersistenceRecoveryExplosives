@@ -2,8 +2,8 @@
 # This script analyzes the Blank threshold data and generates plots
 #
 # PREREQUISITE:
-#   1. Run 00-GlobalCode.R first
-#   2. Run 03-SplitThresholdData.R to create _Blank.csv files
+#   1. Run 00_GlobalCode.R first
+#   2. Run 03_SplitThresholdData.R to create _Blank.csv files
 
 ###### For analysis of blanks ########
 # List all CSV files in the BlankThresholdResults folder

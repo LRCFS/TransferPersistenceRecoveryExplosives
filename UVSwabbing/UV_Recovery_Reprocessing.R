@@ -7,7 +7,7 @@
 # PURPOSE: Determine if a better processing approach can extract
 # meaningful UV recovery values from the existing data.
 #
-# NO DEPENDENCIES on 00-GlobalCode.R - this script is self-contained.
+# NO DEPENDENCIES on 00_GlobalCode.R - this script is self-contained.
 #
 # DATA SOURCES:
 #   - Summary CSVs: UV Analysis/Participant {N}/{Trial}/Threshold Analysis/
