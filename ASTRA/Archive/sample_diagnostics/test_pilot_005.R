@@ -1,7 +1,7 @@
 # Test PILOT_005 with corrected 5s period
 # This is a quick test before running full batch
 
-source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/archive/time_based_lineage/time_based_batch_process.R")
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/Archive/time_based_lineage/time_based_batch_process.R")
 
 # Process just PILOT_005
 config <- SAMPLE_CONFIG[["PILOT_005"]]

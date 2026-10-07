@@ -22,8 +22,8 @@ suppressPackageStartupMessages({
 })
 
 # Load both versions
-source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/archive/detection_dev/pass_based_detection.R")  # v3.0
-source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/archive/detection_dev/pass_based_detection_final.R")  # v4.0
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/Archive/detection_dev/pass_based_detection.R")  # v3.0
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/Archive/detection_dev/pass_based_detection_final.R")  # v4.0
 
 # ==============================================================================
 # CONFIGURATION

@@ -10,8 +10,8 @@ suppressPackageStartupMessages({
   library(patchwork)
 })
 
-source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/archive/detection_dev/pointchange_functions.R")
-source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/archive/time_based_lineage/analyze_pressure_traces_final.R")
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/Archive/detection_dev/pointchange_functions.R")
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/Archive/time_based_lineage/analyze_pressure_traces_final.R")
 
 BASE_PATH <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/ASTRA Swabbing/Pilot Study"
 TRACES_PATH <- file.path(BASE_PATH, "Pressure Traces")

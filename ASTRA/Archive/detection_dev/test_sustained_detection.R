@@ -28,8 +28,8 @@ suppressPackageStartupMessages({
 })
 
 # Source functions
-source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/archive/detection_dev/sustained_pressure_functions.R")
-source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/archive/time_based_lineage/analyze_pressure_traces_final.R")
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/Archive/detection_dev/sustained_pressure_functions.R")
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/Archive/time_based_lineage/analyze_pressure_traces_final.R")
 
 # ==============================================================================
 # CONFIGURATION

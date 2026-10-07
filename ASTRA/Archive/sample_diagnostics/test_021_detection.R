@@ -1,6 +1,6 @@
 # Test PILOT_021 detection with cleaned data
 
-source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/archive/time_based_lineage/time_based_batch_process.R")
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/Archive/time_based_lineage/time_based_batch_process.R")
 
 # Process PILOT_021
 cat("Testing PILOT_021 with cleaned data and 45-55g range\n")

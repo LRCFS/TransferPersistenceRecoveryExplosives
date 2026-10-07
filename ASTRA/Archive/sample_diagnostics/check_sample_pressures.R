@@ -1,5 +1,5 @@
 # Check max pressure for all samples
-source('C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/archive/time_based_lineage/time_based_batch_process.R')
+source('C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/Archive/time_based_lineage/time_based_batch_process.R')
 
 samples <- c('PILOT_001', 'PILOT_005', 'PILOT_009', 'PILOT_013', 'PILOT_017', 'PILOT_021', 'PILOT_025', 'PILOT_029')
 

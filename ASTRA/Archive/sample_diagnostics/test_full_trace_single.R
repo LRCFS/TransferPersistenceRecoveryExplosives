@@ -2,7 +2,7 @@
 # Quick test to verify the new function works before running full batch
 
 # Source the main script (loads all functions)
-source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/archive/time_based_lineage/time_based_batch_process_adaptive.R")
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/Archive/time_based_lineage/time_based_batch_process_adaptive.R")
 
 # Test on PILOT_001 only
 cat("Testing full trace plot generation on PILOT_001...\n\n")

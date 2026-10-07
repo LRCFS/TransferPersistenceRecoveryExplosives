@@ -9,7 +9,7 @@ suppressPackageStartupMessages({
   library(scales)
 })
 
-source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/archive/detection_dev/pass_based_detection.R")
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/Archive/detection_dev/pass_based_detection.R")
 
 BASE_PATH <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/ASTRA Swabbing/Pilot Study"
 TRACES_PATH <- file.path(BASE_PATH, "Pressure Traces")

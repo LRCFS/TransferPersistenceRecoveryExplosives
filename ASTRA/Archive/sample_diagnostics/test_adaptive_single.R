@@ -3,7 +3,7 @@
 cat("Testing ADAPTIVE THRESHOLD script\n")
 cat("==================================\n\n")
 
-source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/archive/time_based_lineage/time_based_batch_process_adaptive.R")
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/Archive/time_based_lineage/time_based_batch_process_adaptive.R")
 
 # Test on PILOT_013 (the problematic one with spikes)
 cat("Testing PILOT_013 (known spike issue)...\n\n")

@@ -1,6 +1,6 @@
 # Test PILOT_013 with new 175-210g range
 
-source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/archive/time_based_lineage/time_based_batch_process.R")
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/Archive/time_based_lineage/time_based_batch_process.R")
 
 cat("Testing PILOT_013 with 175-210g range\n")
 cat("======================================\n\n")

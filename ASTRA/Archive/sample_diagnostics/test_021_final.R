@@ -1,6 +1,6 @@
 # Test PILOT_021 with max_normal_duration = 1.5s
 
-source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/archive/time_based_lineage/time_based_batch_process.R")
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/Archive/time_based_lineage/time_based_batch_process.R")
 
 config <- SAMPLE_CONFIG[["PILOT_021"]]
 result <- process_sample("PILOT_021", config, PARAMS)

@@ -23,7 +23,7 @@ for (i in 1:min(20, length(lines))) {
 }
 
 cat("\n\nAttempting to clean with current function...\n")
-source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/archive/time_based_lineage/time_based_batch_process.R")
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/Archive/time_based_lineage/time_based_batch_process.R")
 
 data <- clean_and_read_csv(filepath)
 

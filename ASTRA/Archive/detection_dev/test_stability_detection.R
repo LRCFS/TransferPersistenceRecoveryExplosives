@@ -25,10 +25,10 @@ suppressPackageStartupMessages({
 })
 
 # Source stability detection functions
-source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/archive/detection_dev/stability_detection_functions.R")
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/Archive/detection_dev/stability_detection_functions.R")
 
 # Also need old method for comparison
-source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/archive/time_based_lineage/analyze_pressure_traces_final.R")
+source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/ASTRA/Archive/time_based_lineage/analyze_pressure_traces_final.R")
 
 # ==============================================================================
 # CONFIGURATION
