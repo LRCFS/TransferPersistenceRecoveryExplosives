@@ -3,7 +3,8 @@
 ==============================================================================
 
 Input file: CalSingleStockIS.csv
-Date: 2026-03-17 10:05:26.817091
+Equipment uncertainties file: EquipmentUncertainties.csv
+Date: 2026-10-07 18:18:19.170144
 Expansion coverage factor (k): 2
 
 Solution hierarchy diagram saved to: CalSingleStockIS_hierarchy.png
@@ -17,14 +18,14 @@ Stock Solution A
 
   Component uncertainties:
 
-    u(PETN pipette) = tolerance / coverage = 6.3246 / 2.0000 = 3.1623
-    ur(PETN pipette) = u / volume = 3.1623 / 1000.0000 = 0.003162
+    u(PETN pipette) = tolerance / coverage = 4.0000 / 1.0000 = 4.0000
+    ur(PETN pipette) = u / volume = 4.0000 / 1000.0000 = 0.004000
 
-    u(RDX pipette) = tolerance / coverage = 6.3246 / 2.0000 = 3.1623
-    ur(RDX pipette) = u / volume = 3.1623 / 1000.0000 = 0.003162
+    u(RDX pipette) = tolerance / coverage = 4.0000 / 1.0000 = 4.0000
+    ur(RDX pipette) = u / volume = 4.0000 / 1000.0000 = 0.004000
 
-    u(volumetric flask) = tolerance / coverage = 40.0000 / 2.0000 = 20.0000
-    ur(volumetric flask) = u / volume = 20.0000 / 20000.0000 = 0.001000
+    u(volumetric flask) = tolerance / coverage = 23.0940 / 1.0000 = 23.0940
+    ur(volumetric flask) = u / volume = 23.0940 / 20000.0000 = 0.001155
 
     u(PETN) = error / coverage = 47.1008 / 2.0000 = 23.5504
     ur(PETN) = u / concentration = 23.5504 / 1000.0000 = 0.023550
@@ -35,14 +36,14 @@ Stock Solution A
   Combined uncertainties:
 
     ur(Stock Solution A, PETN) = sqrt( ur(PETN)^2 + ur(PETN pipette)^2 + ur(RDX pipette)^2 + ur(volumetric flask)^2 )
-                               = sqrt( 0.023550^2 + 0.003162^2 + 0.003162^2 + 0.001000^2 )
-                               = 0.023992
-    U'(Stock Solution A, PETN) = k * ur = 2.0000 * 0.023992 = 0.047984  (4.80%)
+                               = sqrt( 0.023550^2 + 0.004000^2 + 0.004000^2 + 0.001155^2 )
+                               = 0.024248
+    U'(Stock Solution A, PETN) = k * ur = 2.0000 * 0.024248 = 0.048496  (4.85%)
 
     ur(Stock Solution A, RDX) = sqrt( ur(RDX)^2 + ur(PETN pipette)^2 + ur(RDX pipette)^2 + ur(volumetric flask)^2 )
-                              = sqrt( 0.023678^2 + 0.003162^2 + 0.003162^2 + 0.001000^2 )
-                              = 0.024117
-    U'(Stock Solution A, RDX) = k * ur = 2.0000 * 0.024117 = 0.048235  (4.82%)
+                              = sqrt( 0.023678^2 + 0.004000^2 + 0.004000^2 + 0.001155^2 )
+                              = 0.024372
+    U'(Stock Solution A, RDX) = k * ur = 2.0000 * 0.024372 = 0.048743  (4.87%)
 
 
 Cal Solution 1  (from Stock Solution A)
@@ -50,23 +51,23 @@ Cal Solution 1  (from Stock Solution A)
 
   Component uncertainties:
 
-    u(pipette) = tolerance / coverage = 0.9014 / 2.0000 = 0.4507
-    ur(pipette) = u / volume = 0.4507 / 40.0000 = 0.011267
+    u(pipette) = tolerance / coverage = 0.6429 / 1.0000 = 0.6429
+    ur(pipette) = u / volume = 0.6429 / 40.0000 = 0.016073
 
-    u(flask) = tolerance / coverage = 20.0000 / 2.0000 = 10.0000
-    ur(flask) = u / volume = 10.0000 / 10000.0000 = 0.001000
+    u(flask) = tolerance / coverage = 14.4338 / 1.0000 = 14.4338
+    ur(flask) = u / volume = 14.4338 / 10000.0000 = 0.001443
 
   Combined uncertainties:
 
     ur(Cal Solution 1, PETN) = sqrt( ur(Stock Solution A, PETN)^2 + ur(pipette)^2 + ur(flask)^2 )
-                             = sqrt( 0.023992^2 + 0.011267^2 + 0.001000^2 )
-                             = 0.026525
-    U'(Cal Solution 1, PETN) = k * ur = 2.0000 * 0.026525 = 0.053050  (5.30%)
+                             = sqrt( 0.024248^2 + 0.016073^2 + 0.001443^2 )
+                             = 0.029127
+    U'(Cal Solution 1, PETN) = k * ur = 2.0000 * 0.029127 = 0.058254  (5.83%)
 
     ur(Cal Solution 1, RDX) = sqrt( ur(Stock Solution A, RDX)^2 + ur(pipette)^2 + ur(flask)^2 )
-                            = sqrt( 0.024117^2 + 0.011267^2 + 0.001000^2 )
-                            = 0.026638
-    U'(Cal Solution 1, RDX) = k * ur = 2.0000 * 0.026638 = 0.053277  (5.33%)
+                            = sqrt( 0.024372^2 + 0.016073^2 + 0.001443^2 )
+                            = 0.029230
+    U'(Cal Solution 1, RDX) = k * ur = 2.0000 * 0.029230 = 0.058460  (5.85%)
 
 
 Working Solution 1  (from Cal Solution 1)
@@ -74,23 +75,23 @@ Working Solution 1  (from Cal Solution 1)
 
   Component uncertainties:
 
-    u(solvent pipette) = tolerance / coverage = 1.1180 / 2.0000 = 0.5590
-    ur(solvent pipette) = u / volume = 0.5590 / 95.0000 = 0.005884
+    u(solvent pipette) = tolerance / coverage = 0.7256 / 1.0000 = 0.7256
+    ur(solvent pipette) = u / volume = 0.7256 / 95.0000 = 0.007638
 
-    u(sample pipette) = tolerance / coverage = 0.2968 / 2.0000 = 0.1484
-    ur(sample pipette) = u / volume = 0.1484 / 5.0000 = 0.029682
+    u(sample pipette) = tolerance / coverage = 0.1333 / 1.0000 = 0.1333
+    ur(sample pipette) = u / volume = 0.1333 / 5.0000 = 0.026652
 
   Combined uncertainties:
 
     ur(Working Solution 1, PETN) = sqrt( ur(Cal Solution 1, PETN)^2 + ur(solvent pipette)^2 + ur(sample pipette)^2 )
-                                 = sqrt( 0.026525^2 + 0.005884^2 + 0.029682^2 )
-                                 = 0.040239
-    U'(Working Solution 1, PETN) = k * ur = 2.0000 * 0.040239 = 0.080479  (8.05%)
+                                 = sqrt( 0.029127^2 + 0.007638^2 + 0.026652^2 )
+                                 = 0.040212
+    U'(Working Solution 1, PETN) = k * ur = 2.0000 * 0.040212 = 0.080425  (8.04%)
 
     ur(Working Solution 1, RDX) = sqrt( ur(Cal Solution 1, RDX)^2 + ur(solvent pipette)^2 + ur(sample pipette)^2 )
-                                = sqrt( 0.026638^2 + 0.005884^2 + 0.029682^2 )
-                                = 0.040314
-    U'(Working Solution 1, RDX) = k * ur = 2.0000 * 0.040314 = 0.080628  (8.06%)
+                                = sqrt( 0.029230^2 + 0.007638^2 + 0.026652^2 )
+                                = 0.040287
+    U'(Working Solution 1, RDX) = k * ur = 2.0000 * 0.040287 = 0.080575  (8.06%)
 
 
 Working Solution 2  (from Cal Solution 1)
@@ -98,26 +99,26 @@ Working Solution 2  (from Cal Solution 1)
 
   Component uncertainties:
 
-    u(solvent pipette) = tolerance / coverage = 0.2968 / 2.0000 = 0.1484
-    ur(solvent pipette) = u / volume = 0.1484 / 19.0000 = 0.007811
+    u(solvent pipette) = tolerance / coverage = 0.5064 / 1.0000 = 0.5064
+    ur(solvent pipette) = u / volume = 0.5064 / 19.0000 = 0.026652
 
-    u(sample pipette) = tolerance / coverage = 1.1180 / 2.0000 = 0.5590
-    ur(sample pipette) = u / volume = 0.5590 / 76.0000 = 0.007355
+    u(sample pipette) = tolerance / coverage = 1.2215 / 1.0000 = 1.2215
+    ur(sample pipette) = u / volume = 1.2215 / 76.0000 = 0.016073
 
-    u(sample pipette) = tolerance / coverage = 0.2968 / 2.0000 = 0.1484
-    ur(sample pipette) = u / volume = 0.1484 / 5.0000 = 0.029682
+    u(sample pipette) = tolerance / coverage = 0.1333 / 1.0000 = 0.1333
+    ur(sample pipette) = u / volume = 0.1333 / 5.0000 = 0.026652
 
   Combined uncertainties:
 
     ur(Working Solution 2, PETN) = sqrt( ur(Cal Solution 1, PETN)^2 + ur(solvent pipette)^2 + ur(sample pipette)^2 + ur(sample pipette)^2 )
-                                 = sqrt( 0.026525^2 + 0.007811^2 + 0.007355^2 + 0.029682^2 )
-                                 = 0.041227
-    U'(Working Solution 2, PETN) = k * ur = 2.0000 * 0.041227 = 0.082455  (8.25%)
+                                 = sqrt( 0.029127^2 + 0.026652^2 + 0.016073^2 + 0.026652^2 )
+                                 = 0.050273
+    U'(Working Solution 2, PETN) = k * ur = 2.0000 * 0.050273 = 0.100546  (10.05%)
 
     ur(Working Solution 2, RDX) = sqrt( ur(Cal Solution 1, RDX)^2 + ur(solvent pipette)^2 + ur(sample pipette)^2 + ur(sample pipette)^2 )
-                                = sqrt( 0.026638^2 + 0.007811^2 + 0.007355^2 + 0.029682^2 )
-                                = 0.041300
-    U'(Working Solution 2, RDX) = k * ur = 2.0000 * 0.041300 = 0.082601  (8.26%)
+                                = sqrt( 0.029230^2 + 0.026652^2 + 0.016073^2 + 0.026652^2 )
+                                = 0.050333
+    U'(Working Solution 2, RDX) = k * ur = 2.0000 * 0.050333 = 0.100666  (10.07%)
 
 
 Working Solution 3  (from Cal Solution 1)
@@ -125,26 +126,26 @@ Working Solution 3  (from Cal Solution 1)
 
   Component uncertainties:
 
-    u(solvent pipette) = tolerance / coverage = 0.9014 / 2.0000 = 0.4507
-    ur(solvent pipette) = u / volume = 0.4507 / 38.0000 = 0.011860
+    u(solvent pipette) = tolerance / coverage = 1.0128 / 1.0000 = 1.0128
+    ur(solvent pipette) = u / volume = 1.0128 / 38.0000 = 0.026652
 
-    u(solvent pipette) = tolerance / coverage = 0.9014 / 2.0000 = 0.4507
-    ur(solvent pipette) = u / volume = 0.4507 / 57.0000 = 0.007907
+    u(solvent pipette) = tolerance / coverage = 0.9161 / 1.0000 = 0.9161
+    ur(solvent pipette) = u / volume = 0.9161 / 57.0000 = 0.016073
 
-    u(sample pipette) = tolerance / coverage = 0.2968 / 2.0000 = 0.1484
-    ur(sample pipette) = u / volume = 0.1484 / 5.0000 = 0.029682
+    u(sample pipette) = tolerance / coverage = 0.1333 / 1.0000 = 0.1333
+    ur(sample pipette) = u / volume = 0.1333 / 5.0000 = 0.026652
 
   Combined uncertainties:
 
     ur(Working Solution 3, PETN) = sqrt( ur(Cal Solution 1, PETN)^2 + ur(solvent pipette)^2 + ur(solvent pipette)^2 + ur(sample pipette)^2 )
-                                 = sqrt( 0.026525^2 + 0.011860^2 + 0.007907^2 + 0.029682^2 )
-                                 = 0.042282
-    U'(Working Solution 3, PETN) = k * ur = 2.0000 * 0.042282 = 0.084564  (8.46%)
+                                 = sqrt( 0.029127^2 + 0.026652^2 + 0.016073^2 + 0.026652^2 )
+                                 = 0.050273
+    U'(Working Solution 3, PETN) = k * ur = 2.0000 * 0.050273 = 0.100546  (10.05%)
 
     ur(Working Solution 3, RDX) = sqrt( ur(Cal Solution 1, RDX)^2 + ur(solvent pipette)^2 + ur(solvent pipette)^2 + ur(sample pipette)^2 )
-                                = sqrt( 0.026638^2 + 0.011860^2 + 0.007907^2 + 0.029682^2 )
-                                = 0.042353
-    U'(Working Solution 3, RDX) = k * ur = 2.0000 * 0.042353 = 0.084706  (8.47%)
+                                = sqrt( 0.029230^2 + 0.026652^2 + 0.016073^2 + 0.026652^2 )
+                                = 0.050333
+    U'(Working Solution 3, RDX) = k * ur = 2.0000 * 0.050333 = 0.100666  (10.07%)
 
 
 Working Solution 4  (from Cal Solution 1)
@@ -152,26 +153,26 @@ Working Solution 4  (from Cal Solution 1)
 
   Component uncertainties:
 
-    u(solvent pipette) = tolerance / coverage = 0.9014 / 2.0000 = 0.4507
-    ur(solvent pipette) = u / volume = 0.4507 / 57.0000 = 0.007907
+    u(solvent pipette) = tolerance / coverage = 0.9161 / 1.0000 = 0.9161
+    ur(solvent pipette) = u / volume = 0.9161 / 57.0000 = 0.016073
 
-    u(solvent pipette) = tolerance / coverage = 0.9014 / 2.0000 = 0.4507
-    ur(solvent pipette) = u / volume = 0.4507 / 38.0000 = 0.011860
+    u(solvent pipette) = tolerance / coverage = 1.0128 / 1.0000 = 1.0128
+    ur(solvent pipette) = u / volume = 1.0128 / 38.0000 = 0.026652
 
-    u(sample pipette) = tolerance / coverage = 0.2968 / 2.0000 = 0.1484
-    ur(sample pipette) = u / volume = 0.1484 / 5.0000 = 0.029682
+    u(sample pipette) = tolerance / coverage = 0.1333 / 1.0000 = 0.1333
+    ur(sample pipette) = u / volume = 0.1333 / 5.0000 = 0.026652
 
   Combined uncertainties:
 
     ur(Working Solution 4, PETN) = sqrt( ur(Cal Solution 1, PETN)^2 + ur(solvent pipette)^2 + ur(solvent pipette)^2 + ur(sample pipette)^2 )
-                                 = sqrt( 0.026525^2 + 0.007907^2 + 0.011860^2 + 0.029682^2 )
-                                 = 0.042282
-    U'(Working Solution 4, PETN) = k * ur = 2.0000 * 0.042282 = 0.084564  (8.46%)
+                                 = sqrt( 0.029127^2 + 0.016073^2 + 0.026652^2 + 0.026652^2 )
+                                 = 0.050273
+    U'(Working Solution 4, PETN) = k * ur = 2.0000 * 0.050273 = 0.100546  (10.05%)
 
     ur(Working Solution 4, RDX) = sqrt( ur(Cal Solution 1, RDX)^2 + ur(solvent pipette)^2 + ur(solvent pipette)^2 + ur(sample pipette)^2 )
-                                = sqrt( 0.026638^2 + 0.007907^2 + 0.011860^2 + 0.029682^2 )
-                                = 0.042353
-    U'(Working Solution 4, RDX) = k * ur = 2.0000 * 0.042353 = 0.084706  (8.47%)
+                                = sqrt( 0.029230^2 + 0.016073^2 + 0.026652^2 + 0.026652^2 )
+                                = 0.050333
+    U'(Working Solution 4, RDX) = k * ur = 2.0000 * 0.050333 = 0.100666  (10.07%)
 
 
 Working Solution 5  (from Cal Solution 1)
@@ -179,26 +180,26 @@ Working Solution 5  (from Cal Solution 1)
 
   Component uncertainties:
 
-    u(solvent pipette) = tolerance / coverage = 1.1180 / 2.0000 = 0.5590
-    ur(solvent pipette) = u / volume = 0.5590 / 76.0000 = 0.007355
+    u(solvent pipette) = tolerance / coverage = 1.2215 / 1.0000 = 1.2215
+    ur(solvent pipette) = u / volume = 1.2215 / 76.0000 = 0.016073
 
-    u(solvent pipette) = tolerance / coverage = 0.2968 / 2.0000 = 0.1484
-    ur(solvent pipette) = u / volume = 0.1484 / 19.0000 = 0.007811
+    u(solvent pipette) = tolerance / coverage = 0.5064 / 1.0000 = 0.5064
+    ur(solvent pipette) = u / volume = 0.5064 / 19.0000 = 0.026652
 
-    u(sample pipette) = tolerance / coverage = 0.2968 / 2.0000 = 0.1484
-    ur(sample pipette) = u / volume = 0.1484 / 5.0000 = 0.029682
+    u(sample pipette) = tolerance / coverage = 0.1333 / 1.0000 = 0.1333
+    ur(sample pipette) = u / volume = 0.1333 / 5.0000 = 0.026652
 
   Combined uncertainties:
 
     ur(Working Solution 5, PETN) = sqrt( ur(Cal Solution 1, PETN)^2 + ur(solvent pipette)^2 + ur(solvent pipette)^2 + ur(sample pipette)^2 )
-                                 = sqrt( 0.026525^2 + 0.007355^2 + 0.007811^2 + 0.029682^2 )
-                                 = 0.041227
-    U'(Working Solution 5, PETN) = k * ur = 2.0000 * 0.041227 = 0.082455  (8.25%)
+                                 = sqrt( 0.029127^2 + 0.016073^2 + 0.026652^2 + 0.026652^2 )
+                                 = 0.050273
+    U'(Working Solution 5, PETN) = k * ur = 2.0000 * 0.050273 = 0.100546  (10.05%)
 
     ur(Working Solution 5, RDX) = sqrt( ur(Cal Solution 1, RDX)^2 + ur(solvent pipette)^2 + ur(solvent pipette)^2 + ur(sample pipette)^2 )
-                                = sqrt( 0.026638^2 + 0.007355^2 + 0.007811^2 + 0.029682^2 )
-                                = 0.041300
-    U'(Working Solution 5, RDX) = k * ur = 2.0000 * 0.041300 = 0.082601  (8.26%)
+                                = sqrt( 0.029230^2 + 0.016073^2 + 0.026652^2 + 0.026652^2 )
+                                = 0.050333
+    U'(Working Solution 5, RDX) = k * ur = 2.0000 * 0.050333 = 0.100666  (10.07%)
 
 
 Working Solution 6  (from Cal Solution 1)
@@ -206,26 +207,26 @@ Working Solution 6  (from Cal Solution 1)
 
   Component uncertainties:
 
-    u(solvent pipette) = tolerance / coverage = 1.1180 / 2.0000 = 0.5590
-    ur(solvent pipette) = u / volume = 0.5590 / 93.1000 = 0.006004
+    u(solvent pipette) = tolerance / coverage = 0.7111 / 1.0000 = 0.7111
+    ur(solvent pipette) = u / volume = 0.7111 / 93.1000 = 0.007638
 
-    u(solvent pipette) = tolerance / coverage = 0.2968 / 2.0000 = 0.1484
-    ur(solvent pipette) = u / volume = 0.1484 / 1.9000 = 0.078110
+    u(solvent pipette) = tolerance / coverage = 0.0506 / 1.0000 = 0.0506
+    ur(solvent pipette) = u / volume = 0.0506 / 1.9000 = 0.026652
 
-    u(sample pipette) = tolerance / coverage = 0.2968 / 2.0000 = 0.1484
-    ur(sample pipette) = u / volume = 0.1484 / 5.0000 = 0.029682
+    u(sample pipette) = tolerance / coverage = 0.1333 / 1.0000 = 0.1333
+    ur(sample pipette) = u / volume = 0.1333 / 5.0000 = 0.026652
 
   Combined uncertainties:
 
     ur(Working Solution 6, PETN) = sqrt( ur(Cal Solution 1, PETN)^2 + ur(solvent pipette)^2 + ur(solvent pipette)^2 + ur(sample pipette)^2 )
-                                 = sqrt( 0.026525^2 + 0.006004^2 + 0.078110^2 + 0.029682^2 )
-                                 = 0.087873
-    U'(Working Solution 6, PETN) = k * ur = 2.0000 * 0.087873 = 0.175747  (17.57%)
+                                 = sqrt( 0.029127^2 + 0.007638^2 + 0.026652^2 + 0.026652^2 )
+                                 = 0.048243
+    U'(Working Solution 6, PETN) = k * ur = 2.0000 * 0.048243 = 0.096486  (9.65%)
 
     ur(Working Solution 6, RDX) = sqrt( ur(Cal Solution 1, RDX)^2 + ur(solvent pipette)^2 + ur(solvent pipette)^2 + ur(sample pipette)^2 )
-                                = sqrt( 0.026638^2 + 0.006004^2 + 0.078110^2 + 0.029682^2 )
-                                = 0.087908
-    U'(Working Solution 6, RDX) = k * ur = 2.0000 * 0.087908 = 0.175815  (17.58%)
+                                = sqrt( 0.029230^2 + 0.007638^2 + 0.026652^2 + 0.026652^2 )
+                                = 0.048305
+    U'(Working Solution 6, RDX) = k * ur = 2.0000 * 0.048305 = 0.096611  (9.66%)
 
 
 ==============================================================================
@@ -234,21 +235,21 @@ Working Solution 6  (from Cal Solution 1)
 
   Solution            Analyte   ur_combined   Ur_combined      Ur_%
   -----------------------------------------------------------------
-  Stock Solution A    PETN         0.023992      0.047984     4.80%
-  Stock Solution A    RDX          0.024117      0.048235     4.82%
-  Cal Solution 1      PETN         0.026525      0.053050     5.30%
-  Cal Solution 1      RDX          0.026638      0.053277     5.33%
-  Working Solution 1  PETN         0.040239      0.080479     8.05%
-  Working Solution 1  RDX          0.040314      0.080628     8.06%
-  Working Solution 2  PETN         0.041227      0.082455     8.25%
-  Working Solution 2  RDX          0.041300      0.082601     8.26%
-  Working Solution 3  PETN         0.042282      0.084564     8.46%
-  Working Solution 3  RDX          0.042353      0.084706     8.47%
-  Working Solution 4  PETN         0.042282      0.084564     8.46%
-  Working Solution 4  RDX          0.042353      0.084706     8.47%
-  Working Solution 5  PETN         0.041227      0.082455     8.25%
-  Working Solution 5  RDX          0.041300      0.082601     8.26%
-  Working Solution 6  PETN         0.087873      0.175747    17.57%
-  Working Solution 6  RDX          0.087908      0.175815    17.58%
+  Stock Solution A    PETN         0.024248      0.048496     4.85%
+  Stock Solution A    RDX          0.024372      0.048743     4.87%
+  Cal Solution 1      PETN         0.029127      0.058254     5.83%
+  Cal Solution 1      RDX          0.029230      0.058460     5.85%
+  Working Solution 1  PETN         0.040212      0.080425     8.04%
+  Working Solution 1  RDX          0.040287      0.080575     8.06%
+  Working Solution 2  PETN         0.050273      0.100546    10.05%
+  Working Solution 2  RDX          0.050333      0.100666    10.07%
+  Working Solution 3  PETN         0.050273      0.100546    10.05%
+  Working Solution 3  RDX          0.050333      0.100666    10.07%
+  Working Solution 4  PETN         0.050273      0.100546    10.05%
+  Working Solution 4  RDX          0.050333      0.100666    10.07%
+  Working Solution 5  PETN         0.050273      0.100546    10.05%
+  Working Solution 5  RDX          0.050333      0.100666    10.07%
+  Working Solution 6  PETN         0.048243      0.096486     9.65%
+  Working Solution 6  RDX          0.048305      0.096611     9.66%
 
 ==============================================================================
