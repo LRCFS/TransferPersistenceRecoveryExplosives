@@ -1,5 +1,65 @@
 # Design of Experiments: Trace Explosives Recovery
 
+## Table of Contents
+
+This file has two parts, in this order (unchanged from before this note was added -- this is a navigation aid only, no content was moved):
+
+- **Session Log** (below) -- dated session entries, newest-first, August 5 - September 10, 2026.
+- **Design / Reference Documentation** (from "## Overview" onward) -- the original static design document: experimental design, statistical model, QC criteria, success criteria, and directory/file reference.
+
+### Session Log contents (newest-first)
+- Session Summary (September 10, 2026) -- Figure Tidy-Up Pass, Recovery-Efficiency Correction Applied to ASTRA
+- Session Summary (September 8, 2026) -- Negative Control "Still Failing" Investigation
+- Session Summary (September 4, 2026) -- Extraction Efficiency Measured from a New 12-Replicate Dataset
+- Session Summary (September 3, 2026) -- Thesis Colour Palette Extended to Every Subproject in the Repo
+- Session Summary (September 2, 2026, continued) -- Codebase Simplification Pass
+- Session Summary (September 2, 2026) -- Follow-up on MAIN_013, ABS NC Contamination Source
+- Session Summary (August 27, 2026) -- Main Study Full Run: One QC Failure, ABS NC Contamination Found
+- Session Summary (August 25, 2026) -- Actual (ASTRA-Measured) Pressure Model + RDX Batch/Date Effect Re-Tested
+- Session Summary (August 19, 2026, continued yet further) -- RDX Drift Correction Determined Unnecessary
+- Session Summary (August 19, 2026) -- main_study_analysis.R Created
+- Session Summary (August 19, 2026, continued) -- main_study_protocol.txt Drafted; simr Installed
+- Session Summary (August 11, 2026, continued) -- Main Study Design: Multi-Level Pressure Dose-Response
+- Session Summary (August 11, 2026) -- select_best_attempt() Now Prefers the EARLIEST Accepted Attempt
+- Session Summary (August 10, 2026, continued x3) -- pilot_analysis.R Now Sources Shared InjectionAcceptance.R
+- Session Summary (August 10, 2026, continued) -- RDX Batch-to-Batch Recovery Investigation
+- Session Summary (August 10, 2026) -- NC Evaluation Restructured to Two Explicit Stages
+- Session Summary (August 7, 2026) -- Negative Control Regex Fix
+- Session Summary (August 6, 2026, continued x9) -- Mean Diamond Colour Changed to Red
+- Session Summary (August 6, 2026, continued x8) -- Simplified "All Data" Plot Titles
+- Session Summary (August 6, 2026, continued x7) -- All-Data Box Plots: Removed Point Colour Coding
+- Session Summary (August 6, 2026, continued x6) -- "Wet-Only" Clarified as a Main-Study Design
+- Session Summary (August 6, 2026, continued yet further) -- PETN Below_LOQ Extended Too
+- Session Summary (August 6, 2026, continued further) -- RDX Below_LOQ Now Also Counted as 0% Recovery
+- Session Summary (August 6, 2026, continued) -- Power Analysis Overhaul
+- Session Summary (August 6, 2026) -- Statistical Results Persisted to pilot_analysis_summary.txt
+- Session Summary (August 5, 2026, continued x5) -- use_qc_filtered_data Toggle
+- Session Summary (August 5, 2026, continued yet again) -- By-Repeat Individual-Value Bar Charts
+- Session Summary (August 5, 2026, continued) -- Extended to NA-Flag Non-Detections Too
+- Session Summary (August 5, 2026) -- "Below_LOD" Non-Detections No Longer Hard-Fail Samples
+
+### Design / Reference Documentation contents
+- Overview
+- Experimental Design
+- Experimental Details
+- Study Phases
+- Statistical Model
+- Key Metrics from Pilot Study
+- Requirements for Full DOE Script
+- Success Criteria
+- Expected Outcomes
+- GC-MS Data Collation & QC Pass/Fail Criteria (Added July 30, 2026)
+- IS Peak Area Injection-Validity Check (Added July 31, 2026)
+- Reanalysis / Duplicate-Sample Handling (Added July 31, 2026)
+- Bar Charts with SEM Error Bars (Added July 31, 2026)
+- Box Plot Y-Axis Fixed to 0-50% + Sample Size Labels (Added August 2026)
+- Files in This Directory
+- References and Resources
+- Contact and Support
+
+---
+
+
 ## Session Summary (September 10, 2026) — Figure Tidy-Up Pass (Pilot Plots Trimmed, Hinge/Boxplot Restyling), Recovery-Efficiency Correction Finally Applied to ASTRA, and Four New Pilot+Main Pressure/Recovery Figures
 
 ### Motivation

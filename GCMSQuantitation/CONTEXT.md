@@ -1,162 +1,929 @@
 # GCMSQuantitation - Project Context
 
-## Session Summary (October 6, 2026) — Independent ICH Q2(R2) Calibration-Curve LOD/LOQ Added as a Cross-Check Against the Live SD-Based SNR System
+## Table of Contents
 
-### Motivation
+This file has three parts, in this order:
 
-Follow-on from an investigation into the live pipeline's `snr_detect=3`/`snr_quant=10` thresholds (`ModPeaks.R::calculate_snr()`, SD-based). Confirmed empirically (176 real noise-region measurements across 2 FINEX datasets, both analytes) that the peak-to-peak noise range in this instrument's data is consistently ~3.7-3.9x the SD -- meaning the live thresholds are considerably more lenient than the traditional peak-to-peak-based "3:1/10:1" chromatography convention (USP ⟨621⟩, Ph. Eur. 2.2.46: `S/N = 2H/h`, h = peak-to-peak). ICH Q2(R2) §3.2.3 itself doesn't mandate either convention. Rather than retroactively rescale `snr_detect`/`snr_quant` (which would reclassify results across both completed studies -- a decision deliberately deferred), implemented ICH's **third**, independent LOD/LOQ approach (`LOD = 3.3*sigma/S`, `LOQ = 10*sigma/S`, based on the calibration curve itself) as a separate, defensible, ng-denominated validation number.
+- **Part 1: Living Reference / Design Documentation** -- static sections describing the current pipeline design, QC criteria, and architecture. Not a chronological log.
+- **Part 2: Session Log, Recent** -- dated session entries, newest-first, July 31 - October 6, 2026.
+- **Part 3: Earlier Project History** -- older dated session entries interleaved with further static/reference notes, roughly April - July 2026. Preserved in its original relative order from before this file was reorganised (October 2026); not re-sorted into strict chronological order during that reorganisation, to avoid misclassifying any entry.
 
-### Methodology decision: evaluating S for a *quadratic* (not linear) calibration curve
+### Part 1 contents
+- QC Monitoring Strategy (Updated June 2026)
+- Column Organization (Updated June 2026)
+- Negative Control (NC) Evaluation Criteria (Updated June 2026)
+- Batch Processing (June 2026)
+- Project Structure (Consolidated - May 2026)
+- Pipeline Architecture
+- Study Context: FINEX Swabbing Study
+- Known Issues / Bug Fixes
 
-Every calibration curve in this pipeline is a weighted quadratic (`Code/03_Quantification.R`'s `quad_formula`), but ICH's formula assumes a constant linear slope. Resolved by evaluating S as the **local derivative** (`2*a*x+b`) of the fitted quadratic at the **lowest calibration standard's concentration** -- consistent with (a) Cuadros-Rodriguez L. et al., "An IUPAC-based approach to estimate the detection limit in co-extraction-based optical sensors for anions with sigmoidal response calibration curves," *Anal. Bioanal. Chem.* 2011, 401(9), 2881-2889 (DOI: 10.1007/s00216-011-5366-8) -- a published precedent for adapting the same IUPAC/ICH methodology to a different nonlinear calibration shape -- and (b) the delta-method/first-order Taylor expansion (JCGM 100:2008, GUM), the same technique this codebase's own Item 19 PETN drift-correction uncertainty propagation already uses (`local_slope <- 2 * qa * res$value + qb`, `Code/03_Quantification.R`). sigma was taken as the residual standard error of the weighted fit (`summary(model)$sigma`), per Dolan JW, "Chromatographic Measurements, Part 5: Determining LOD and LOQ Based on the Calibration Curve," *Separation Science* (sepscience.com/hplc-solutions-126).
+### Part 2 contents (newest-first)
+- Session Summary (October 6, 2026) -- ICH Q2(R2) Calibration-Curve LOD/LOQ [condensed; see Diagnostics/Generic/ICH_LODLOQ_Output/LODLOQ_Investigation_Narrative.md for full write-up]
+- Session Summary (September 8, 2026, continued) -- Conditional Formatting Silently Dropped (OneDrive XLSX)
+- Session Summary (September 8, 2026, continued) -- Extraction+Filtration Efficiency Simplified
+- Session Summary (September 8, 2026) -- 0.2ng QC "Sensitivity Check" Split
+- Session Summary (September 7, 2026) -- Extraction+Filtration Efficiency Simplified
+- Session Summary (September 4, 2026, continued) -- Red-Team Review Section D Closed Out
+- Session Summary (September 4, 2026) -- Investigating Pre-Existing Bugs (Colour-Palette Pass)
+- Session Summary (September 3, 2026) -- Thesis-wide Colour Palette Extended Into GCMSQuantitation
+- Session Summary (August 27, 2026) -- Full FINEX Batch Run, Two New Bugs Found and Fixed
+- Session Summary (August 19, 2026, continued further) -- RDX 6ng QC "Step-Then-Plateau" Bias
+- Session Summary (August 19, 2026, continued) -- FINEX Collation Deduplicates Reanalysed Samples
+- Session Summary (August 19, 2026) -- PETN m/z 57 Qualifier-Ion Columns Removed
+- Session Summary (August 18, 2026, continued) -- Cross-Study "Other Peak" Investigation
+- Session Summary (August 18, 2026) -- TIC Deinterleaving Fix
+- Session Summary (August 14, 2026, continued) -- Confirmatory Ion Columns Added
+- Session Summary (August 12-14, 2026) -- Confirmatory Ion Detection for PETN and RDX
+- Session Summary (August 11, 2026) -- PETN vs RDX Correlation Plots
+- Session Summary (August 10, 2026, continued) -- Injection Acceptance Logic Consolidated
+- Session Summary (August 5, 2026, continued) -- drift_correction_exclude_qc_lines
+- Session Summary (August 5, 2026) -- PowerLaw Reinstated for ASTRA, Bracket Retired
+- Session Summary (August 4, 2026) -- Bracketed QC Drift Correction for ASTRA Pilot Study
+- Session Summary (August 3, 2026, continued yet again) -- Baseline-Correction Integration Floor Fix
+- Session Summary (August 3, 2026, continued) -- PETN/RDX Recovery + %RSD PCA Biplot
+- Session Summary (August 3, 2026) -- PETN vs RDX Recovery Correlation Plots
+- Session Summary (August 3, 2026, continued) -- Step-Change Drift Correction (Analysis4)
+- Session Summary (July 31, 2026) -- IS Peak Area Injection-Validity Check
 
-### Implementation: `Diagnostics/Generic/ICH_CalibrationCurve_LODLOQ.R` (new, standalone, read-only)
-
-Does not touch any live pipeline file, model object, or results CSV -- reads only already-exported `*_GCMSResults.csv` files plus each dataset's own `run_metadata.yaml` (for `Dilution`, `use_15nrdx_for_petn`/`use_is_for_rdx`, `cal_exclude_lines`, needed to reproduce the exact production fit per dataset). Auto-discovers every dataset across both FINEX ("Accepted Analysis") and ASTRA (Main + Pilot Study "GC Data") roots, re-fits the identical weighted quadratic (`weights = 1/CalLevelAdj`) per `CalibrationSet`, applies the same `Below_LOD` filter and any per-dataset `cal_exclude_lines`, then computes LOD/LOQ in ng. A lightweight cross-check (no raw-signal reprocessing needed) reports, per calibration set, the lowest real Sample/QC concentration the *live* pipeline already calls `Quantifiable` (SNR>=10) -- directly comparable in the same ng units.
-
-**Dataset-label fix along the way**: ASTRA's Main Study and Pilot Study folders both reuse `Analysis1`/`Analysis3`/`Analysis4` as folder names -- the underlying numbers were always correctly distinct (kept by full path throughout), but the plain folder name alone was ambiguous in the printed/exported tables. Added a `(Main)`/`(Pilot)` display-label suffix to disambiguate.
-
-### Result (real data, 30 datasets, 60 dataset x CalibrationSet x analyte combinations, R² 0.978-0.9999)
-
-| | ICH LOQ (ng), median | Live system's own empirical "Quantifiable" floor (ng), median |
-|---|---|---|
-| PETN, FINEX | 0.94 | 0.084 |
-| PETN, ASTRA | 0.79 | 0.079 |
-| RDX, FINEX | 0.84 | 0.032 |
-| RDX, ASTRA | 1.13 | 0.042 |
-
-**The live SNR-based system is calling results "Quantifiable" at concentrations roughly 10-20x below where the independent ICH calibration-curve method would place the LOQ**, consistent across virtually every one of the 30 datasets and both analytes (see `ICH_LODLOQ_Comparison.png` -- the ICH-LOQ circle sits clearly above its corresponding empirical-boundary X in nearly every panel). This corroborates, with a second independent method, the earlier finding that the SD-based SNR convention is substantially more lenient than a traditional peak-to-peak-equivalent reading.
-
-### Not yet decided (deliberately deferred, same as the SNR-convention investigation)
-
-This script does **not** change `snr_detect`/`snr_quant` or any live acceptance logic -- it produces a second, independent, defensible number to report in the thesis methods/validation section. Whether to (a) report both numbers as a disclosed limitation, (b) tighten the operational SNR thresholds to match (would require full reprocessing + reclassification across both studies), or (c) treat the ICH number as the primary citable LOD/LOQ and the SNR tiers as an operational-only QC gate, remains an open decision for the user.
-
-### Files Modified
-
-`Diagnostics/Generic/ICH_CalibrationCurve_LODLOQ.R` (new). Outputs (new, in `Diagnostics/Generic/ICH_LODLOQ_Output/`): `ICH_LODLOQ_PerCalibrationSet.csv` (60 rows, full per-calibration-set detail), `ICH_LODLOQ_Summary.csv` (per-analyte x per-study + pooled aggregates), `ICH_LODLOQ_Comparison.png`. `CONTEXT.md` (this entry).
+### Part 3 contents (original order, not strictly chronological)
+- Session Summary: Statistical Analysis Integration (July 3, 2026)
+  - Changes Made in This Session
+  - Removed Code (Archive for Restoration)
+- Thesis Chapter 1: Explosive Properties Reference Table
+- Thesis Chapter 2: Literature Review Introduction Draft
+- Known Issues / Diagnosed Problems
+- GC-MS Acquisition Method Details
+- Filtering Study Results (April 2026)
+- Surface Chemistry and Surface Free Energy
+- GC-MS Method Development
+- Diagnostic Scripts
+- Dual-Method Sequences (20260428 Cal Check)
+- Existing Code Issues (Not Yet Addressed)
+- Code Quality Policy
+- Report Progress (TMC4.txt)
+- Changes Made (May 2026 Session)
+- V9 Method RT Investigation (20260429 Robustness)
+- Lab22-1 Dataset (30 April 2026)
+- Session Summary (May 28, 2026)
+- Session Summary (July 2, 2026) - IN PROGRESS
+- Session Summary (June 2026)
+- Session Summary (June 10, 2026)
+- Session Summary (June 17, 2026)
+- Session Summary (June 12, 2026)
+- Statistical Analysis Diagnostic Issues (June 30, 2026)
+- Power Law vs Polynomial Drift Correction (June 2026)
+- Session Summary (July 20, 2026)
+- Session Summary (July 29, 2026) (+ 8 same-day "continued" sub-entries)
 
 ---
 
-### Follow-up (same day): Quantified Real-Data Impact of Tightening SNR Thresholds to Their Peak-to-Peak-Equivalent Values
+## PART 1: LIVING REFERENCE / DESIGN DOCUMENTATION
 
-New script, same read-only/non-invasive design: `Diagnostics/Generic/SNR_Threshold_Impact_Simulation.R`. Reuses already-exported per-row SNR/concentration columns (no reprocessing) plus the ICH LOQ table above, to quantify -- in real numbers, not speculation -- what tightening `snr_detect`/`snr_quant` to their measured peak-to-peak-equivalent values (~3.7-3.9x stricter, i.e. snr_detect ~11, snr_quant ~37-39) would actually touch, across all 697 real sample rows / 149 QC injections per level per analyte in all 30 datasets.
-
-**Explicit scope limitation**: this counts row-level tier reclassifications and QC-level SNR-component flips; it does NOT re-run the full bracket-gating cascade (`assign_qc_brackets()`/`compute_injection_acceptance()`), so it is a directionally reliable lower bound, not an exact "N additional samples get Outcome=Reanalyse" figure.
-
-**Key findings**:
-- **6ng (quantitative) QC level is essentially unaffected**: 0/142 PETN, 1/143 RDX 6ng QCs would newly fail the SNR-component -- the backbone of the bracket-acceptance system doesn't depend on this ambiguity.
-- **0.2ng (sensitivity) QC level is heavily affected, especially PETN**: 57 of 90 currently-passing PETN 0.2ng QCs (63.3%) would newly fail the SNR-component; RDX 0.2ng less severely (14 of 144, 9.7%).
-- **Real sample SNR tiers rarely flip** (PETN 6.6%, RDX 16.2% of currently-"Quantifiable" rows downgrade), but **reported concentrations sitting below the independent ICH calibration-curve LOQ are far more common**: 24.6% of PETN and fully 50.5% of RDX "Quantifiable" results are below their own dataset's ICH LOQ already, with zero threshold change needed to notice this.
-- **Negative controls**: PETN trace-detection calls are fragile (11 of 14 currently-detected PETN NC rows would flip to "clean" under the stricter threshold); the headline **RDX contamination finding on ABS NCs is robust** (only 2 of 15 currently-detected RDX NC rows would flip) -- the thesis's main contamination narrative does not hinge on this threshold ambiguity.
-
-**Files**: `Diagnostics/Generic/SNR_Threshold_Impact_Simulation.R` (new). Outputs (new, in `ICH_LODLOQ_Output/`): `SNRThreshold_Impact_PerDataset.csv`, `SNRThreshold_Impact_QC_PerDataset.csv`. `CONTEXT.md` (this entry).
+*Static sections describing the current pipeline design, QC criteria, and architecture. Not a chronological log -- see Part 2/3 below for the session history.*
 
 ---
 
-### Follow-up (same day): Below-ICH-LOQ Breakdown by Surface -- RDX/ABS Solvent Issue Confirmed as a Real, Significant Contributor, but NOT the Full Explanation
+## QC Monitoring Strategy (Updated June 2026)
 
-Hypothesis tested: does the already-documented RDX/ABS acetonitrile-solvent compatibility issue (RedTeam_Findings.md item #17 -- RDX standards spiked in acetonitrile damage/interact with ABS, artifactually suppressing RDX recovery on ABS-Smooth/ABS-Textured; already excluded from FINEX's statistical interpretation via `rdx_surface_exclude`) account for most/all of the 50.5% RDX below-ICH-LOQ finding above?
+### Two-Tier QC System
 
-New script `Diagnostics/Generic/RDX_PETN_BelowLOQ_BySurface.R` (read-only, same design). Attaches Surface to each real-sample row via the IDENTICAL FINEX parsing regex/map `04_CollateStudyResults.R` itself uses (`sample_pattern`/`surface_map`) for FINEX, and a RunID join against the already-collated `main_study_data_nested.csv`/`pilot_data_nested.csv` for ASTRA (885 of 903 Quantifiable rows matched a Surface).
+The QC monitoring system uses **two separate evaluation strategies** depending on QC level:
 
-**Result: the ABS/solvent issue is real and makes ABS substantially worse, but it is NOT the full explanation for RDX --- Steel alone still has roughly half its own RDX results below the ICH LOQ:**
+#### 1. Quantitative QCs (6ng level)
 
-| Analyte | ABS-Smooth | ABS-Textured | Steel | Glass |
-|---|---|---|---|---|
-| PETN below-ICH-LOQ rate | 53.5% | 41.7% | **17.4%** | 0.0% |
-| RDX below-ICH-LOQ rate | 93.7% | 84.6% | **51.3%** | 0.0% |
+**Purpose**: Monitor drift correction accuracy and quantitative performance
 
-- **PETN's below-LOQ problem is predominantly ABS-driven** (71.9% of all below-LOQ PETN rows are ABS surfaces) -- consistent with the hypothesis.
-- **RDX's below-LOQ problem is only partially ABS-driven**: ABS surfaces are disproportionately worse (93.7%/84.6% vs Steel's 51.3%), and 61.1% of all below-LOQ RDX rows are ABS -- but Steel's own 51.3% below-LOQ rate is not negligible and cannot be explained by a surface-matrix/solvent-compatibility mechanism that is specific to ABS. This points to a second, surface-independent contributor to RDX's below-LOQ rate -- most likely the RDX calibration curve's own low-end (quadratic) shape/local-slope characteristics, exactly the kind of thing the ICH calibration-curve LOD/LOQ method is designed to surface, rather than a second matrix effect.
-- Glass (n=12 per analyte, small) is never below LOQ for either analyte -- consistent with Glass's already-documented high raw-PA/recovery.
+**Criteria**:
+- **Bias limit**: ±15% (configurable via `qc_bias_limit` in GlobalCode.R)
+- **SNR threshold**: ≥10 for quantifiable
 
-**Conclusion**: the known RDX/ABS solvent issue should be cited as a real, significant, quantified contributor (and the ABS-vs-Steel contrast is itself a useful quotable statistic), but should NOT be presented as explaining "most or all" of the RDX below-LOQ finding -- the Steel-only 51.3% figure needs its own explanation, independent of the ABS/solvent story.
+**Flags**:
+- `PASS`: |%bias| ≤ 15% AND SNR ≥ 10
+- `FAIL_BIAS`: |%bias| > 15%
+- `FAIL_SNR`: SNR < 10
+- `FAIL`: General failure (no concentration)
 
-**Files**: `Diagnostics/Generic/RDX_PETN_BelowLOQ_BySurface.R` (new). Output (new, in `ICH_LODLOQ_Output/`): `BelowLOQ_BySurface_Detail.csv`. `CONTEXT.md` (this entry).
+**Used for**:
+- Drift model fitting (power law or polynomial)
+- Sequence acceptance criteria
+- Calibration validation
 
----
+**Plots generated**:
+- `{Analyte}_QC_6ng_Accuracy.png`: %Bias vs injection number (with ±15% reference lines)
+- `{Analyte}_QC_6ng_Accuracy_DriftCorrected.png`: Drift-corrected %bias (PETN/RDX when applicable)
 
-### Follow-up (same day): A Fix Requiring No Reanalysis -- Using Already-Acquired 0.2ng QC Replicates Directly, Instead of the Global Quadratic Curve's Residual + Local Slope
+#### 2. Sensitivity QCs (0.2ng level)
 
-User's question: since the below-LOQ problem traces to the calibration curve itself (not sample quality), is there anything addressable without physically reanalysing samples? Investigated whether the ALREADY-ACQUIRED 0.2ng QC replicate injections (5-6 per dataset, run throughout each sequence for routine QC purposes, confirmed via `Code/03_Quantification.R`'s `CalSets <- split(CalData, rep(seq_len(nrow(CalData)/n_levels), each=n_levels))` -- exactly 1 point per Cal level per set, i.e. the full-range quadratic has NO replication at the low end at all) could give a tighter, independently-justified LOD/LOQ than extrapolating from the full 0.2-10ng curve's own residual SD and local slope.
+**Purpose**: Monitor system detection capability at trace levels
 
-**Method tested** (new script `Diagnostics/Generic/ReplicateQC_LowLevel_LODLOQ.R`, read-only): ICH Q2(R2)'s own first-listed approach, "based on the standard deviation of the response" -- taken directly in concentration units from the 0.2ng QC replicates' own already-computed, back-calculated concentrations (no new slope term needed; the QC is at a known fixed concentration, so this sidesteps the whole quadratic-local-slope question entirely):
+**Criteria**: SNR thresholds AND quantifiability check (drift-corrected only)
+
+**Uncorrected flags (`petn_qc_flag`, `rdx_qc_flag`)**: 
+- SNR-only evaluation (no longer used in current pipeline)
+- Retained for legacy compatibility
+
+**Drift-corrected flags (`petn_qc_flag_dc`, `rdx_qc_flag_dc`)**: 
+- **Primary evaluation method** (used for all QC acceptance decisions)
+- **Pass**: SNR ≥ 10 AND drift-corrected concentration > 0
+- **Warn**: 3 ≤ SNR < 10 AND drift-corrected concentration > 0
+- **Fail**: SNR < 3 OR drift-corrected concentration ≤ 0 OR concentration is NA
+
+**Three-component check:**
+1. **Concentration > 0**: Verifies drift correction restored quantifiability (peak above calibration extrapolation threshold) — checked FIRST
+2. **SNR ≥ 3**: Verifies system detection capability (signal above noise floor)
+3. **SNR ≥ 10**: Distinguishes good sensitivity (PASS) from marginal but acceptable (WARN)
+
+**Rationale**: 
+- A 0.2ng QC that is detected (good SNR) but returns concentration = 0 indicates the drift correction was insufficient to restore quantifiability
+- This represents a **dual failure**: drift correction performance inadequate to compensate for signal loss
+- Even though the analyte was technically "detected," the system failed to quantify it at trace levels
+- SNR thresholds distinguish between robust quantification (≥10, PASS) and marginal but acceptable (3-10, WARN)
+
+**Flags**:
+- `SENSITIVITY_CHECK_PASS`: SNR ≥ 10 AND concentration_dc > 0
+- `SENSITIVITY_CHECK_WARN`: 3 ≤ SNR < 10 AND concentration_dc > 0
+- `SENSITIVITY_CHECK_FAIL`: SNR < 3 OR concentration_dc ≤ 0
+
+**Used for**:
+- System sensitivity trending (both detection and quantification)
+- Drift correction effectiveness assessment
+- Confirming the system can quantify trace contamination after drift correction
+
+**Plots generated**:
+- `{Analyte}_QC_0p2ng_SNR_Trend.png`: SNR vs injection number (with SNR=10 and SNR=3 reference lines)
+- `{Analyte}_QC_0p2ng_RawPA_Trends.png`: Raw PA vs injection number (before drift correction)
+
+### Rationale
+
+At trace levels (0.2ng), several factors make bias criteria unreliable:
+
+1. **Non-proportional signal losses**: Adsorption to active inlet sites is disproportionately high at trace levels
+2. **Baseline noise dominance**: At 0.2ng, peak height is only ~5-20× above noise, making quantitation imprecise
+3. **Carryover effects**: Previous high-concentration injections can cause transient contamination
+4. **Inlet condition variability**: Trace analytes are extremely sensitive to inlet cleanliness
+
+These factors produce systematic positive bias (+35% to +70% in most sequences) that does not reflect calibration accuracy or drift correction performance.
+
+**SNR is the appropriate metric** at trace levels because:
+- It directly measures detection capability (signal > noise)
+- It is independent of calibration accuracy
+- It tracks system sensitivity degradation over time
+- It provides a clear threshold for LOD (SNR = 3) and LOQ (SNR = 10)
+
+### New Output Columns
+
+| Column | Description | Values |
+|--------|-------------|--------|
+| `petn_qc_type` | QC evaluation type for PETN | `"QUANTITATIVE"` (6ng) or `"SENSITIVITY"` (0.2ng) |
+| `rdx_qc_type` | QC evaluation type for RDX | `"QUANTITATIVE"` (6ng) or `"SENSITIVITY"` (0.2ng) |
+| `petn_qc_flag` | PETN QC result flag | `"PASS"`, `"FAIL_BIAS"`, `"FAIL_SNR"`, `"SENSITIVITY_CHECK_PASS"`, `"SENSITIVITY_CHECK_WARN"`, `"SENSITIVITY_CHECK_FAIL"` |
+| `rdx_qc_flag` | RDX QC result flag | Same as `petn_qc_flag` |
+| `petn_qc_flag_dc` | Drift-corrected PETN QC flag | Same flag values as uncorrected |
+| `rdx_qc_flag_dc` | Drift-corrected RDX QC flag | Same flag values as uncorrected |
+
+### Implementation Details
+
+**File**: `Code/03_Quantification.R`, lines 1388-1465 (QC evaluation), lines 1467-1583 (QC plots)
+
+**QC evaluation logic** (drift-corrected flags):
+```r
+if (cal_level == 0.2) {
+  # 0.2ng: Three-tier evaluation (concentration first, then SNR thresholds)
+  # Priority: conc <= 0 → FAIL (not quantifiable)
+  #           SNR < 3 → FAIL (below LOD)
+  #           SNR < 10 → WARN (detected but marginal)
+  #           SNR >= 10 AND conc > 0 → PASS (good sensitivity)
+  snr_val <- if ("petn_snr" %in% names(Combined)) Combined$petn_snr[i] else NA_real_
+  conc_dc_val <- Combined$petn_concentration_dc[i]
+  
+  if (is.na(snr_val) || is.na(conc_dc_val)) {
+    Combined$petn_qc_flag_dc[i] <- NA_character_
+  } else if (conc_dc_val <= 0) {
+    Combined$petn_qc_flag_dc[i] <- "SENSITIVITY_CHECK_FAIL"
+  } else if (snr_val < 3) {
+    Combined$petn_qc_flag_dc[i] <- "SENSITIVITY_CHECK_FAIL"
+  } else if (snr_val < 10) {
+    Combined$petn_qc_flag_dc[i] <- "SENSITIVITY_CHECK_WARN"
+  } else {
+    Combined$petn_qc_flag_dc[i] <- "SENSITIVITY_CHECK_PASS"
+  }
+} else {
+  # Higher QCs (6ng): Bias + SNR evaluation
+  if (abs(bias_val_dc) <= qc_bias_limit && snr_val >= 10) {
+    qc_flag <- "PASS"
+  } else if (abs(bias_val_dc) > qc_bias_limit) {
+    qc_flag <- "FAIL_BIAS"
+  } else if (snr_val < 10) {
+    qc_flag <- "FAIL_SNR"
+  }
+}
 ```
-LOD = 3.3 x SD(replicate concentrations)      LOQ = 10 x SD(replicate concentrations)
-```
 
-**Result (all 30 datasets)**:
-- RDX: median LOQ drops from 0.844 ng (quadratic-curve method) to 0.223 ng (QC-replicate method) -- a **2.0x improvement**. 25 of 30 datasets had >=4 usable 0.2ng QC replicates (NA rate only 3.4%).
-- PETN: median LOQ drops from 0.953 ng to 0.566 ng -- a **1.7x improvement**, smaller than RDX's and with a higher NA rate (8.7%, 23 of 30 datasets usable) -- consistent with PETN's already-documented lack of IS correction making its own low-level repeatability noisier.
-- **Re-evaluating the same real-sample rows flagged "below ICH LOQ" in the earlier analysis**: switching to the QC-replicate method RESCUES 43.1% of PETN's and 35.0% of RDX's previously-below-LOQ rows (i.e. they are now above the new, tighter, better-justified LOQ with zero new data). RDX still has a substantial residual below-LOQ rate even after rescue (45.1%, down from 68.8%) -- this method helps materially but does not fully resolve the RDX finding on its own.
+**Collation script** (`Code/04_CollateStudyResults.R`):
+- Reads pre-computed flags from `petn_qc_flag_dc` and `rdx_qc_flag_dc` columns
+- Maps flags to PASS/WARN/FAIL for bracket assignment
+- Simplified flags in SystemMonitoring.xlsx: SENSITIVITY_CHECK_* → PASS/WARN/FAIL
+- No threshold parameters needed (single source of truth in 03)
 
-**Why this is legitimate, not circular**: the back-calculated concentration for each 0.2ng QC replicate still passes through the same quadratic model, so any systematic bias in the curve's shape/local slope affects all 5-6 replicates similarly (a bias question) -- the SD across replicates specifically isolates the RANDOM scatter (repeatability) at the concentration that actually matters for LOD/LOQ, which is a more direct, better-targeted measurement than inferring low-end noise indirectly from a global fit dominated by residuals from the much more concentrated high end.
+**Note on uncorrected vs drift-corrected flags**: 
+- Uncorrected flags (`petn_qc_flag`, `rdx_qc_flag`) use SNR-only evaluation (legacy)
+- **Drift-corrected flags are the primary QC evaluation** (`petn_qc_flag_dc`, `rdx_qc_flag_dc`)
+- Only drift-corrected flags include the concentration > 0 check and three-tier SNR thresholds
+- SNR is not affected by drift correction (raw signal property), but concentration is
 
-**Scope/limitation**: this is a reporting/validation-level change only -- it produces a different, better-justified LOD/LOQ *number* for the thesis. It does **not** change `solve_concentration()`, any sample's own reported recovery value, or any live acceptance/QC logic, all of which remain untouched.
+### Sequence Acceptance Criteria
 
-**Files**: `Diagnostics/Generic/ReplicateQC_LowLevel_LODLOQ.R` (new). Outputs (new, in `ICH_LODLOQ_Output/`): `ReplicateQC_vs_QuadCurve_LODLOQ.csv`, `BelowLOQ_Rescue_Comparison.csv`. `CONTEXT.md` (this entry).
+**0.2ng QC failures still contribute to overall sequence QC status**, but with different interpretation:
 
----
+| 0.2ng QC Flag | Interpretation | Action |
+|---------------|----------------|--------|
+| `SENSITIVITY_CHECK_PASS` | System sensitivity excellent (SNR ≥ 10, quantifiable) | Continue |
+| `SENSITIVITY_CHECK_WARN` | System sensitivity adequate (3 ≤ SNR < 10, quantifiable) | Monitor; consider inlet maintenance if multiple WARNs; triggers `PASS*` in collation |
+| `SENSITIVITY_CHECK_FAIL` | Detection OR quantification failure | **FAIL sequence**; investigate cause |
 
-### Follow-up (same day): Would a Differently-Characterised Calibration Curve Fix This? Tested 5 Candidate Fits -- Answer Differs by Analyte
+**Failure modes:**
+- **SNR < 3**: System has lost detection capability → inlet cleaning required
+- **Concentration = 0**: Drift correction insufficient → may need stronger drift correction or inlet cleaning
+- **SNR < 10 with concentration > 0**: System can detect and quantify but sensitivity is marginal → acceptable with warning (PASS*)
 
-User's question: is the below-LOQ problem fixable by using a different calibration fit (weighting scheme, or model order) rather than just a different LOD/LOQ formula? New script `Diagnostics/Generic/CalibrationModel_Comparison.R` (read-only). Critically, judged candidates NOT by R² on the same 6 calibration points they were fit on (meaningless here -- a 3-parameter quadratic through 6 points will always look excellent regardless of how well-constrained the low end actually is), but by **held-out prediction**: each candidate model (fit on the Cal standards only) was used to back-calculate concentration from the already-acquired 0.2ng QC replicates' own RAW response (never seen by the fit), then judged on bias-vs-true-concentration and precision across those predictions.
+**Analyte-Specific QC Filtering (Updated July 2026):**
 
-**Candidates tested** (all using only already-acquired Cal standards, no new data): `QuadX1` (current production: quadratic, weights=1/x), `QuadX2` (quadratic, weights=1/x²), `LinX1`/`LinX2` (linear, same two weighting schemes), `QuadOLS` (quadratic, unweighted, for comparison).
+0.2ng QC failures are now evaluated on a **per-analyte basis**. A sample only fails due to 0.2ng QC failure if the corresponding analyte in that sample is also unquantifiable.
 
-**Result -- genuinely different conclusions per analyte**:
-
-| Analyte | Best model (lowest |bias|) | Median signed bias | Current production (QuadX1) bias |
+| 0.2ng QC Status | Sample Analyte SNR | Sample Result | Rationale |
 |---|---|---|---|
-| RDX | **QuadX1 (current)** | +4.7% | +4.7% (already best of the 5) |
-| PETN | **LinX1** (linear, weights=1/x) | -44.7% | **-64.7%** (worst of the 5) |
+| FAIL | Quantifiable (≥10) | `PASS*` | Sample analyte IS quantifiable → QC failure indicates vial/drift issue, not system capability |
+| FAIL | Below_LOQ (3-10) or Below_LOD (<3) | `FAIL` | Sample analyte NOT quantifiable → QC failure is relevant |
+| WARN | Any | `PASS*` | Unchanged |
+| PASS | Any | Contributes to PASS | Unchanged |
 
-- **RDX: the current model is already the best-performing of the 5 candidates tested.** No curve-fitting change is likely to meaningfully help RDX's residual below-LOQ rate -- it is very likely intrinsic to the measurement (non-proportional low-level signal loss, consistent with this project's own long-documented trace-level adsorption literature), not a model-choice artifact. `QuadOLS` (unweighted) is dramatically worse (-46.3% bias) -- confirms the existing 1/x inverse-concentration weighting is doing real, necessary work preventing the high-concentration points from dominating the fit.
-- **PETN: a real, actionable improvement exists.** Dropping the quadratic term entirely (`LinX1`, still weights=1/x) cuts the systematic low-end bias from -64.7% to -44.7% -- roughly a third smaller error, using the exact same already-acquired calibration standards, zero new data. The quadratic term appears to introduce curvature-driven distortion specifically in the low-concentration region it is least constrained by (same general mechanism as the previously-documented "fitted calibration curve's own intercept sits above the real low-end response" artifact). **This does not fully solve PETN's problem** -- even the best model (`LinX1`) still leaves a -44.7% systematic underestimate at 0.2ng, consistent with PETN's already-documented lack of internal-standard correction being a deeper reliability limit that no amount of curve-fitting alone can fully correct.
+**Implementation**: If a 0.2ng QC fails but the sample's analyte has SNR ≥ 10 ("Quantifiable"), the QC failure is treated as a warning with message: `"PETN 0.2ng pre QC FAIL (sample OK)"`. This triggers `PASS*` instead of `FAIL`.
 
-**Recommendation arising from this**: leave RDX's calibration model as-is (already optimal among tested alternatives). For PETN, switching from quadratic to linear is worth considering as a documented refinement (smaller, not zero, bias) -- but this would be a live-pipeline model change (not just a reporting-level LOD/LOQ recalculation like the QC-replicate fix above), so it needs the same explicit-decision treatment as every other threshold/model change in this project before being adopted, including full reprocessing impact assessment.
+**6ng QC failures remain unchanged**: 6ng QC failures (bias-based) always disqualify samples regardless of sample analyte status.
 
-**Files**: `Diagnostics/Generic/CalibrationModel_Comparison.R` (new). Output (new, in `ICH_LODLOQ_Output/`): `CalibrationModel_Comparison_Detail.csv`. `CONTEXT.md` (this entry).
+A sequence can PASS if 6ng QCs are within ±15% bias even if 0.2ng QCs show concentration = 0, as long as 0.2ng SNR ≥ 3 AND concentration > 0 after drift correction. If either criterion fails, the system has lost the ability to quantify trace levels, and the sequence should be investigated.
+
+### Comparison to Previous Approach
+
+| Aspect | Previous | Current (June 2026) |
+|--------|----------|---------------------|
+| 0.2ng evaluation | Bias ±15% + SNR ≥10 | **SNR thresholds (3/10) AND concentration_dc > 0** |
+| 0.2ng QC flags | PASS / FAIL | **PASS / WARN / FAIL** (three-tier) |
+| 0.2ng QC failure rate | ~60% (bias failures) | Variable (depends on drift correction effectiveness) |
+| 6ng evaluation | Bias ±15% | **Bias ±15% + SNR ≥10** |
+| Plot structure | Single combined plot (all QC levels) | **Separate plots**: 6ng bias, 0.2ng SNR + raw PA |
+| Flag nomenclature | `PASS` / `FAIL` | Differentiated: `FAIL_BIAS` vs `SENSITIVITY_CHECK_PASS`/`WARN`/`FAIL` |
+| QC type tracking | Not tracked | New columns: `petn_qc_type`, `rdx_qc_type` |
+| Concentration check | Not included | **Added**: Must have concentration_dc > 0 to pass/warn |
+| Collation QC evaluation | Recalculates from SNR | **Reads pre-computed flags** from 03 |
+
+### Expected Impact
+
+**On ABS-S-2 dataset** (example from implementation discussion):
+
+| Metric | Before | After |
+|--------|--------|-------|
+| 6ng QC status | 5/5 PASS (bias <15%) | 5/5 PASS (unchanged) |
+| 0.2ng QC status | 1/5 PASS (bias) | 2 PASS, 2 WARN, 1 FAIL (SNR-based) |
+| Overall sequence status | PASS (6ng good) | PASS (6ng good, 0.2ng detectable) |
+| 0.2ng interpretation | "Failing quantitative accuracy" | "System sensitivity adequate (SNR≥3)" |
+
+### Plot Interpretation Guide
+
+#### 6ng QC Accuracy Plot
+
+- **X-axis**: Injection number (sequence position)
+- **Y-axis**: % Bias vs true concentration (6ng)
+- **Red dashed lines**: ±15% acceptance limits
+- **Points**: Shape indicates flag (circle = PASS, X = FAIL_BIAS, triangle = FAIL_SNR)
+- **Line**: Trend across sequence (should be near zero if drift correction effective)
+
+**Good pattern**: All points between ±15%, clustered near zero  
+**Problem pattern**: Progressive drift (points trend away from zero), outliers outside ±15%
+
+#### 0.2ng QC SNR Trend Plot
+
+- **X-axis**: Injection number (sequence position)
+- **Y-axis**: Signal-to-Noise Ratio (SNR)
+- **Green dashed line**: SNR = 10 (Pass threshold, LOQ)
+- **Orange dashed line**: SNR = 3 (Warn threshold, LOD)
+- **Points**: Shape indicates flag (circle = PASS, triangle = WARN, X = FAIL)
+- **Line**: SNR trend across sequence
+
+**Good pattern**: All points above SNR = 10 (green line)  
+**Acceptable pattern**: Points decline but stay above SNR = 3 (orange line)  
+**Problem pattern**: Points drop below SNR = 3 (system has lost detection capability)
+
+### References
+
+- **Validation approach**: Based on analysis of ABS-S-1, ABS-S-2, Lab10-1, and Lab17-1 datasets showing 0.2ng QCs consistently exhibit +35% to +70% bias regardless of 6ng QC performance
+- **SNR thresholds**: 
+  - SNR = 10: Established quantification threshold (10:1 S/N ratio, ICH Q2(R1) guidance)
+  - SNR = 3: Established detection threshold (3:1 S/N ratio, standard analytical practice)
+- **Trace-level adsorption**: Walsh & Ranney (1998), Emmrich et al. (2001) — nitrate esters and nitramines show non-proportional losses at trace levels
 
 ---
 
-### Follow-up (same day): Exhaustive Check -- Nothing Further Reduces RDX's Below-LOQ Rate Without Reanalysis
+## Column Organization (Updated June 2026)
 
-User's decision: PETN's calibration stays quadratic (not changed). Explicit follow-up question: is there ANYTHING else (short of physical reanalysis) that could reduce RDX's residual below-LOQ rate, beyond the QC-replicate LOD/LOQ fix already found (which rescued 35.0% of previously-flagged rows but left 45.1% still below)? Two further, previously-untested avenues checked:
+### Design Principles
 
-**1. Augmenting the quadratic fit itself with the 0.2ng QC replicates** (`Diagnostics/Generic/RDX_AugmentedCalibration_Test.R`, new) -- rather than using the QC replicates only as an independent SD estimate (the already-adopted fix), this pools them directly INTO the regression as extra low-end data points, scientifically legitimate since "QC" vs "Cal" is a sequence-log role label, not a different physical measurement. **Result: no reliable improvement** -- median LOQ improves only 1.13x, and the direction is inconsistent (16 of 30 calibration sets improve, 14 of 30 get WORSE). The global-curve-residual LOD/LOQ formula remains dominated by scatter across the whole 0.2-10ng range regardless of how many points sit at the low end -- confirming this is a structural limitation of that formula, not a data-quantity problem, and reinforcing why the QC-replicate-SD method (which bypasses the global residual entirely) was the one approach that actually worked.
+The column structure in all output XLSX files follows consistent organizational principles:
 
-**2. Pooling calibration data across datasets** (to statistically borrow strength from ~30 datasets' worth of 0.2ng Cal standards instead of 1 per dataset) -- checked for viability first by testing whether the RDX low-end curve SHAPE (ratio of the 0.2ng Cal response to the 6ng Cal response, a dimensionless measure of curvature independent of absolute drift level) is actually stable across datasets. **Result: not viable** -- CV = 33.4% across all 30 datasets (range 0.035-0.091), confirming the low-end shape itself varies substantially run-to-run. This is consistent with (and reinforces) the already-documented, separately-investigated RDX calendar-drift finding (item #15, closed 04/09/2026) -- pooling would blend genuinely different calibration behaviours from different time points into a misleading average, not a legitimate strengthening of the estimate.
+1. **Analyte grouping**: All PETN columns together, then all RDX columns together
+2. **Acceptance forward**: `analysis_accepted` and `Outcome` columns moved immediately after identifiers for quick reference
+3. **QC level ordering**: In individual lab QC sheets, 0.2ng QCs appear first, then 6ng QCs (ascending by concentration)
+4. **Consistent across sheets**: Same PETN→RDX grouping pattern applied to all sheet types (Calibration, QC, Samples, Blanks, NC)
 
-**Conclusion: the realistic, non-reanalysis option space for RDX is exhausted.** The three real, available levers are: (a) the QC-replicate-based LOD/LOQ reporting fix (adopted, 2.0x tighter, rescues 35% of flagged rows), (b) the already-known ABS/solvent exclusion (real, substantial, but leaves Steel's own 51.3% below-LOQ rate unexplained), and nothing else moves the needle. The remaining residual below-LOQ rate (45.1% even after the QC-replicate fix) should be documented as a genuine, intrinsic sensitivity/non-proportionality limitation of RDX quantification at trace levels -- consistent with this project's own extensively-documented trace-level adsorption/signal-loss literature (see "Filtering Study Results" and the RDX calendar-drift closure elsewhere in this file) -- not a fixable statistical or curve-fitting artifact.
+### Study-Level FINEX_StudyResults.xlsx
 
-**Files**: `Diagnostics/Generic/RDX_AugmentedCalibration_Test.R` (new). Output (new, in `ICH_LODLOQ_Output/`): `RDX_AugmentedCalibration_Detail.csv`. `CONTEXT.md` (this entry).
+#### Samples Sheet (35 columns: A-AI)
+
+| Column Range | Content | Count |
+|--------------|---------|-------|
+| **A-E** | Identifiers (Lab, Participant, Surface, SurfaceName, Repeat) | 5 |
+| **F-G** | Acceptance (analysis_accepted, Outcome) | 2 |
+| **H-S** | ALL PETN COLUMNS | 12 |
+| **T-AF** | ALL RDX COLUMNS | 12 |
+| **AG-AJ** | Source tracing (Date, SampleName, DataFile, SourceFile) | 4 |
+
+**PETN columns (H-S):**
+- H: Flag (petn_snr_flag)
+- I-J: Values (petn_concentration_dc, petn_recovery_dc)
+- K-N: QC brackets (petn_qc_6ng_pre/post, petn_qc_02ng_pre/post)
+- O-S: QC inherited flags (4 flags matching brackets above)
+
+**RDX columns (T-AF):** Same structure as PETN
+
+#### NC Sheet (26 columns: A-Z, restructured August 7, 2026)
+
+| Column Range | Content | Count |
+|--------------|---------|-------|
+| **A-D** | Identifiers (Lab, Participant, Surface, SurfaceName) | 4 |
+| **E** | Stage 1: `nc_analysis_accepted` -- was this injection/run analytically trustworthy? (PASS/PASS*/FAIL:, same vocabulary as the Samples sheet's `analysis_accepted`) | 1 |
+| **F** | Stage 2: `nc_result` -- contamination outcome (Negative (clean) / Positive: ... ), only meaningful when Stage 1 is PASS/PASS*; forced to "Not evaluated (analysis failed)" otherwise | 1 |
+| **G-J** | ALL PETN COLUMNS -- raw evidence behind Stage 2 | 4 |
+| **K-N** | ALL RDX COLUMNS -- raw evidence behind Stage 2 | 4 |
+| **O-P** | IS audit columns (rdx_is_snr_flag, rdx_is_pa_flag) -- basis for Stage 1 | 2 |
+| **Q-X** | QC bracket audit columns (petn/rdx_qc_6ng_pre/post, petn/rdx_qc_02ng_pre/post) -- basis for Stage 1 | 8 |
+| **Y-Z** (+ 2 more) | Source tracing (Date, SampleName, DataFile, SourceFile) | 4 |
+
+**PETN columns (G-J):** petn_snr_flag, petn_ph, petn_concentration_dc, petn_recovery_dc
+
+**RDX columns (K-N):** Same structure as PETN
+
+**Note (August 7, 2026)**: Restructured from the previous single `nc_status` + boolean `nc_analysis_valid` pair into an explicit two-stage `nc_analysis_accepted` / `nc_result` pair, mirroring the Samples sheet's `analysis_accepted`/`Outcome` pattern -- see "NC Evaluation Restructured into Two Explicit Stages" session summary above for full rationale. The 6ng QC bracket columns (Q-T) are new to this sheet as of this session (previously only the 0.2ng brackets were shown/checked for NCs).
+
+#### Per-Surface Sheets
+
+Per-surface sheets (Lab10_ABS-S, Lab10_S, etc.) automatically inherit the column order from the main Samples sheet.
+
+
+### Individual Lab {Lab}_GCMSResults.xlsx
+
+All sheets in individual lab XLSX files use consistent structure: **Identification → IS (15N-RDX) → ALL PETN → ALL RDX → Shared columns**
+
+#### Calibration Sheet
+
+- Identification: Date, Line, SampleName, DataFile, Vial, CalLevel, CalibrationSet
+- IS: rdx_is_rt, rdx_is_pa, rdx_is_snr, rdx_is_snr_flag
+- **PETN**: Raw (RT, PA, PH, SNR, SNR flag, ratio) → Quantitation (concentration, quant method) → Accuracy (percent_bias)
+- **RDX**: Same structure as PETN
+- Shared: TrueCalConcAdj
+
+#### QC Sheet
+
+- Identification: Date, Line, SampleName, DataFile, Vial, CalLevel, CalibrationSet
+- IS: rdx_is_rt, rdx_is_pa, rdx_is_snr, rdx_is_snr_flag
+- **PETN**: Raw → Quantitation (uncorrected) → Drift correction (factor, concentration_dc) → Accuracy (uncorrected %bias) → QC evaluation (type, flag) → Accuracy (drift-corrected %bias, flag_dc)
+- **RDX**: Same structure as PETN
+- Shared: TrueCalConcAdj
+
+**Row sorting:** QC sheet rows are sorted by `CalLevel` (ascending), then `Line`. This places 0.2ng QCs before 6ng QCs, matching the analytical progression from low to high concentration.
+
+#### Samples Sheet
+
+- Identification: Date, Line, SampleName, DataFile, Vial
+- IS: rdx_is_rt, rdx_is_pa, rdx_is_snr, rdx_is_snr_flag
+- **PETN**: Raw → Quantitation (uncorrected, incl. quant method) → Drift correction
+- **RDX**: Same structure as PETN
+
+#### Blanks Sheet
+
+- Identification: Date, Line, SampleName, DataFile, Vial
+- **PETN**: Raw signal only (RT, PA, PH, SNR, SNR flag)
+- **RDX**: Same structure as PETN
+
+(No IS columns or quantitation/concentrations in Blanks — raw signal data only)
+
+### Rationale
+
+**PETN first, RDX second:** PETN is the primary target analyte for most surfaces (typically higher recovery, more reliable signal). Placing all PETN columns together allows rapid visual scanning of PETN results without having to skip over interleaved RDX columns.
+
+**Acceptance columns forward (study-level Samples sheet):** `analysis_accepted` and `Outcome` are the most commonly referenced columns when reviewing sample batches. Placing them immediately after identifiers (columns F-G) allows quick filtering/sorting without scrolling right through all measurement data.
+
+**QC 0.2ng before 6ng (individual lab QC sheets):** Matches the analytical progression from low to high concentration when reviewing data. The 0.2ng QCs monitor LOQ-level sensitivity, while 6ng QCs monitor quantitative accuracy. Reviewing in ascending order is more intuitive.
+
+**Study-level vs lab-level QC order difference:** Study-level sheets prioritize 6ng QCs in bracket columns (columns L-O for 6ng, P-S for 0.2ng) because 6ng QCs define the acceptance criteria. Lab-level QC sheets prioritize 0.2ng rows first because they appear earlier in the sequence and ascending concentration order is more natural when reviewing raw data.
+
+**Consistent PETN→RDX grouping across all sheets:** Reduces cognitive load — users always know "PETN columns come first, then RDX" regardless of which sheet they're viewing.
+
+### Implementation
+
+**Files modified:**
+- `Code/04_CollateStudyResults.R`: Lines 748-794 (`desired_cols`, `desired_cols_nc`)
+- `Code/03_Quantification.R`: Lines 1849-1950 (`cal_cols`, `qc_cols`, `smp_cols`, `blk_cols`, QC row sorting)
+
+**Testing:** Verify column positions with known data (e.g., Lab10-1) and spot-check that values are in correct columns after reorganization.
 
 ---
 
-### Follow-up (same day): QC-Replicate LOD/LOQ Added to the Live Pipeline (Reporting-Only); Consolidated Narrative Written
+## Negative Control (NC) Evaluation Criteria (Updated June 2026)
 
-User's decision: add the QC-replicate-based LOD/LOQ to the live pipeline, but only as an additional **reported** metric -- not a new acceptance/gating criterion (operational SNR-based acceptance and the ICH-defensible validation LOD/LOQ stay deliberately separate, consistent with every other threshold-question resolution in this investigation).
+### Three-Tier Evaluation System
 
-**Implementation** (`Code/03_Quantification.R`): new block inserted immediately before "Export final results" (i.e. after BOTH PETN drift correction and RDX's own concentration are fully finalised -- the pre-existing "Calibration Statistics Excel Export" block, ~line 760, runs too early for `petn_concentration_dc` to exist yet). Computes `{Analyte}_LOD_QCReplicate_ng`/`{Analyte}_LOQ_QCReplicate_ng` per `CalibrationSet` from the 0.2ng QC rows' already-computed concentrations (requires >=4 usable replicates, else `NA` -- not fabricated), merges into the already-built `cal_stats_wide` object (still in memory from the earlier export), and re-writes `*_CalibrationStats.xlsx`.
+Negative controls are evaluated using **three independent criteria** (any can trigger WARN/FAIL):
 
-**A real near-miss caught during testing**: the first test run was intended against `Lab9` but silently processed `Analysis4` (ASTRA Main Study) instead -- `.preset_DataFolder`/`.preset_study_type` were set directly in the test script, but `GlobalCode.R`'s own preamble (`.preset_DataFolder <- if (exists("DataFolder", inherits=FALSE)) DataFolder else NULL; rm(list=setdiff(ls(), c(...)))`) immediately overwrites them by checking for a variable literally named `DataFolder`, not `.preset_DataFolder` -- the correct pattern (matching `RunAllDatasets.R`) is to set `DataFolder`/`study_type` directly, which `GlobalCode.R` itself then captures into `.preset_*` before its own reset. Caught immediately from the console output (wrong dataset name in every log line); verified **zero regression** before proceeding further (Analysis4's own pre-existing `_GCMSResults.csv`, automatically backed up before the overwrite per the established mechanism, diffed byte-identical across all 89 columns against the post-run file) -- the new code's own correctness was unaffected by the mistake, but it's recorded here as a cautionary note for future one-off interactive test runs, same category as this file's own prior "self-inflicted DataFolder regression" entries.
+#### 1. SNR Flag Criteria
+- **FAIL**: SNR flag = `Quantifiable` (analyte clearly present, contamination confirmed)
+- **WARN**: SNR flag = `Below_LOQ` (trace detected but not quantifiable)
+- **PASS**: SNR flag = `Below_LOD` or NA (no analyte detected)
 
-**Re-tested correctly against Lab9** (FINEX): zero regression (90/90 columns byte-identical), new RDX LOD/LOQ = 0.0470/0.1423 ng, exactly matching the standalone diagnostic script's own hand-verified figure for this same dataset. PETN came back `NA` (Lab9 has only 3 of 5 0.2ng QC replicates with a non-NA concentration, below the 4-replicate minimum) -- correct, conservative behaviour, not a bug.
+#### 2. Peak Height Criteria (NEW - June 2026)
+- **WARN**: Peak height detected (PH > 0) but below minimum threshold
+  - PETN: `0 < PH < 200` (MinPeakHeight_PETN from GlobalCode.R)
+  - RDX: `0 < PH < 50` (MinPeakHeight_RDX from GlobalCode.R)
+- **Rationale**: Catches trace contamination/carryover that passes SNR criteria (due to low noise) but fails absolute signal threshold
 
-**`FINEX/04_CollateStudyResults.R`'s `CalSummary` sheet updated** to retain the new columns -- its existing column-reorganisation step does a hard `select(all_of(c(id_cols, petn_cols, rdx_cols, is_cols)))` that would otherwise have silently dropped them (neither `PETN_LOD_QCReplicate_ng` nor `PETN_LOQ_QCReplicate_ng` match the existing `petn_cols`/`rdx_cols` grep patterns, which look for the keyword at the *start* of the column name). ASTRA's own `main_study_analysis.R`/`pilot_analysis.R` CalSummary-equivalents read calibration stats files via a plain `bind_rows()` with no equivalent hard select -- confirmed these pick up the new columns automatically, no changes needed there.
+#### 3. Concentration Criteria (NEW - June 2026)
+- **WARN**: Concentration (drift-corrected) == 0
+- **Rationale**: A concentration of exactly 0 indicates:
+  - A peak was detected (otherwise concentration would be NA)
+  - Negative extrapolation was floored at zero in quadratic solver (`solve_concentration()`)
+  - Real signal present below calibration range (trace contamination)
 
-**Not yet done**: a full reprocessing run across all 30 datasets to populate this column everywhere (currently populated only for the 2 datasets touched during testing, Lab9 and Analysis4). Purely additive and low-risk whenever convenient -- not done this session since it wasn't explicitly requested.
+### Priority Logic
 
-**Update (same day): full reprocessing completed.** Ran all 30 datasets -- FINEX via `FINEX/RunAllDatasets.R` (19 datasets, 2.7 minutes total, `reprocess_tic`/`reprocess_sim` both `FALSE` so only quantification/export re-ran, not raw-signal processing; all 19 `SUCCESS`, 0 failures per `BatchProcessing_Log.csv`), ASTRA via 11 individual isolated `DataFolder`/`study_type` runs (Main Study: Analysis1-4 + Oustanding samples 5; Pilot Study: Analysis1/3/4/5/6/7 -- no ASTRA-side batch runner exists, so run as a loop with the same isolated-environment pattern `RunAllDatasets.R` itself uses). All 11 `SUCCESS`, 0 failures.
+For each analyte, classification follows **first-match priority**:
+1. Concentration_dc == 0 → **trace** (WARN) - *Peak below calibration range*
+2. SNR = `Quantifiable` → **contaminated** (FAIL) - *Quantifiable contamination*
+3. 0 < PH < threshold → **trace** (WARN) - *Low peak height*
+4. SNR = `Below_LOQ` → **trace** (WARN) - *Trace detected*
+5. SNR = `Below_LOD` or NA → **clean** (PASS) - *No detection*
 
-**Verification**: spot-checked 5 datasets (Analysis1/Analysis3 Main, Analysis5 Pilot, Lab29, Steel 5) against their own automatic pre-overwrite backups (the existing `Results/Backup/` mechanism) -- **zero mismatches across every pre-existing column** in all 5 (76-115 columns each depending on dataset). `CalSummary`/the per-dataset `_CalibrationStats.xlsx` now carry the new QC-replicate LOD/LOQ columns for all 30 datasets (`NA` where a dataset has fewer than 4 usable 0.2ng QC replicates for a given analyte -- e.g. several ASTRA Pilot datasets for both analytes, `Lab9`/`Steel 4` for PETN specifically -- exactly the designed conservative behaviour, not a bug).
+**Rationale for priority order:**
+- Concentration == 0 indicates negative extrapolation (peak below lowest calibrator)
+- This is trace contamination (WARN), not full contamination (FAIL)
+- Takes priority over SNR evaluation because it provides concentration-specific context
+- Prevents false positives where low peaks quantify to 0 but are flagged as full contamination
 
-**Files**: all 30 datasets' `*_CalibrationStats.xlsx` regenerated with the new columns (`_GCMSResults.csv`/`.xlsx` confirmed unchanged by the spot-check above). `FINEX_StudyResults.csv`/`.xlsx` regenerated (`CalSummary` sheet now carries the new columns for all 19 FINEX datasets). ASTRA's own `main_study_results.xlsx`/`ASTRA_PilotStudyResults.xlsx`-equivalent CalSummary sheets were **not** separately regenerated this session (that requires re-running `main_study_analysis.R`/`pilot_analysis.R` themselves, not just `GlobalCode.R` per dataset) -- the per-dataset `_CalibrationStats.xlsx` files they read from are ready whenever that's next done.
+### Combined Status
 
-**Consolidated narrative**: `Diagnostics/Generic/ICH_LODLOQ_Output/LODLOQ_Investigation_Narrative.md` (new) -- a single, thesis-ready write-up of the entire investigation (motivation, SD-vs-peak-to-peak measurement, ICH calibration-curve validation, real-data impact simulation, surface breakdown, the adopted QC-replicate fix, the calibration-model-comparison and exhaustive-check follow-ups, live-pipeline integration, full reference list), superseding the need to read through the 7 separate chronological session entries above for citation purposes.
+**Note (August 7, 2026)**: The labels below (`NC PASS`/`NC WARN`/`NC FAIL`) are the *historical* names for this classification, from when it was the sheet's only status column. As of August 7, 2026 this classification is `nc_result` (Stage 2 -- contamination outcome), relabelled `Negative (clean)` / `Positive: ...`, and is only reported at all if `nc_analysis_accepted` (Stage 1 -- run trustworthiness, checked first) is PASS/PASS* -- see "NC Evaluation Restructured into Two Explicit Stages" session summary above. The underlying SNR/PH/concentration classification logic itself is unchanged.
 
-**Files**: `Code/03_Quantification.R` (new QC-replicate LOD/LOQ block before "Export final results"), `FINEX/04_CollateStudyResults.R` (`petn_cols`/`rdx_cols` extended to retain the new columns in `CalSummary`), `Lab9`/`Analysis4`'s `_CalibrationStats.xlsx` (regenerated with the new columns; `_GCMSResults.csv`/`.xlsx` unchanged, confirmed byte-identical), `Diagnostics/Generic/ICH_LODLOQ_Output/LODLOQ_Investigation_Narrative.md` (new). `CONTEXT.md` (this entry).
+| PETN Status | RDX Status | NC Status (historical name) | `nc_result` (current name) |
+|-------------|------------|-----------|-----------|
+| contaminated | contaminated | NC FAIL: PETN + RDX contaminated | Positive: PETN + RDX contaminated |
+| contaminated | clean/trace | NC FAIL: PETN contaminated | Positive: PETN contaminated |
+| clean/trace | contaminated | NC FAIL: RDX contaminated | Positive: RDX contaminated |
+| trace | trace | NC WARN: PETN + RDX trace detected | Positive: PETN + RDX trace detected |
+| trace | clean | NC WARN: PETN trace detected | Positive: PETN trace detected |
+| clean | trace | NC WARN: RDX trace detected | Positive: RDX trace detected |
+| clean | clean | NC PASS | Negative (clean) |
+
+### Implementation
+
+**File**: `Code/04_CollateStudyResults.R`, function `compute_nc_result()` (Stage 2; was `compute_nc_status()` prior to August 7, 2026)
+
+**Columns evaluated**:
+- `petn_snr_flag`, `rdx_snr_flag` (SNR criteria - primary)
+- `petn_ph`, `rdx_ph` (peak height criteria - now visible in NC sheet)
+- `petn_concentration_dc` (PETN drift-corrected, preferred)
+- `petn_concentration` (fallback if DC not available)
+- `rdx_concentration` (RDX uncorrected, no drift correction typically applied)
+
+**Thresholds**:
+- PETN PH threshold: 200 (from `MinPeakHeight_PETN` in GlobalCode.R)
+- RDX PH threshold: 50 (from `MinPeakHeight_RDX` in GlobalCode.R)
+
+### Example Cases
+
+| Scenario | PETN PH | PETN SNR | PETN Conc (dc) | Old Status | New Status |
+|----------|---------|----------|----------------|------------|------------|
+| Clean NC | NA | Below_LOD | NA | NC PASS | NC PASS |
+| Trace carryover | 150 | Below_LOQ | 0.05 | NC WARN | NC WARN |
+| **Peak below cal range** | 300 | Quantifiable | **0** | **NC FAIL** | **NC WARN** (fixed) |
+| Low PH, no quantification | 180 | Below_LOD | NA | NC PASS | **NC WARN** (new) |
+| Clear contamination | 5000 | Quantifiable | 0.5 | NC FAIL | NC FAIL |
+| Very low carryover | 40 | Below_LOD | NA | NC PASS | **NC WARN** (new) |
+
+**Key improvements**:
+- **Fixes concentration == 0 + SNR Quantifiable**: Now correctly shows WARN (trace) instead of FAIL (contaminated)
+- Catches low PH peaks that pass SNR due to low noise baseline
+- Uses drift-corrected concentrations for PETN (more accurate evaluation)
+- More sensitive to trace contamination/carryover
+
+### NC Sheet Columns
+
+The NC sheet in `FINEX_StudyResults.xlsx` includes diagnostic columns:
+
+| Column | Purpose |
+|--------|---------|
+| `nc_analysis_accepted` (Stage 1, restructured August 7, 2026) | Was this NC injection/run analytically trustworthy? PASS/PASS*/FAIL:, checked from IS validity + BOTH 6ng and 0.2ng QC brackets -- same criteria family as the Samples sheet's `analysis_accepted`. Must be PASS/PASS* for `nc_result` below to be meaningful. |
+| `nc_result` (Stage 2, restructured August 7, 2026) | Contamination outcome -- `Negative (clean)` / `Positive: ...` -- ONLY evaluated when `nc_analysis_accepted` is PASS/PASS*; forced to `"Not evaluated (analysis failed)"` otherwise, regardless of the raw SNR/PH/concentration signal. |
+| `petn_snr_flag`, `rdx_snr_flag` | Primary SNR-based evidence behind `nc_result` |
+| `petn_ph`, `rdx_ph` | Peak height evidence behind `nc_result` |
+| `petn_concentration_dc`, `rdx_concentration` | Quantified amounts (if detected) -- evidence behind `nc_result` |
+| `rdx_is_snr_flag`, `rdx_is_pa_flag` | IS evidence behind `nc_analysis_accepted` |
+| `petn_qc_6ng_pre/post`, `rdx_qc_6ng_pre/post` (added August 7, 2026) | 6ng QC bracket evidence behind `nc_analysis_accepted` -- previously computed for every Sample-type row (NCs included) but not shown on this sheet |
+| `petn_qc_02ng_pre/post`, `rdx_qc_02ng_pre/post` | 0.2ng QC bracket evidence behind `nc_analysis_accepted` |
+
+### Expected Impact
+
+**On typical datasets:**
+- NCs with concentration == 0 will now show **NC WARN** instead of potentially NC PASS
+- NCs with low PH (below 200/50 but > 0) will trigger **NC WARN**
+- No impact on clean NCs (Below_LOD, no peak) or heavily contaminated NCs (Quantifiable)
+- Better catches edge cases of trace contamination and carryover
+
+**Estimated change in NC pass rate:**
+- **Previous**: ~70-80% PASS, ~10-15% WARN, ~10-15% FAIL
+- **After**: ~60-70% PASS, ~20-25% WARN, ~10-15% FAIL (more sensitive to trace)
+
+### Rationale for Each Criterion
+
+**Why SNR alone is insufficient:**
+- SNR is relative to local noise
+- In sequences with very clean baselines (low noise), trace peaks can appear to have "good" SNR
+- Absolute signal threshold (PH) catches these cases
+
+**Why PH threshold matters:**
+- PH = 200/50 thresholds validated against blank noise in real datasets
+- Below these thresholds, peak integration becomes unreliable
+- Catches instrument carryover that produces small but reproducible peaks
+
+**Why concentration == 0 is contamination:**
+- `solve_concentration()` returns 0 only when:
+  - A peak was detected (PA > 0)
+  - Quadratic extrapolation gave negative concentration
+  - Result was floored at 0 (Code/03_Quantification.R, line 107)
+- This is NOT a clean NC - it's a real peak below the lowest calibrator
+- Should be flagged as trace contamination (WARN)
+
+### Comparison to Previous Approach
+
+| Aspect | Previous (pre-June 2026) | Current (June 2026) |
+|--------|--------------------------|---------------------|
+| Evaluation criteria | SNR flag only | **SNR + PH + Concentration** |
+| Concentration == 0 | Not checked | **WARN** (trace detected) |
+| Low PH (< threshold) | Not checked | **WARN** (trace detected) |
+| Columns in NC sheet | SNR flags, concentrations | **Added: petn_ph, rdx_ph** |
+| Sensitivity to trace | Moderate (SNR-based) | **High** (three-tier) |
+| PASS rate (typical) | ~75% | ~65% (more stringent) |
+
+---
+
+## Batch Processing (June 2026)
+
+### RunAllDatasets.R - Automated Batch Processing
+
+**Purpose**: Process all datasets in the Accepted Analysis folder automatically without manually changing `DataFolder` in GlobalCode.R for each run.
+
+**Usage**:
+```r
+# 1. Configure GlobalCode.R settings (RTs, thresholds, drift correction)
+# 2. Set reprocessing flags in Code/02_PeakDetection.R if needed
+# 3. Run batch script:
+source("RunAllDatasets.R")
+```
+
+**Behavior**:
+- Discovers all subdirectories in Accepted Analysis folder
+- Excludes "Plots" folder (case-insensitive)
+- Validates each dataset (checks for .LOG file, .ms1 data)
+- Processes each dataset in isolated environment (no variable contamination)
+- Continues on error (doesn't stop entire batch)
+- Logs success/failure for each dataset
+- Always runs `04_CollateStudyResults.R` at end
+- Respects reprocessing flags in `02_PeakDetection.R`
+- Uses same GlobalCode.R settings for all datasets
+
+**Outputs**:
+- Individual `Results/` folders per dataset (as usual)
+- `BatchProcessing_Log.csv` in Accepted Analysis folder (summary)
+- `FINEX_StudyResults.xlsx` (collated study results)
+
+**Configuration** (top of `RunAllDatasets.R`):
+```r
+accepted_analysis_dir <- "path/to/Accepted Analysis"
+exclude_folders <- c("Plots")  # Case-insensitive
+```
+
+**Validation per dataset**:
+- Checks for sequence .LOG file
+- Checks for GcDataConverterMs/ or RawData/ directory
+- Checks for .ms1 files
+- Skips invalid datasets with warning
+
+**Error handling**:
+- Validation failures: Logged as "SKIPPED"
+- Processing errors: Logged as "FAILED" with error message
+- Continues to next dataset regardless
+- Reports all failures at end
+
+**Isolated execution**:
+- Each dataset runs in `new.env(parent = .GlobalEnv)`
+- GlobalCode.R variables (DataFolder, analytes, etc.) isolated per dataset
+- No variable leakage between iterations
+- Same behavior as manual single-dataset processing
+
+**Performance**:
+- Progress indicator: `[Progress: 5/37]`
+- Timer for total elapsed time
+- Garbage collection between datasets (`gc()`)
+- Typical runtime: ~5-10 minutes per dataset (depends on reprocessing flags)
+
+**Example output**:
+```
+========================================
+BATCH PROCESSING: FINEX Swabbing Study
+========================================
+
+Found 37 datasets (excluding: Plots)
+
+[Progress: 1/37]
+Processing: ABS-S-1
+✓ SUCCESS: ABS-S-1
+
+[Progress: 2/37]
+Processing: ABS-S-2
+✓ SUCCESS: ABS-S-2
+
+[... more datasets ...]
+
+========================================
+BATCH PROCESSING COMPLETE
+========================================
+Total datasets: 37
+Successful: 35
+Failed: 2
+Skipped: 0
+Elapsed time: 185.3 minutes
+
+--- FAILED DATASETS ---
+  1. Lab22-1
+     Error: RTs not found (check GlobalCode.R RTs for V9 method)
+  2. Lab30
+     Error: Sequence log parse error
+
+Processing log saved to: .../Accepted Analysis/BatchProcessing_Log.csv
+
+========================================
+Running CollateStudyResults...
+========================================
+
+✓ Collation complete (2.1 minutes)
+
+========================================
+ALL PROCESSING COMPLETE
+========================================
+Total time: 187.4 minutes
+```
+
+**BatchProcessing_Log.csv format**:
+| Dataset | Status | Error |
+|---------|--------|-------|
+| ABS-S-1 | SUCCESS | |
+| ABS-S-2 | SUCCESS | |
+| Lab22-1 | FAILED | RTs not found (check GlobalCode.R RTs for V9 method) |
+| Lab30 | SKIPPED | Validation failed: No .ms1 files found |
+
+**Advantages over manual processing**:
+- ✅ Process 37+ datasets unattended (overnight run)
+- ✅ Consistent settings across all datasets
+- ✅ Automatic error recovery (doesn't stop on failure)
+- ✅ Full audit trail (log file)
+- ✅ No risk of forgetting to change DataFolder
+- ✅ Individual Results/ folders preserved (same as manual)
+- ✅ Respects all existing flags and settings
+
+**Limitations**:
+- Same GlobalCode.R settings for all datasets (assumes all use same method)
+- For mixed methods (V8/V9 RTs), either:
+  - Process V8 datasets first, then manually update RTs and rerun for V9 datasets
+  - Or modify script to support per-dataset RT overrides (advanced)
+
+---
+
+## Project Structure (Consolidated - May 2026)
+
+```
+GCMSQuantitation/
+├── GlobalCode.R              # Main configuration (set DataFolder, RTs, toggle use_15nrdx_for_petn)
+├── RunAllDatasets.R          # Batch processing script (NEW - June 2026)
+├── Code/                     # Active pipeline scripts
+│   ├── 01_MsFilesReorganiser.R  # Convert .ms1 files to TIC/SIM CSVs
+│   ├── 02_PeakDetection.R        # Peak detection and integration
+│   ├── 03_Quantification.R       # Calibration, quantification, drift correction
+│   ├── 04_CollateStudyResults.R  # Collate results across all runs
+│   ├── 05_StatisticalAnalysis.R  # Statistical analysis of recovery data
+│   └── ModPeaks.R                # Signal processing functions
+├── Diagnostics/               # Diagnostic/analysis scripts
+│   ├── SequenceDiagnostics.R
+│   ├── DriftCorrectionComparison.R
+│   ├── DriftCorrectionDiagram.R
+│   ├── Partial_Drift_Correction.R  # Apply drift correction to specific region
+│   ├── SplitDualMethod.R
+│   └── DualMethodProcess.R
+├── Archive/                  # Deprecated scripts (for reference)
+│   ├── Legacy_Code/          # Original Code/ folder contents
+│   ├── v1-NoNG/              # Previous v1-NoNG folder
+│   └── v2-NG_Deprecated/     # Previous v2-NG/Code/ contents
+├── Test Data/                # Example output (documentation)
+└── CONTEXT.md                # This file
+```
+
+## Pipeline Architecture
+
+Sequential stages, orchestrated from `GlobalCode.R`:
+
+| Stage | Script | Purpose |
+|---|---|---|
+| 0 | `GlobalCode.R` | Configuration, constants, library loading. Sources `Code/ModPeaks.R`. |
+| 1 | `Code/01_MsFilesReorganiser.R` | Convert `.ms1` files to structured TIC/SIM CSVs |
+| 2 | `Code/02_PeakDetection.R` | Signal processing: baseline correction, peak detection, SNR, integration |
+| 3 | `Code/03_Quantification.R` | Parse sequence logs, build calibrations, quantify unknowns, QC assessment |
+| 4 | `Code/04_CollateStudyResults.R` | (Optional) Collate all runs into study-level dataset |
+| 5 | `Code/05_StatisticalAnalysis.R` | (Optional) Statistical analysis of recovery variance components |
+
+**NG (nitroglycerin) has been removed** from the current pipeline. Only 15N-RDX (m/z 122) is used as the internal standard for both PETN and RDX ratio calibration.
+
+### Configuration Toggle
+
+In `GlobalCode.R`:
+```r
+use_15nrdx_for_petn <- TRUE   # TRUE: PETN uses 15N-RDX IS for ratio calibration
+                               # FALSE: PETN uses PA only (no ratio)
+```
+
+Data flow: Raw Agilent `.D` files -> ProteoWizard MSConvert -> `.ms1` -> R pipeline -> calibration plots + quantitated results (CSV/XLSX/PNG)
+
+### ModPeaks.R -- Signal Processing Engine (v2-NG: 632 lines)
+
+**File**: `Code/ModPeaks.R` (sourced by GlobalCode.R)
+
+Contains the core signal processing functions used by Test.R:
+
+| Function | Purpose |
+|---|---|
+| `ModPeaks()` | Peak detection algorithm: sweeps threshold levels to find peaks above minimum peak height/width |
+| `apply_baseline_correction()` | Rolling-ball baseline correction via the `baseline` package |
+| `deinterleave_sim()` | Removes interleaved SIM scan-group pairs, keeping only Group B (higher-intensity second scan) |
+| `trapz_area()` | Trapezoidal integration of retention-time/intensity pairs |
+| `process_sim_channel()` | Full SIM channel pipeline: m/z filter (+/- 0.5 Da) -> deinterleave -> smooth -> baseline correct -> RT window filter -> peak detect |
+| `calculate_snr()` | Signal-to-noise ratio: peak_height / sd(noise_region) |
+| `extract_peak_area()` | Peak area extraction with SNR-based acceptance filter (Below_LOD / Below_LOQ / Quantifiable) |
+| `plot_integration()` | Generates integration verification TIFF plots showing baseline, peak, integration boundaries, and annotations |
+
+## Study Context: FINEX Swabbing Study
+
+Analysing swab samples for explosives (PETN, RDX) across multiple laboratories.
+
+### Study Design
+
+- **Labs**: 1 to 37
+- **Participants per lab**: 1 or 2 (some labs only have 1)
+- **Surfaces per participant**: Steel (S), Glass (G), ABS-Smooth (ABS-S), ABS-Textured (ABS-T)
+- **Repeats per set**: 6 samples + 1 negative control (NC)
+- **Sample naming convention**: `Lab18 P1 S3` (Lab, Participant, Surface+Repeat) or `Lab18 P1 S NC` (negative control)
+
+### Sample Preparation
+
+- Cotton Q-tip swabs with wooden stick (majority of stick cut off after swabbing)
+- Swabs pre-cleaned: soaked overnight in acetone, dried before use
+- Extraction: swab tips sonicated in ethanol for 2 minutes
+- Internal standards (15N-RDX and NG) added **post-extraction** to the vial
+- IS added post-extraction by design: ensures constant IS amount per injection to track GC performance only
+
+### Data Folder Structure
+
+Each GC-MS sequence run lives in its own folder under:
+```
+C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/FINEX Swabbing Study/
+```
+Examples:
+- `Lab14-Glass/` (single run)
+- `Lab18/Lab 18 -1/` (steel), `Lab18/Lab 18 -2/` (ABS-S)
+
+Each folder contains: RawData/, GcDataConverterMs/, GcDataConvertedRcode/, GcData/, Results/
+
+`DataFolder` in `GlobalCode.R` is changed manually for each run.
+
+## Known Issues / Bug Fixes
+
+### dplyr 1.1.4 Compatibility Issue (June 2026)
+
+**Problem**: Pipeline fails during peak detection (02_PeakDetection.R) with error:
+```
+Error in `dplyr::filter()`:
+! Can't specify an argument named `by` in this verb.
+ℹ Did you mean to use `.by` instead?
+```
+
+**Location**: `Code/ModPeaks.R`, line 460 in `extract_peak_area()` function
+
+**Root cause**: dplyr 1.1.0+ introduced stricter argument checking. While no explicit `by=` argument exists in the code, the error suggests a parameter interpretation issue specific to this version.
+
+**Original code affected** (7 locations in ModPeaks.R):
+
+```r
+# Line 249-251: process_sim_channel()
+channel_data <- raw_data %>%
+  dplyr::filter(abs(Mass - mz) < 0.5) %>%
+  dplyr::select(RetentionTime, Intensity) %>%
+  dplyr::filter(RetentionTime < rt_upper_limit)
+
+# Line 367-370: calculate_snr()
+noise_data <- baseline_corrected %>%
+  dplyr::filter(
+    RetentionTime >= noise_window[1] &
+    RetentionTime <= noise_window[2]
+  )
+
+# Line 460: extract_peak_area() -- ERROR LOCATION
+candidate <- peaks %>%
+  dplyr::filter(x < (expected_rt + rt_tolerance) & x > (expected_rt - rt_tolerance))
+
+# Line 481: extract_peak_area()
+peak_data <- signal %>%
+  dplyr::filter(dplyr::between(RTime, lmin, lmax))
+
+# Line 567: plot_integration()
+plot_data <- baseline_corrected %>%
+  dplyr::filter(RetentionTime >= plot_min & RetentionTime <= plot_max)
+
+# Line 573: plot_integration()
+peak_data_plot <- peak_data %>%
+  dplyr::filter(dplyr::between(RTime, lmin, lmax))
+```
+
+**Fix applied** (June 12, 2026): Replaced all `dplyr::filter()` calls with base R subsetting using `[row_condition, , drop = FALSE]` syntax. This eliminates the dplyr dependency for filtering operations and avoids the argument interpretation issue entirely.
+
+**Replacement examples**:
+
+```r
+# Line 249-251: Before
+channel_data <- raw_data %>%
+  dplyr::filter(abs(Mass - mz) < 0.5) %>%
+  dplyr::select(RetentionTime, Intensity) %>%
+  dplyr::filter(RetentionTime < rt_upper_limit)
+
+# Line 249-251: After
+channel_data <- raw_data[abs(raw_data$Mass - mz) < 0.5, , drop = FALSE]
+channel_data <- channel_data[, c("RetentionTime", "Intensity"), drop = FALSE]
+channel_data <- channel_data[channel_data$RetentionTime < rt_upper_limit, , drop = FALSE]
+
+# Line 460 (ERROR LOCATION): Before
+candidate <- peaks %>%
+  dplyr::filter(x < (expected_rt + rt_tolerance) & x > (expected_rt - rt_tolerance))
+
+# Line 460: After
+candidate <- peaks[
+  peaks$x < (expected_rt + rt_tolerance) & 
+  peaks$x > (expected_rt - rt_tolerance),
+  , drop = FALSE
+]
+
+# Line 481: Before
+peak_data <- signal %>%
+  dplyr::filter(dplyr::between(RTime, lmin, lmax))
+
+# Line 481: After
+peak_data <- signal[
+  signal$RTime >= lmin & signal$RTime <= lmax,
+  , drop = FALSE
+]
+```
+
+**Verification**: Confirmed no `dplyr::filter()` calls remain in ModPeaks.R using `grep -n "dplyr::filter"` (no output = all replaced).
+
+**Files modified**: `Code/ModPeaks.R` (7 locations: lines 249-251, 367-370, 460, 481, 567, 573)
+
+---
+
+
+## PART 2: SESSION LOG -- RECENT (newest-first, July 31 - October 6, 2026)
+
+---
+
+## Session Summary (October 6, 2026) -- Independent ICH Q2(R2) Calibration-Curve LOD/LOQ Added as a Cross-Check Against the Live SD-Based SNR System
+
+**Full write-up moved to**: `Diagnostics/Generic/ICH_LODLOQ_Output/LODLOQ_Investigation_Narrative.md` -- a consolidated, thesis-ready document covering the complete investigation (motivation, SD-vs-peak-to-peak measurement, ICH calibration-curve validation, real-data impact simulation, surface breakdown, the adopted QC-replicate fix, calibration-model-comparison and exhaustive-check follow-ups, live-pipeline integration, full references). The 7 same-day "Follow-up" entries previously written out in full here have been condensed into this pointer, per that document's own note that it supersedes them for citation purposes. (Condensed during the October 2026 documentation cleanup; the original full entries remain in git history.)
+
+**Summary**: Investigated whether the live SNR-based (SD convention) detection/quantification thresholds are consistent with ICH Q2(R2)'s independent calibration-curve LOD/LOQ method. Found the live system calls results "Quantifiable" roughly 10-20x below where the ICH method would place the LOQ. Tested several candidate fixes (QC-replicate-based LOD/LOQ, alternative calibration models, augmented/pooled calibration data); adopted the QC-replicate-based LOD/LOQ, added to the live pipeline as an additional **reported** metric only (not a new acceptance/gating criterion -- operational SNR-based acceptance and this ICH-defensible validation number stay deliberately separate). This rescues ~35-43% of previously-flagged below-ICH-LOQ rows. RDX's residual below-LOQ rate (45.1% even after the fix) is documented as a genuine, intrinsic sensitivity/non-proportionality limitation of RDX quantification at trace levels, not a fixable statistical or curve-fitting artifact.
+
+**Files Modified**: `Diagnostics/Generic/ICH_CalibrationCurve_LODLOQ.R`, `SNR_Threshold_Impact_Simulation.R`, `RDX_PETN_BelowLOQ_BySurface.R`, `ReplicateQC_LowLevel_LODLOQ.R`, `CalibrationModel_Comparison.R`, `RDX_AugmentedCalibration_Test.R` (all new, read-only diagnostics; outputs in `Diagnostics/Generic/ICH_LODLOQ_Output/`). `Code/03_Quantification.R` (new QC-replicate LOD/LOQ block added before "Export final results"). `FINEX/04_CollateStudyResults.R` (`petn_cols`/`rdx_cols` extended to retain the new columns in `CalSummary`). All 30 datasets reprocessed and spot-verified byte-identical on every pre-existing column. `Diagnostics/Generic/ICH_LODLOQ_Output/LODLOQ_Investigation_Narrative.md` (new, see above). `CONTEXT.md` (this entry).
 
 ---
 
@@ -1533,831 +2300,10 @@ Note: `Lab14 P2 S4/S5/S6` are a distinct anomaly pattern -- `petn_snr_flag`/`rdx
 
 ---
 
-## QC Monitoring Strategy (Updated June 2026)
 
-### Two-Tier QC System
+## PART 3: EARLIER PROJECT HISTORY (preserved in original order)
 
-The QC monitoring system uses **two separate evaluation strategies** depending on QC level:
-
-#### 1. Quantitative QCs (6ng level)
-
-**Purpose**: Monitor drift correction accuracy and quantitative performance
-
-**Criteria**:
-- **Bias limit**: ±15% (configurable via `qc_bias_limit` in GlobalCode.R)
-- **SNR threshold**: ≥10 for quantifiable
-
-**Flags**:
-- `PASS`: |%bias| ≤ 15% AND SNR ≥ 10
-- `FAIL_BIAS`: |%bias| > 15%
-- `FAIL_SNR`: SNR < 10
-- `FAIL`: General failure (no concentration)
-
-**Used for**:
-- Drift model fitting (power law or polynomial)
-- Sequence acceptance criteria
-- Calibration validation
-
-**Plots generated**:
-- `{Analyte}_QC_6ng_Accuracy.png`: %Bias vs injection number (with ±15% reference lines)
-- `{Analyte}_QC_6ng_Accuracy_DriftCorrected.png`: Drift-corrected %bias (PETN/RDX when applicable)
-
-#### 2. Sensitivity QCs (0.2ng level)
-
-**Purpose**: Monitor system detection capability at trace levels
-
-**Criteria**: SNR thresholds AND quantifiability check (drift-corrected only)
-
-**Uncorrected flags (`petn_qc_flag`, `rdx_qc_flag`)**: 
-- SNR-only evaluation (no longer used in current pipeline)
-- Retained for legacy compatibility
-
-**Drift-corrected flags (`petn_qc_flag_dc`, `rdx_qc_flag_dc`)**: 
-- **Primary evaluation method** (used for all QC acceptance decisions)
-- **Pass**: SNR ≥ 10 AND drift-corrected concentration > 0
-- **Warn**: 3 ≤ SNR < 10 AND drift-corrected concentration > 0
-- **Fail**: SNR < 3 OR drift-corrected concentration ≤ 0 OR concentration is NA
-
-**Three-component check:**
-1. **Concentration > 0**: Verifies drift correction restored quantifiability (peak above calibration extrapolation threshold) — checked FIRST
-2. **SNR ≥ 3**: Verifies system detection capability (signal above noise floor)
-3. **SNR ≥ 10**: Distinguishes good sensitivity (PASS) from marginal but acceptable (WARN)
-
-**Rationale**: 
-- A 0.2ng QC that is detected (good SNR) but returns concentration = 0 indicates the drift correction was insufficient to restore quantifiability
-- This represents a **dual failure**: drift correction performance inadequate to compensate for signal loss
-- Even though the analyte was technically "detected," the system failed to quantify it at trace levels
-- SNR thresholds distinguish between robust quantification (≥10, PASS) and marginal but acceptable (3-10, WARN)
-
-**Flags**:
-- `SENSITIVITY_CHECK_PASS`: SNR ≥ 10 AND concentration_dc > 0
-- `SENSITIVITY_CHECK_WARN`: 3 ≤ SNR < 10 AND concentration_dc > 0
-- `SENSITIVITY_CHECK_FAIL`: SNR < 3 OR concentration_dc ≤ 0
-
-**Used for**:
-- System sensitivity trending (both detection and quantification)
-- Drift correction effectiveness assessment
-- Confirming the system can quantify trace contamination after drift correction
-
-**Plots generated**:
-- `{Analyte}_QC_0p2ng_SNR_Trend.png`: SNR vs injection number (with SNR=10 and SNR=3 reference lines)
-- `{Analyte}_QC_0p2ng_RawPA_Trends.png`: Raw PA vs injection number (before drift correction)
-
-### Rationale
-
-At trace levels (0.2ng), several factors make bias criteria unreliable:
-
-1. **Non-proportional signal losses**: Adsorption to active inlet sites is disproportionately high at trace levels
-2. **Baseline noise dominance**: At 0.2ng, peak height is only ~5-20× above noise, making quantitation imprecise
-3. **Carryover effects**: Previous high-concentration injections can cause transient contamination
-4. **Inlet condition variability**: Trace analytes are extremely sensitive to inlet cleanliness
-
-These factors produce systematic positive bias (+35% to +70% in most sequences) that does not reflect calibration accuracy or drift correction performance.
-
-**SNR is the appropriate metric** at trace levels because:
-- It directly measures detection capability (signal > noise)
-- It is independent of calibration accuracy
-- It tracks system sensitivity degradation over time
-- It provides a clear threshold for LOD (SNR = 3) and LOQ (SNR = 10)
-
-### New Output Columns
-
-| Column | Description | Values |
-|--------|-------------|--------|
-| `petn_qc_type` | QC evaluation type for PETN | `"QUANTITATIVE"` (6ng) or `"SENSITIVITY"` (0.2ng) |
-| `rdx_qc_type` | QC evaluation type for RDX | `"QUANTITATIVE"` (6ng) or `"SENSITIVITY"` (0.2ng) |
-| `petn_qc_flag` | PETN QC result flag | `"PASS"`, `"FAIL_BIAS"`, `"FAIL_SNR"`, `"SENSITIVITY_CHECK_PASS"`, `"SENSITIVITY_CHECK_WARN"`, `"SENSITIVITY_CHECK_FAIL"` |
-| `rdx_qc_flag` | RDX QC result flag | Same as `petn_qc_flag` |
-| `petn_qc_flag_dc` | Drift-corrected PETN QC flag | Same flag values as uncorrected |
-| `rdx_qc_flag_dc` | Drift-corrected RDX QC flag | Same flag values as uncorrected |
-
-### Implementation Details
-
-**File**: `Code/03_Quantification.R`, lines 1388-1465 (QC evaluation), lines 1467-1583 (QC plots)
-
-**QC evaluation logic** (drift-corrected flags):
-```r
-if (cal_level == 0.2) {
-  # 0.2ng: Three-tier evaluation (concentration first, then SNR thresholds)
-  # Priority: conc <= 0 → FAIL (not quantifiable)
-  #           SNR < 3 → FAIL (below LOD)
-  #           SNR < 10 → WARN (detected but marginal)
-  #           SNR >= 10 AND conc > 0 → PASS (good sensitivity)
-  snr_val <- if ("petn_snr" %in% names(Combined)) Combined$petn_snr[i] else NA_real_
-  conc_dc_val <- Combined$petn_concentration_dc[i]
-  
-  if (is.na(snr_val) || is.na(conc_dc_val)) {
-    Combined$petn_qc_flag_dc[i] <- NA_character_
-  } else if (conc_dc_val <= 0) {
-    Combined$petn_qc_flag_dc[i] <- "SENSITIVITY_CHECK_FAIL"
-  } else if (snr_val < 3) {
-    Combined$petn_qc_flag_dc[i] <- "SENSITIVITY_CHECK_FAIL"
-  } else if (snr_val < 10) {
-    Combined$petn_qc_flag_dc[i] <- "SENSITIVITY_CHECK_WARN"
-  } else {
-    Combined$petn_qc_flag_dc[i] <- "SENSITIVITY_CHECK_PASS"
-  }
-} else {
-  # Higher QCs (6ng): Bias + SNR evaluation
-  if (abs(bias_val_dc) <= qc_bias_limit && snr_val >= 10) {
-    qc_flag <- "PASS"
-  } else if (abs(bias_val_dc) > qc_bias_limit) {
-    qc_flag <- "FAIL_BIAS"
-  } else if (snr_val < 10) {
-    qc_flag <- "FAIL_SNR"
-  }
-}
-```
-
-**Collation script** (`Code/04_CollateStudyResults.R`):
-- Reads pre-computed flags from `petn_qc_flag_dc` and `rdx_qc_flag_dc` columns
-- Maps flags to PASS/WARN/FAIL for bracket assignment
-- Simplified flags in SystemMonitoring.xlsx: SENSITIVITY_CHECK_* → PASS/WARN/FAIL
-- No threshold parameters needed (single source of truth in 03)
-
-**Note on uncorrected vs drift-corrected flags**: 
-- Uncorrected flags (`petn_qc_flag`, `rdx_qc_flag`) use SNR-only evaluation (legacy)
-- **Drift-corrected flags are the primary QC evaluation** (`petn_qc_flag_dc`, `rdx_qc_flag_dc`)
-- Only drift-corrected flags include the concentration > 0 check and three-tier SNR thresholds
-- SNR is not affected by drift correction (raw signal property), but concentration is
-
-### Sequence Acceptance Criteria
-
-**0.2ng QC failures still contribute to overall sequence QC status**, but with different interpretation:
-
-| 0.2ng QC Flag | Interpretation | Action |
-|---------------|----------------|--------|
-| `SENSITIVITY_CHECK_PASS` | System sensitivity excellent (SNR ≥ 10, quantifiable) | Continue |
-| `SENSITIVITY_CHECK_WARN` | System sensitivity adequate (3 ≤ SNR < 10, quantifiable) | Monitor; consider inlet maintenance if multiple WARNs; triggers `PASS*` in collation |
-| `SENSITIVITY_CHECK_FAIL` | Detection OR quantification failure | **FAIL sequence**; investigate cause |
-
-**Failure modes:**
-- **SNR < 3**: System has lost detection capability → inlet cleaning required
-- **Concentration = 0**: Drift correction insufficient → may need stronger drift correction or inlet cleaning
-- **SNR < 10 with concentration > 0**: System can detect and quantify but sensitivity is marginal → acceptable with warning (PASS*)
-
-**Analyte-Specific QC Filtering (Updated July 2026):**
-
-0.2ng QC failures are now evaluated on a **per-analyte basis**. A sample only fails due to 0.2ng QC failure if the corresponding analyte in that sample is also unquantifiable.
-
-| 0.2ng QC Status | Sample Analyte SNR | Sample Result | Rationale |
-|---|---|---|---|
-| FAIL | Quantifiable (≥10) | `PASS*` | Sample analyte IS quantifiable → QC failure indicates vial/drift issue, not system capability |
-| FAIL | Below_LOQ (3-10) or Below_LOD (<3) | `FAIL` | Sample analyte NOT quantifiable → QC failure is relevant |
-| WARN | Any | `PASS*` | Unchanged |
-| PASS | Any | Contributes to PASS | Unchanged |
-
-**Implementation**: If a 0.2ng QC fails but the sample's analyte has SNR ≥ 10 ("Quantifiable"), the QC failure is treated as a warning with message: `"PETN 0.2ng pre QC FAIL (sample OK)"`. This triggers `PASS*` instead of `FAIL`.
-
-**6ng QC failures remain unchanged**: 6ng QC failures (bias-based) always disqualify samples regardless of sample analyte status.
-
-A sequence can PASS if 6ng QCs are within ±15% bias even if 0.2ng QCs show concentration = 0, as long as 0.2ng SNR ≥ 3 AND concentration > 0 after drift correction. If either criterion fails, the system has lost the ability to quantify trace levels, and the sequence should be investigated.
-
-### Comparison to Previous Approach
-
-| Aspect | Previous | Current (June 2026) |
-|--------|----------|---------------------|
-| 0.2ng evaluation | Bias ±15% + SNR ≥10 | **SNR thresholds (3/10) AND concentration_dc > 0** |
-| 0.2ng QC flags | PASS / FAIL | **PASS / WARN / FAIL** (three-tier) |
-| 0.2ng QC failure rate | ~60% (bias failures) | Variable (depends on drift correction effectiveness) |
-| 6ng evaluation | Bias ±15% | **Bias ±15% + SNR ≥10** |
-| Plot structure | Single combined plot (all QC levels) | **Separate plots**: 6ng bias, 0.2ng SNR + raw PA |
-| Flag nomenclature | `PASS` / `FAIL` | Differentiated: `FAIL_BIAS` vs `SENSITIVITY_CHECK_PASS`/`WARN`/`FAIL` |
-| QC type tracking | Not tracked | New columns: `petn_qc_type`, `rdx_qc_type` |
-| Concentration check | Not included | **Added**: Must have concentration_dc > 0 to pass/warn |
-| Collation QC evaluation | Recalculates from SNR | **Reads pre-computed flags** from 03 |
-
-### Expected Impact
-
-**On ABS-S-2 dataset** (example from implementation discussion):
-
-| Metric | Before | After |
-|--------|--------|-------|
-| 6ng QC status | 5/5 PASS (bias <15%) | 5/5 PASS (unchanged) |
-| 0.2ng QC status | 1/5 PASS (bias) | 2 PASS, 2 WARN, 1 FAIL (SNR-based) |
-| Overall sequence status | PASS (6ng good) | PASS (6ng good, 0.2ng detectable) |
-| 0.2ng interpretation | "Failing quantitative accuracy" | "System sensitivity adequate (SNR≥3)" |
-
-### Plot Interpretation Guide
-
-#### 6ng QC Accuracy Plot
-
-- **X-axis**: Injection number (sequence position)
-- **Y-axis**: % Bias vs true concentration (6ng)
-- **Red dashed lines**: ±15% acceptance limits
-- **Points**: Shape indicates flag (circle = PASS, X = FAIL_BIAS, triangle = FAIL_SNR)
-- **Line**: Trend across sequence (should be near zero if drift correction effective)
-
-**Good pattern**: All points between ±15%, clustered near zero  
-**Problem pattern**: Progressive drift (points trend away from zero), outliers outside ±15%
-
-#### 0.2ng QC SNR Trend Plot
-
-- **X-axis**: Injection number (sequence position)
-- **Y-axis**: Signal-to-Noise Ratio (SNR)
-- **Green dashed line**: SNR = 10 (Pass threshold, LOQ)
-- **Orange dashed line**: SNR = 3 (Warn threshold, LOD)
-- **Points**: Shape indicates flag (circle = PASS, triangle = WARN, X = FAIL)
-- **Line**: SNR trend across sequence
-
-**Good pattern**: All points above SNR = 10 (green line)  
-**Acceptable pattern**: Points decline but stay above SNR = 3 (orange line)  
-**Problem pattern**: Points drop below SNR = 3 (system has lost detection capability)
-
-### References
-
-- **Validation approach**: Based on analysis of ABS-S-1, ABS-S-2, Lab10-1, and Lab17-1 datasets showing 0.2ng QCs consistently exhibit +35% to +70% bias regardless of 6ng QC performance
-- **SNR thresholds**: 
-  - SNR = 10: Established quantification threshold (10:1 S/N ratio, ICH Q2(R1) guidance)
-  - SNR = 3: Established detection threshold (3:1 S/N ratio, standard analytical practice)
-- **Trace-level adsorption**: Walsh & Ranney (1998), Emmrich et al. (2001) — nitrate esters and nitramines show non-proportional losses at trace levels
-
----
-
-## Column Organization (Updated June 2026)
-
-### Design Principles
-
-The column structure in all output XLSX files follows consistent organizational principles:
-
-1. **Analyte grouping**: All PETN columns together, then all RDX columns together
-2. **Acceptance forward**: `analysis_accepted` and `Outcome` columns moved immediately after identifiers for quick reference
-3. **QC level ordering**: In individual lab QC sheets, 0.2ng QCs appear first, then 6ng QCs (ascending by concentration)
-4. **Consistent across sheets**: Same PETN→RDX grouping pattern applied to all sheet types (Calibration, QC, Samples, Blanks, NC)
-
-### Study-Level FINEX_StudyResults.xlsx
-
-#### Samples Sheet (35 columns: A-AI)
-
-| Column Range | Content | Count |
-|--------------|---------|-------|
-| **A-E** | Identifiers (Lab, Participant, Surface, SurfaceName, Repeat) | 5 |
-| **F-G** | Acceptance (analysis_accepted, Outcome) | 2 |
-| **H-S** | ALL PETN COLUMNS | 12 |
-| **T-AF** | ALL RDX COLUMNS | 12 |
-| **AG-AJ** | Source tracing (Date, SampleName, DataFile, SourceFile) | 4 |
-
-**PETN columns (H-S):**
-- H: Flag (petn_snr_flag)
-- I-J: Values (petn_concentration_dc, petn_recovery_dc)
-- K-N: QC brackets (petn_qc_6ng_pre/post, petn_qc_02ng_pre/post)
-- O-S: QC inherited flags (4 flags matching brackets above)
-
-**RDX columns (T-AF):** Same structure as PETN
-
-#### NC Sheet (26 columns: A-Z, restructured August 7, 2026)
-
-| Column Range | Content | Count |
-|--------------|---------|-------|
-| **A-D** | Identifiers (Lab, Participant, Surface, SurfaceName) | 4 |
-| **E** | Stage 1: `nc_analysis_accepted` -- was this injection/run analytically trustworthy? (PASS/PASS*/FAIL:, same vocabulary as the Samples sheet's `analysis_accepted`) | 1 |
-| **F** | Stage 2: `nc_result` -- contamination outcome (Negative (clean) / Positive: ... ), only meaningful when Stage 1 is PASS/PASS*; forced to "Not evaluated (analysis failed)" otherwise | 1 |
-| **G-J** | ALL PETN COLUMNS -- raw evidence behind Stage 2 | 4 |
-| **K-N** | ALL RDX COLUMNS -- raw evidence behind Stage 2 | 4 |
-| **O-P** | IS audit columns (rdx_is_snr_flag, rdx_is_pa_flag) -- basis for Stage 1 | 2 |
-| **Q-X** | QC bracket audit columns (petn/rdx_qc_6ng_pre/post, petn/rdx_qc_02ng_pre/post) -- basis for Stage 1 | 8 |
-| **Y-Z** (+ 2 more) | Source tracing (Date, SampleName, DataFile, SourceFile) | 4 |
-
-**PETN columns (G-J):** petn_snr_flag, petn_ph, petn_concentration_dc, petn_recovery_dc
-
-**RDX columns (K-N):** Same structure as PETN
-
-**Note (August 7, 2026)**: Restructured from the previous single `nc_status` + boolean `nc_analysis_valid` pair into an explicit two-stage `nc_analysis_accepted` / `nc_result` pair, mirroring the Samples sheet's `analysis_accepted`/`Outcome` pattern -- see "NC Evaluation Restructured into Two Explicit Stages" session summary above for full rationale. The 6ng QC bracket columns (Q-T) are new to this sheet as of this session (previously only the 0.2ng brackets were shown/checked for NCs).
-
-#### Per-Surface Sheets
-
-Per-surface sheets (Lab10_ABS-S, Lab10_S, etc.) automatically inherit the column order from the main Samples sheet.
-
-
-### Individual Lab {Lab}_GCMSResults.xlsx
-
-All sheets in individual lab XLSX files use consistent structure: **Identification → IS (15N-RDX) → ALL PETN → ALL RDX → Shared columns**
-
-#### Calibration Sheet
-
-- Identification: Date, Line, SampleName, DataFile, Vial, CalLevel, CalibrationSet
-- IS: rdx_is_rt, rdx_is_pa, rdx_is_snr, rdx_is_snr_flag
-- **PETN**: Raw (RT, PA, PH, SNR, SNR flag, ratio) → Quantitation (concentration, quant method) → Accuracy (percent_bias)
-- **RDX**: Same structure as PETN
-- Shared: TrueCalConcAdj
-
-#### QC Sheet
-
-- Identification: Date, Line, SampleName, DataFile, Vial, CalLevel, CalibrationSet
-- IS: rdx_is_rt, rdx_is_pa, rdx_is_snr, rdx_is_snr_flag
-- **PETN**: Raw → Quantitation (uncorrected) → Drift correction (factor, concentration_dc) → Accuracy (uncorrected %bias) → QC evaluation (type, flag) → Accuracy (drift-corrected %bias, flag_dc)
-- **RDX**: Same structure as PETN
-- Shared: TrueCalConcAdj
-
-**Row sorting:** QC sheet rows are sorted by `CalLevel` (ascending), then `Line`. This places 0.2ng QCs before 6ng QCs, matching the analytical progression from low to high concentration.
-
-#### Samples Sheet
-
-- Identification: Date, Line, SampleName, DataFile, Vial
-- IS: rdx_is_rt, rdx_is_pa, rdx_is_snr, rdx_is_snr_flag
-- **PETN**: Raw → Quantitation (uncorrected, incl. quant method) → Drift correction
-- **RDX**: Same structure as PETN
-
-#### Blanks Sheet
-
-- Identification: Date, Line, SampleName, DataFile, Vial
-- **PETN**: Raw signal only (RT, PA, PH, SNR, SNR flag)
-- **RDX**: Same structure as PETN
-
-(No IS columns or quantitation/concentrations in Blanks — raw signal data only)
-
-### Rationale
-
-**PETN first, RDX second:** PETN is the primary target analyte for most surfaces (typically higher recovery, more reliable signal). Placing all PETN columns together allows rapid visual scanning of PETN results without having to skip over interleaved RDX columns.
-
-**Acceptance columns forward (study-level Samples sheet):** `analysis_accepted` and `Outcome` are the most commonly referenced columns when reviewing sample batches. Placing them immediately after identifiers (columns F-G) allows quick filtering/sorting without scrolling right through all measurement data.
-
-**QC 0.2ng before 6ng (individual lab QC sheets):** Matches the analytical progression from low to high concentration when reviewing data. The 0.2ng QCs monitor LOQ-level sensitivity, while 6ng QCs monitor quantitative accuracy. Reviewing in ascending order is more intuitive.
-
-**Study-level vs lab-level QC order difference:** Study-level sheets prioritize 6ng QCs in bracket columns (columns L-O for 6ng, P-S for 0.2ng) because 6ng QCs define the acceptance criteria. Lab-level QC sheets prioritize 0.2ng rows first because they appear earlier in the sequence and ascending concentration order is more natural when reviewing raw data.
-
-**Consistent PETN→RDX grouping across all sheets:** Reduces cognitive load — users always know "PETN columns come first, then RDX" regardless of which sheet they're viewing.
-
-### Implementation
-
-**Files modified:**
-- `Code/04_CollateStudyResults.R`: Lines 748-794 (`desired_cols`, `desired_cols_nc`)
-- `Code/03_Quantification.R`: Lines 1849-1950 (`cal_cols`, `qc_cols`, `smp_cols`, `blk_cols`, QC row sorting)
-
-**Testing:** Verify column positions with known data (e.g., Lab10-1) and spot-check that values are in correct columns after reorganization.
-
----
-
-## Negative Control (NC) Evaluation Criteria (Updated June 2026)
-
-### Three-Tier Evaluation System
-
-Negative controls are evaluated using **three independent criteria** (any can trigger WARN/FAIL):
-
-#### 1. SNR Flag Criteria
-- **FAIL**: SNR flag = `Quantifiable` (analyte clearly present, contamination confirmed)
-- **WARN**: SNR flag = `Below_LOQ` (trace detected but not quantifiable)
-- **PASS**: SNR flag = `Below_LOD` or NA (no analyte detected)
-
-#### 2. Peak Height Criteria (NEW - June 2026)
-- **WARN**: Peak height detected (PH > 0) but below minimum threshold
-  - PETN: `0 < PH < 200` (MinPeakHeight_PETN from GlobalCode.R)
-  - RDX: `0 < PH < 50` (MinPeakHeight_RDX from GlobalCode.R)
-- **Rationale**: Catches trace contamination/carryover that passes SNR criteria (due to low noise) but fails absolute signal threshold
-
-#### 3. Concentration Criteria (NEW - June 2026)
-- **WARN**: Concentration (drift-corrected) == 0
-- **Rationale**: A concentration of exactly 0 indicates:
-  - A peak was detected (otherwise concentration would be NA)
-  - Negative extrapolation was floored at zero in quadratic solver (`solve_concentration()`)
-  - Real signal present below calibration range (trace contamination)
-
-### Priority Logic
-
-For each analyte, classification follows **first-match priority**:
-1. Concentration_dc == 0 → **trace** (WARN) - *Peak below calibration range*
-2. SNR = `Quantifiable` → **contaminated** (FAIL) - *Quantifiable contamination*
-3. 0 < PH < threshold → **trace** (WARN) - *Low peak height*
-4. SNR = `Below_LOQ` → **trace** (WARN) - *Trace detected*
-5. SNR = `Below_LOD` or NA → **clean** (PASS) - *No detection*
-
-**Rationale for priority order:**
-- Concentration == 0 indicates negative extrapolation (peak below lowest calibrator)
-- This is trace contamination (WARN), not full contamination (FAIL)
-- Takes priority over SNR evaluation because it provides concentration-specific context
-- Prevents false positives where low peaks quantify to 0 but are flagged as full contamination
-
-### Combined Status
-
-**Note (August 7, 2026)**: The labels below (`NC PASS`/`NC WARN`/`NC FAIL`) are the *historical* names for this classification, from when it was the sheet's only status column. As of August 7, 2026 this classification is `nc_result` (Stage 2 -- contamination outcome), relabelled `Negative (clean)` / `Positive: ...`, and is only reported at all if `nc_analysis_accepted` (Stage 1 -- run trustworthiness, checked first) is PASS/PASS* -- see "NC Evaluation Restructured into Two Explicit Stages" session summary above. The underlying SNR/PH/concentration classification logic itself is unchanged.
-
-| PETN Status | RDX Status | NC Status (historical name) | `nc_result` (current name) |
-|-------------|------------|-----------|-----------|
-| contaminated | contaminated | NC FAIL: PETN + RDX contaminated | Positive: PETN + RDX contaminated |
-| contaminated | clean/trace | NC FAIL: PETN contaminated | Positive: PETN contaminated |
-| clean/trace | contaminated | NC FAIL: RDX contaminated | Positive: RDX contaminated |
-| trace | trace | NC WARN: PETN + RDX trace detected | Positive: PETN + RDX trace detected |
-| trace | clean | NC WARN: PETN trace detected | Positive: PETN trace detected |
-| clean | trace | NC WARN: RDX trace detected | Positive: RDX trace detected |
-| clean | clean | NC PASS | Negative (clean) |
-
-### Implementation
-
-**File**: `Code/04_CollateStudyResults.R`, function `compute_nc_result()` (Stage 2; was `compute_nc_status()` prior to August 7, 2026)
-
-**Columns evaluated**:
-- `petn_snr_flag`, `rdx_snr_flag` (SNR criteria - primary)
-- `petn_ph`, `rdx_ph` (peak height criteria - now visible in NC sheet)
-- `petn_concentration_dc` (PETN drift-corrected, preferred)
-- `petn_concentration` (fallback if DC not available)
-- `rdx_concentration` (RDX uncorrected, no drift correction typically applied)
-
-**Thresholds**:
-- PETN PH threshold: 200 (from `MinPeakHeight_PETN` in GlobalCode.R)
-- RDX PH threshold: 50 (from `MinPeakHeight_RDX` in GlobalCode.R)
-
-### Example Cases
-
-| Scenario | PETN PH | PETN SNR | PETN Conc (dc) | Old Status | New Status |
-|----------|---------|----------|----------------|------------|------------|
-| Clean NC | NA | Below_LOD | NA | NC PASS | NC PASS |
-| Trace carryover | 150 | Below_LOQ | 0.05 | NC WARN | NC WARN |
-| **Peak below cal range** | 300 | Quantifiable | **0** | **NC FAIL** | **NC WARN** (fixed) |
-| Low PH, no quantification | 180 | Below_LOD | NA | NC PASS | **NC WARN** (new) |
-| Clear contamination | 5000 | Quantifiable | 0.5 | NC FAIL | NC FAIL |
-| Very low carryover | 40 | Below_LOD | NA | NC PASS | **NC WARN** (new) |
-
-**Key improvements**:
-- **Fixes concentration == 0 + SNR Quantifiable**: Now correctly shows WARN (trace) instead of FAIL (contaminated)
-- Catches low PH peaks that pass SNR due to low noise baseline
-- Uses drift-corrected concentrations for PETN (more accurate evaluation)
-- More sensitive to trace contamination/carryover
-
-### NC Sheet Columns
-
-The NC sheet in `FINEX_StudyResults.xlsx` includes diagnostic columns:
-
-| Column | Purpose |
-|--------|---------|
-| `nc_analysis_accepted` (Stage 1, restructured August 7, 2026) | Was this NC injection/run analytically trustworthy? PASS/PASS*/FAIL:, checked from IS validity + BOTH 6ng and 0.2ng QC brackets -- same criteria family as the Samples sheet's `analysis_accepted`. Must be PASS/PASS* for `nc_result` below to be meaningful. |
-| `nc_result` (Stage 2, restructured August 7, 2026) | Contamination outcome -- `Negative (clean)` / `Positive: ...` -- ONLY evaluated when `nc_analysis_accepted` is PASS/PASS*; forced to `"Not evaluated (analysis failed)"` otherwise, regardless of the raw SNR/PH/concentration signal. |
-| `petn_snr_flag`, `rdx_snr_flag` | Primary SNR-based evidence behind `nc_result` |
-| `petn_ph`, `rdx_ph` | Peak height evidence behind `nc_result` |
-| `petn_concentration_dc`, `rdx_concentration` | Quantified amounts (if detected) -- evidence behind `nc_result` |
-| `rdx_is_snr_flag`, `rdx_is_pa_flag` | IS evidence behind `nc_analysis_accepted` |
-| `petn_qc_6ng_pre/post`, `rdx_qc_6ng_pre/post` (added August 7, 2026) | 6ng QC bracket evidence behind `nc_analysis_accepted` -- previously computed for every Sample-type row (NCs included) but not shown on this sheet |
-| `petn_qc_02ng_pre/post`, `rdx_qc_02ng_pre/post` | 0.2ng QC bracket evidence behind `nc_analysis_accepted` |
-
-### Expected Impact
-
-**On typical datasets:**
-- NCs with concentration == 0 will now show **NC WARN** instead of potentially NC PASS
-- NCs with low PH (below 200/50 but > 0) will trigger **NC WARN**
-- No impact on clean NCs (Below_LOD, no peak) or heavily contaminated NCs (Quantifiable)
-- Better catches edge cases of trace contamination and carryover
-
-**Estimated change in NC pass rate:**
-- **Previous**: ~70-80% PASS, ~10-15% WARN, ~10-15% FAIL
-- **After**: ~60-70% PASS, ~20-25% WARN, ~10-15% FAIL (more sensitive to trace)
-
-### Rationale for Each Criterion
-
-**Why SNR alone is insufficient:**
-- SNR is relative to local noise
-- In sequences with very clean baselines (low noise), trace peaks can appear to have "good" SNR
-- Absolute signal threshold (PH) catches these cases
-
-**Why PH threshold matters:**
-- PH = 200/50 thresholds validated against blank noise in real datasets
-- Below these thresholds, peak integration becomes unreliable
-- Catches instrument carryover that produces small but reproducible peaks
-
-**Why concentration == 0 is contamination:**
-- `solve_concentration()` returns 0 only when:
-  - A peak was detected (PA > 0)
-  - Quadratic extrapolation gave negative concentration
-  - Result was floored at 0 (Code/03_Quantification.R, line 107)
-- This is NOT a clean NC - it's a real peak below the lowest calibrator
-- Should be flagged as trace contamination (WARN)
-
-### Comparison to Previous Approach
-
-| Aspect | Previous (pre-June 2026) | Current (June 2026) |
-|--------|--------------------------|---------------------|
-| Evaluation criteria | SNR flag only | **SNR + PH + Concentration** |
-| Concentration == 0 | Not checked | **WARN** (trace detected) |
-| Low PH (< threshold) | Not checked | **WARN** (trace detected) |
-| Columns in NC sheet | SNR flags, concentrations | **Added: petn_ph, rdx_ph** |
-| Sensitivity to trace | Moderate (SNR-based) | **High** (three-tier) |
-| PASS rate (typical) | ~75% | ~65% (more stringent) |
-
----
-
-## Batch Processing (June 2026)
-
-### RunAllDatasets.R - Automated Batch Processing
-
-**Purpose**: Process all datasets in the Accepted Analysis folder automatically without manually changing `DataFolder` in GlobalCode.R for each run.
-
-**Usage**:
-```r
-# 1. Configure GlobalCode.R settings (RTs, thresholds, drift correction)
-# 2. Set reprocessing flags in Code/02_PeakDetection.R if needed
-# 3. Run batch script:
-source("RunAllDatasets.R")
-```
-
-**Behavior**:
-- Discovers all subdirectories in Accepted Analysis folder
-- Excludes "Plots" folder (case-insensitive)
-- Validates each dataset (checks for .LOG file, .ms1 data)
-- Processes each dataset in isolated environment (no variable contamination)
-- Continues on error (doesn't stop entire batch)
-- Logs success/failure for each dataset
-- Always runs `04_CollateStudyResults.R` at end
-- Respects reprocessing flags in `02_PeakDetection.R`
-- Uses same GlobalCode.R settings for all datasets
-
-**Outputs**:
-- Individual `Results/` folders per dataset (as usual)
-- `BatchProcessing_Log.csv` in Accepted Analysis folder (summary)
-- `FINEX_StudyResults.xlsx` (collated study results)
-
-**Configuration** (top of `RunAllDatasets.R`):
-```r
-accepted_analysis_dir <- "path/to/Accepted Analysis"
-exclude_folders <- c("Plots")  # Case-insensitive
-```
-
-**Validation per dataset**:
-- Checks for sequence .LOG file
-- Checks for GcDataConverterMs/ or RawData/ directory
-- Checks for .ms1 files
-- Skips invalid datasets with warning
-
-**Error handling**:
-- Validation failures: Logged as "SKIPPED"
-- Processing errors: Logged as "FAILED" with error message
-- Continues to next dataset regardless
-- Reports all failures at end
-
-**Isolated execution**:
-- Each dataset runs in `new.env(parent = .GlobalEnv)`
-- GlobalCode.R variables (DataFolder, analytes, etc.) isolated per dataset
-- No variable leakage between iterations
-- Same behavior as manual single-dataset processing
-
-**Performance**:
-- Progress indicator: `[Progress: 5/37]`
-- Timer for total elapsed time
-- Garbage collection between datasets (`gc()`)
-- Typical runtime: ~5-10 minutes per dataset (depends on reprocessing flags)
-
-**Example output**:
-```
-========================================
-BATCH PROCESSING: FINEX Swabbing Study
-========================================
-
-Found 37 datasets (excluding: Plots)
-
-[Progress: 1/37]
-Processing: ABS-S-1
-✓ SUCCESS: ABS-S-1
-
-[Progress: 2/37]
-Processing: ABS-S-2
-✓ SUCCESS: ABS-S-2
-
-[... more datasets ...]
-
-========================================
-BATCH PROCESSING COMPLETE
-========================================
-Total datasets: 37
-Successful: 35
-Failed: 2
-Skipped: 0
-Elapsed time: 185.3 minutes
-
---- FAILED DATASETS ---
-  1. Lab22-1
-     Error: RTs not found (check GlobalCode.R RTs for V9 method)
-  2. Lab30
-     Error: Sequence log parse error
-
-Processing log saved to: .../Accepted Analysis/BatchProcessing_Log.csv
-
-========================================
-Running CollateStudyResults...
-========================================
-
-✓ Collation complete (2.1 minutes)
-
-========================================
-ALL PROCESSING COMPLETE
-========================================
-Total time: 187.4 minutes
-```
-
-**BatchProcessing_Log.csv format**:
-| Dataset | Status | Error |
-|---------|--------|-------|
-| ABS-S-1 | SUCCESS | |
-| ABS-S-2 | SUCCESS | |
-| Lab22-1 | FAILED | RTs not found (check GlobalCode.R RTs for V9 method) |
-| Lab30 | SKIPPED | Validation failed: No .ms1 files found |
-
-**Advantages over manual processing**:
-- ✅ Process 37+ datasets unattended (overnight run)
-- ✅ Consistent settings across all datasets
-- ✅ Automatic error recovery (doesn't stop on failure)
-- ✅ Full audit trail (log file)
-- ✅ No risk of forgetting to change DataFolder
-- ✅ Individual Results/ folders preserved (same as manual)
-- ✅ Respects all existing flags and settings
-
-**Limitations**:
-- Same GlobalCode.R settings for all datasets (assumes all use same method)
-- For mixed methods (V8/V9 RTs), either:
-  - Process V8 datasets first, then manually update RTs and rerun for V9 datasets
-  - Or modify script to support per-dataset RT overrides (advanced)
-
----
-
-## Project Structure (Consolidated - May 2026)
-
-```
-GCMSQuantitation/
-├── GlobalCode.R              # Main configuration (set DataFolder, RTs, toggle use_15nrdx_for_petn)
-├── RunAllDatasets.R          # Batch processing script (NEW - June 2026)
-├── Code/                     # Active pipeline scripts
-│   ├── 01_MsFilesReorganiser.R  # Convert .ms1 files to TIC/SIM CSVs
-│   ├── 02_PeakDetection.R        # Peak detection and integration
-│   ├── 03_Quantification.R       # Calibration, quantification, drift correction
-│   ├── 04_CollateStudyResults.R  # Collate results across all runs
-│   ├── 05_StatisticalAnalysis.R  # Statistical analysis of recovery data
-│   └── ModPeaks.R                # Signal processing functions
-├── Diagnostics/               # Diagnostic/analysis scripts
-│   ├── SequenceDiagnostics.R
-│   ├── DriftCorrectionComparison.R
-│   ├── DriftCorrectionDiagram.R
-│   ├── Partial_Drift_Correction.R  # Apply drift correction to specific region
-│   ├── SplitDualMethod.R
-│   └── DualMethodProcess.R
-├── Archive/                  # Deprecated scripts (for reference)
-│   ├── Legacy_Code/          # Original Code/ folder contents
-│   ├── v1-NoNG/              # Previous v1-NoNG folder
-│   └── v2-NG_Deprecated/     # Previous v2-NG/Code/ contents
-├── Test Data/                # Example output (documentation)
-└── CONTEXT.md                # This file
-```
-
-## Pipeline Architecture
-
-Sequential stages, orchestrated from `GlobalCode.R`:
-
-| Stage | Script | Purpose |
-|---|---|---|
-| 0 | `GlobalCode.R` | Configuration, constants, library loading. Sources `Code/ModPeaks.R`. |
-| 1 | `Code/01_MsFilesReorganiser.R` | Convert `.ms1` files to structured TIC/SIM CSVs |
-| 2 | `Code/02_PeakDetection.R` | Signal processing: baseline correction, peak detection, SNR, integration |
-| 3 | `Code/03_Quantification.R` | Parse sequence logs, build calibrations, quantify unknowns, QC assessment |
-| 4 | `Code/04_CollateStudyResults.R` | (Optional) Collate all runs into study-level dataset |
-| 5 | `Code/05_StatisticalAnalysis.R` | (Optional) Statistical analysis of recovery variance components |
-
-**NG (nitroglycerin) has been removed** from the current pipeline. Only 15N-RDX (m/z 122) is used as the internal standard for both PETN and RDX ratio calibration.
-
-### Configuration Toggle
-
-In `GlobalCode.R`:
-```r
-use_15nrdx_for_petn <- TRUE   # TRUE: PETN uses 15N-RDX IS for ratio calibration
-                               # FALSE: PETN uses PA only (no ratio)
-```
-
-Data flow: Raw Agilent `.D` files -> ProteoWizard MSConvert -> `.ms1` -> R pipeline -> calibration plots + quantitated results (CSV/XLSX/PNG)
-
-### ModPeaks.R -- Signal Processing Engine (v2-NG: 632 lines)
-
-**File**: `Code/ModPeaks.R` (sourced by GlobalCode.R)
-
-Contains the core signal processing functions used by Test.R:
-
-| Function | Purpose |
-|---|---|
-| `ModPeaks()` | Peak detection algorithm: sweeps threshold levels to find peaks above minimum peak height/width |
-| `apply_baseline_correction()` | Rolling-ball baseline correction via the `baseline` package |
-| `deinterleave_sim()` | Removes interleaved SIM scan-group pairs, keeping only Group B (higher-intensity second scan) |
-| `trapz_area()` | Trapezoidal integration of retention-time/intensity pairs |
-| `process_sim_channel()` | Full SIM channel pipeline: m/z filter (+/- 0.5 Da) -> deinterleave -> smooth -> baseline correct -> RT window filter -> peak detect |
-| `calculate_snr()` | Signal-to-noise ratio: peak_height / sd(noise_region) |
-| `extract_peak_area()` | Peak area extraction with SNR-based acceptance filter (Below_LOD / Below_LOQ / Quantifiable) |
-| `plot_integration()` | Generates integration verification TIFF plots showing baseline, peak, integration boundaries, and annotations |
-
-## Study Context: FINEX Swabbing Study
-
-Analysing swab samples for explosives (PETN, RDX) across multiple laboratories.
-
-### Study Design
-
-- **Labs**: 1 to 37
-- **Participants per lab**: 1 or 2 (some labs only have 1)
-- **Surfaces per participant**: Steel (S), Glass (G), ABS-Smooth (ABS-S), ABS-Textured (ABS-T)
-- **Repeats per set**: 6 samples + 1 negative control (NC)
-- **Sample naming convention**: `Lab18 P1 S3` (Lab, Participant, Surface+Repeat) or `Lab18 P1 S NC` (negative control)
-
-### Sample Preparation
-
-- Cotton Q-tip swabs with wooden stick (majority of stick cut off after swabbing)
-- Swabs pre-cleaned: soaked overnight in acetone, dried before use
-- Extraction: swab tips sonicated in ethanol for 2 minutes
-- Internal standards (15N-RDX and NG) added **post-extraction** to the vial
-- IS added post-extraction by design: ensures constant IS amount per injection to track GC performance only
-
-### Data Folder Structure
-
-Each GC-MS sequence run lives in its own folder under:
-```
-C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/FINEX Swabbing Study/
-```
-Examples:
-- `Lab14-Glass/` (single run)
-- `Lab18/Lab 18 -1/` (steel), `Lab18/Lab 18 -2/` (ABS-S)
-
-Each folder contains: RawData/, GcDataConverterMs/, GcDataConvertedRcode/, GcData/, Results/
-
-`DataFolder` in `GlobalCode.R` is changed manually for each run.
-
-## Known Issues / Bug Fixes
-
-### dplyr 1.1.4 Compatibility Issue (June 2026)
-
-**Problem**: Pipeline fails during peak detection (02_PeakDetection.R) with error:
-```
-Error in `dplyr::filter()`:
-! Can't specify an argument named `by` in this verb.
-ℹ Did you mean to use `.by` instead?
-```
-
-**Location**: `Code/ModPeaks.R`, line 460 in `extract_peak_area()` function
-
-**Root cause**: dplyr 1.1.0+ introduced stricter argument checking. While no explicit `by=` argument exists in the code, the error suggests a parameter interpretation issue specific to this version.
-
-**Original code affected** (7 locations in ModPeaks.R):
-
-```r
-# Line 249-251: process_sim_channel()
-channel_data <- raw_data %>%
-  dplyr::filter(abs(Mass - mz) < 0.5) %>%
-  dplyr::select(RetentionTime, Intensity) %>%
-  dplyr::filter(RetentionTime < rt_upper_limit)
-
-# Line 367-370: calculate_snr()
-noise_data <- baseline_corrected %>%
-  dplyr::filter(
-    RetentionTime >= noise_window[1] &
-    RetentionTime <= noise_window[2]
-  )
-
-# Line 460: extract_peak_area() -- ERROR LOCATION
-candidate <- peaks %>%
-  dplyr::filter(x < (expected_rt + rt_tolerance) & x > (expected_rt - rt_tolerance))
-
-# Line 481: extract_peak_area()
-peak_data <- signal %>%
-  dplyr::filter(dplyr::between(RTime, lmin, lmax))
-
-# Line 567: plot_integration()
-plot_data <- baseline_corrected %>%
-  dplyr::filter(RetentionTime >= plot_min & RetentionTime <= plot_max)
-
-# Line 573: plot_integration()
-peak_data_plot <- peak_data %>%
-  dplyr::filter(dplyr::between(RTime, lmin, lmax))
-```
-
-**Fix applied** (June 12, 2026): Replaced all `dplyr::filter()` calls with base R subsetting using `[row_condition, , drop = FALSE]` syntax. This eliminates the dplyr dependency for filtering operations and avoids the argument interpretation issue entirely.
-
-**Replacement examples**:
-
-```r
-# Line 249-251: Before
-channel_data <- raw_data %>%
-  dplyr::filter(abs(Mass - mz) < 0.5) %>%
-  dplyr::select(RetentionTime, Intensity) %>%
-  dplyr::filter(RetentionTime < rt_upper_limit)
-
-# Line 249-251: After
-channel_data <- raw_data[abs(raw_data$Mass - mz) < 0.5, , drop = FALSE]
-channel_data <- channel_data[, c("RetentionTime", "Intensity"), drop = FALSE]
-channel_data <- channel_data[channel_data$RetentionTime < rt_upper_limit, , drop = FALSE]
-
-# Line 460 (ERROR LOCATION): Before
-candidate <- peaks %>%
-  dplyr::filter(x < (expected_rt + rt_tolerance) & x > (expected_rt - rt_tolerance))
-
-# Line 460: After
-candidate <- peaks[
-  peaks$x < (expected_rt + rt_tolerance) & 
-  peaks$x > (expected_rt - rt_tolerance),
-  , drop = FALSE
-]
-
-# Line 481: Before
-peak_data <- signal %>%
-  dplyr::filter(dplyr::between(RTime, lmin, lmax))
-
-# Line 481: After
-peak_data <- signal[
-  signal$RTime >= lmin & signal$RTime <= lmax,
-  , drop = FALSE
-]
-```
-
-**Verification**: Confirmed no `dplyr::filter()` calls remain in ModPeaks.R using `grep -n "dplyr::filter"` (no output = all replaced).
-
-**Files modified**: `Code/ModPeaks.R` (7 locations: lines 249-251, 367-370, 460, 481, 567, 573)
+*Older dated session entries interleaved with further static/reference notes, roughly April - July 2026. Preserved in the original relative order these were written in, before this file was reorganised into Parts 1/2/3 (October 2026 documentation cleanup). Not re-sorted into strict chronological order during that reorganisation, to avoid misclassifying any individual entry.*
 
 ---
 
