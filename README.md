@@ -14,11 +14,11 @@ This is a collection of largely independent R projects (each with its own `.Rpro
 | `SartoriusBalance/` | Serial-logging script for the balance used to record swab contact pressure on the ASTRA device | `SartoriusBalance/CONTEXT.md` |
 | `DataAnalysis/` | Thesis Chapter 3 methodology analysis (manual swab mount angle/pressure) | — (see `GCMSQuantitation/CONTEXT.md` / `ASTRA/doe/CONTEXT.md` session entries that reference it) |
 | `Extraction/` | Extraction and filtration efficiency measurement for PETN/RDX | — (see `GCMSQuantitation/CONTEXT.md` / `ASTRA/doe/CONTEXT.md` session entries that reference it) |
-| `SolutionPreparationMU/` | Measurement-uncertainty propagation for calibration-standard solution preparation | — |
+| `SolutionPreparationMU/` | Measurement-uncertainty propagation for calibration-standard solution preparation | `SolutionPreparationMU/README.md` |
 | `ExplosivesInterpolScopusSearch/` | Scientometric literature review: explosives-as-evidence trends (Scopus + INTERPOL IFSMS reports) | `ExplosivesInterpolScopusSearch/README.md` |
 | `SamplingInterpolScopusSearch/` | Sibling scientometric review, same methodology, for drugs-as-evidence/sampling literature | `SamplingInterpolScopusSearch/README.md` |
-| `ErrorCalc/` | Standalone error-calculation spreadsheet | — |
-| `Reports/` | Thesis chapter drafts (extracted from Word), bibliography (`.ris`), and the text-extraction tooling used to read them | — |
+| `ErrorCalc/` | Standalone error-calculation spreadsheet | `ErrorCalc/README.md` |
+| `Reports/` | Thesis chapter drafts (extracted from Word), bibliography (`.ris`), and the text-extraction tooling used to read them | `Reports/README.md` |
 
 ## Documentation conventions
 
