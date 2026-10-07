@@ -1598,11 +1598,27 @@ run_power_analysis <- function(fit, analyte_name, n_target = 6, alpha = alpha_le
   n_pressure_levels <- fit$n_pressure_levels
   n_surface_types   <- fit$n_surface_types
 
+  # NOTE (Oct 2026 red-team review): for every main effect above, k is that
+  # effect's own number of LEVELS, matching pwr.anova.test()'s assumption of
+  # a one-way ANOVA with k groups (numerator df = k-1) -- consistent with
+  # the real Type III F-test for that term. For the Surface_type:Pressure_f
+  # INTERACTION, the real Type III F-test has numerator df =
+  # (n_surface_types-1)*(n_pressure_levels-1), i.e. 4 here, not the
+  # (n_surface_types*n_pressure_levels)-1 = 9 that treating k as the raw
+  # CELL COUNT would imply. Previously this used k = n_surface_types *
+  # n_pressure_levels (= 10 cells), silently feeding pwr.anova.test() a
+  # 9-numerator-df reference design for this one row while every other row
+  # in the same table used the k-1-df convention -- making the interaction
+  # row's power/min-N figures not comparable, on a like-for-like basis, to
+  # the other rows in the same printed table. Fixed by using the
+  # df-equivalent k (df+1) for the interaction too, consistent with every
+  # other row's own k = df+1 convention.
+  interaction_df <- (n_surface_types - 1) * (n_pressure_levels - 1)
   k_map <- c(
     "Surface_type"            = n_surface_types,
-    "Pressure_f"              = n_pressure_levels,
-    "Study"                   = 2,
-    "Surface_type:Pressure_f" = n_surface_types * n_pressure_levels
+    "Pressure_f"               = n_pressure_levels,
+    "Study"                    = 2,
+    "Surface_type:Pressure_f"  = interaction_df + 1
   )
 
   eta2_to_f <- function(eta2) {

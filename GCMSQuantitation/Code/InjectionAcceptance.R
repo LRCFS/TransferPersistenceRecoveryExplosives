@@ -500,11 +500,21 @@ assign_blank_brackets <- function(all_data) {
   }
 
   worse_of <- function(a, b) {
+    # BUG FIX (Oct 2026 red-team review): previously indexed names(rank) --
+    # the full 3-element vector -- with a position computed from rank[vals],
+    # a position *within the subsetted (<=2-element) vals vector*. Since
+    # vals' own position never reliably corresponds to its position in the
+    # full 3-element rank, this meant "Contaminated" was never returned for
+    # ANY input (confirmed by exhaustive testing of all 16 input
+    # combinations), silently disabling the blank-carryover hard-fail/caveat
+    # for every sample/NC in both FINEX and ASTRA. Fixed by indexing vals
+    # itself (which already holds the correct label strings), not rank's
+    # names.
     rank <- c("Clean" = 1, "Trace" = 2, "Contaminated" = 3)
     vals <- c(a, b)
     vals <- vals[!is.na(vals)]
     if (length(vals) == 0) return("Clean")
-    names(rank)[which.max(rank[vals])]
+    vals[which.max(rank[vals])]
   }
 
   source_files <- unique(all_data$SourceFile[all_data$Type == "Sample"])

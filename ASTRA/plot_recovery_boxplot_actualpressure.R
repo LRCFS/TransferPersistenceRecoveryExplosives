@@ -130,9 +130,23 @@ cat(sprintf("Loaded %d Main pressure rows, %d Main recovery rows, %d Pilot press
 # Pilot Study: drop NC rows AND restrict to wet (Solvent_level == "present")
 # samples only, to match the Main Study's all-wet design - the Pilot Study
 # also ran dry replicates at every level, not comparable here.
+# QC-ACCEPTANCE FILTER (added Oct 2026 red-team review): this script
+# previously had NO filter on analysis_accepted at all, unlike the other
+# companion recovery-vs-pressure plotting scripts (plot_petn_vs_rdx_recovery.R,
+# plot_pressure_boxplot_by_target.R, plot_combined_qc_overview.R,
+# plot_combined_traces_50_200.R), which all correctly restrict to
+# analysis_accepted %in% c("PASS","PASS*") -- matching the authoritative
+# model in main_study_analysis.R's build_pooled_dataset(). This gap let a
+# QC-failed sample's recovery value silently appear in this boxplot/outlier
+# analysis (confirmed: MAIN_013 carried FAIL status with materially
+# different recovery values before its reanalysis, and would have been
+# fully visible here with no filter in place).
 
-recovery_main <- recovery_data %>% filter(SampleType == "Main")
-recovery_pilot <- pilot_recovery_data %>% filter(SampleType == "Pilot", Solvent_level == "present")
+recovery_main <- recovery_data %>%
+  filter(SampleType == "Main", analysis_accepted %in% c("PASS", "PASS*"))
+recovery_pilot <- pilot_recovery_data %>%
+  filter(SampleType == "Pilot", Solvent_level == "present",
+         analysis_accepted %in% c("PASS", "PASS*"))
 
 joined_main <- recovery_main %>%
   left_join(

@@ -85,9 +85,23 @@ cat(sprintf("Loaded %d Main pressure rows, %d Main recovery rows, %d Pilot press
 # ===============================================================================
 # FILTER + JOIN
 # ===============================================================================
+# QC-ACCEPTANCE FILTER (added Oct 2026 red-team review): this script
+# previously had NO filter on analysis_accepted at all, unlike the other
+# companion recovery-vs-pressure plotting scripts (plot_petn_vs_rdx_recovery.R,
+# plot_pressure_boxplot_by_target.R, plot_combined_qc_overview.R,
+# plot_combined_traces_50_200.R), which all correctly restrict to
+# analysis_accepted %in% c("PASS","PASS*") -- matching the authoritative
+# model in main_study_analysis.R's build_pooled_dataset(). This script fits
+# its OWN independent regression models (Linear/Quadratic/Logarithmic/
+# Asymptotic) directly on this data, so a QC-failed sample could silently
+# pull the fitted curve, R^2, and p-value shown on these figures in a
+# different direction than the authoritative model's results.
 
-recovery_main <- recovery_data %>% filter(SampleType == "Main")
-recovery_pilot <- pilot_recovery_data %>% filter(SampleType == "Pilot", Solvent_level == "present")
+recovery_main <- recovery_data %>%
+  filter(SampleType == "Main", analysis_accepted %in% c("PASS", "PASS*"))
+recovery_pilot <- pilot_recovery_data %>%
+  filter(SampleType == "Pilot", Solvent_level == "present",
+         analysis_accepted %in% c("PASS", "PASS*"))
 
 joined_main <- recovery_main %>%
   left_join(pressure_data %>% select(Sample, Target, Mean_Pressure), by = c("RunID" = "Sample")) %>%
