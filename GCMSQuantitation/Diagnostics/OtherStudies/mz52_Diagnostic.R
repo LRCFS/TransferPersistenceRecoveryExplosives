@@ -136,7 +136,7 @@ for (file in all_files) {
   )
   
   conc <- case_when(
-    file %in% calibrants ~ cal_conc[calibrants == file],
+    file %in% calibrants ~ cal_conc[match(file, calibrants)],
     file %in% blanks ~ 0,
     file == "009" ~ 6,
     file == "011" ~ 0.2,
@@ -179,7 +179,7 @@ for (file in all_files) {
   )
   
   conc_val <- case_when(
-    file %in% calibrants ~ cal_conc[calibrants == file],
+    file %in% calibrants ~ cal_conc[match(file, calibrants)],
     file %in% blanks ~ 0,
     file == "009" ~ 6,
     file == "011" ~ 0.2,

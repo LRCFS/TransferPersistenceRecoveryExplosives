@@ -141,8 +141,13 @@ for (i in seq_along(datasets)) {
   
   cat("Found", nrow(qc_6ng), "PETN 6ng QCs at rows:", paste(qc_6ng$Row, collapse=", "), "\n")
   
-  qc_6ng$Dataset <- dataset_name
-  all_qc_data[[dataset_name]] <- qc_6ng
+  # NOTE: qc_6ng is NOT stored into all_qc_data here. It must only be stored
+  # AFTER predicted_petn_pa/predicted_is_pa are added below (and only if both
+  # power models actually succeeded) -- storing it here was a bug: R copies
+  # data frames by value, so a copy stored before those columns exist would
+  # permanently lack them, breaking the plotting code further down which
+  # reads them via all_qc_combined (see "Column 'predicted_petn_pa' doesn't
+  # exist" -- the exact symptom this caused).
   
   # ====================================================
   # Fit power curve to PETN PA
@@ -218,6 +223,11 @@ for (i in seq_along(datasets)) {
     cat("WARNING: Cannot proceed with dual correction - one or both power models failed\n")
     next
   }
+  
+  # Both predicted_petn_pa and predicted_is_pa now exist on qc_6ng -- safe to
+  # store for the cross-dataset plotting section further down the script.
+  qc_6ng$Dataset <- dataset_name
+  all_qc_data[[dataset_name]] <- qc_6ng
   
   # ====================================================
   # Extract calibration curve (RATIO-BASED)
