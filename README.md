@@ -24,6 +24,8 @@ This is a collection of largely independent R projects (each with its own `.Rpro
 
 Most sub-projects keep a `CONTEXT.md` acting as both a running session log (dated entries, newest-first) and living reference documentation (design rationale, current pipeline behaviour). The two largest — `GCMSQuantitation/CONTEXT.md` and `ASTRA/doe/CONTEXT.md` — each start with a Table of Contents to help navigate between the session log and the static reference sections. `ASTRA/README.md` is the exception: a fully consolidated reference manual + changelog rather than a session log.
 
+[`OPEN_ITEMS.md`](OPEN_ITEMS.md) (repo root) indexes every open question, pending decision, or blocked task currently scattered across the various `CONTEXT.md` files, grouped by project, with a pointer back to the full detail in each source file.
+
 ## Shared code
 
 - `thesis_palette.R` (repo root) — shared colour-palette definitions, `source()`d by scripts across `GCMSQuantitation`, `UVSwabbing`, `ASTRA`, `DataAnalysis`, and `Extraction` for consistent thesis figure styling.
