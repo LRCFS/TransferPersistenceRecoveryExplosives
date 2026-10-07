@@ -2,9 +2,10 @@
 .Rhistory
 .RData
 .Ruserdata
-.RDataTmp
-.RDataTmp1
+.RDataTmp*
 Rplots.pdf
+.DS_Store
+Thumbs.db
 ScopusOutputs/
 GCMSQuantitation/Test Data/
 /Reports/
