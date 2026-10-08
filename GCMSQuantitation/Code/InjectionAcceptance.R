@@ -325,9 +325,19 @@ assign_qc_brackets <- function(all_data, petn_bias_col, rdx_bias_col,
                     "rdx_is_snr_flag")))
 
   # Determine which QCs actually injected (RDX IS detected)
+  # BUG FIX (Oct 2026 red-team review): previously compared against the
+  # literal "Not_Detected", a value rdx_is_snr_flag never takes (its real
+  # vocabulary, same as every other *_snr_flag column, is "Below_LOD"/
+  # "Below_LOQ"/"Quantifiable"/NA -- "Not_Detected"/"NOT_DETECTED" only
+  # ever appears on the differently-named rdx_is_pa_flag column). This
+  # reduced to just `!is.na(rdx_is_snr_flag)`, meaning a QC whose IS was
+  # detected at all -- even at "Below_LOD" (effectively undetectable,
+  # pa floored to NA) -- was still counted as "injected". Fixed to also
+  # exclude "Below_LOD", matching the genuine non-detect semantics used
+  # for the ND/BQL fix elsewhere in this pipeline.
   if ("rdx_is_snr_flag" %in% names(qc_rows)) {
     qc_rows$injected <- !is.na(qc_rows$rdx_is_snr_flag) &
-                         qc_rows$rdx_is_snr_flag != "Not_Detected"
+                         qc_rows$rdx_is_snr_flag != "Below_LOD"
   } else {
     qc_rows$injected <- TRUE
   }

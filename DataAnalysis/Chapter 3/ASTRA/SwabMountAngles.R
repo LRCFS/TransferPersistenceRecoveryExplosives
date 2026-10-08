@@ -11,8 +11,15 @@ source("C:/Users/A Bruce - User/Documents/TransferPersistenceRecoveryExplosives/
 data <- read.csv("C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Thesis Data/Chapter 3 - Methodology/SwabMountAngles.csv")
 
 #Separate data
+# BUG FIX (Oct 2026 red-team review): this 45 degree group previously
+# omitted the %>% na.omit() that both the 90 degree and 70 degree groups
+# below already use -- a single NA in this group's own Load column would
+# silently make mean()/max()/sd() all resolve to NA for 45 degrees only,
+# while the other two angles stayed clean. Added na.omit() here too so all
+# three angles are handled identically.
 data45 <- data %>%
-  filter(Swab.Mount == "45°")
+  filter(Swab.Mount == "45°") %>%
+  na.omit()
 data45_max <- max(data45$Load)
 data45_min <- min(data45$Load)
 data45_avg <- mean(data45$Load)

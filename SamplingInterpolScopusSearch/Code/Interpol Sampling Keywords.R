@@ -141,8 +141,24 @@ InterpolSamplingbyCountry_Graph <- InterpolSamplingCountryPairsCountSubset %>%
 InterpolKeywordOrder <- InterpolKeywordOrder %>%
   arrange(desc(x),(Group.1))
 
-InterpolKeywordOrder$Colour <- InterpolKeywordOrder$Group.1
-InterpolKeywordOrder$Colour <- gsr(as.character(InterpolKeywordOrder$Colour),as.character(ExplosiveList$Corrected.Explosive),as.character(ExplosiveList$Colour))
+# BUG FIX (Oct 2026 red-team review): the two lines previously here
+# (InterpolKeywordOrder$Colour <- ...; then remapped via
+# gsr(..., ExplosiveList$Corrected.Explosive, ExplosiveList$Colour)) were
+# leftover, unmodified copy-paste from the sibling Explosives project's
+# 06_Figure3_Interpol_Explosive_Country.R, where ExplosiveList is a real,
+# loaded reference table with Corrected.Explosive/Colour columns. This
+# project has no equivalent object -- ExplosiveList is never created
+# anywhere in SamplingInterpolScopusSearch (only SamplingList is loaded,
+# GlobalCode.R, and SamplingDatabase.csv has no Corrected.Sampling/Colour
+# columns to build an equivalent from -- see OPEN_ITEMS.md). Referencing
+# ExplosiveList halted the script with "object not found" if this file was
+# ever run. Confirmed InterpolKeywordOrder$Colour is never actually read
+# anywhere else in this file (the real axis.text.y call below, line ~161,
+# uses a hardcoded "black", not this column) -- it was dead code even in
+# the version that would have run successfully. Removed entirely rather
+# than fixed in place, since there is no equivalent reference data in this
+# project to build a real per-term colour mapping from; building one would
+# be a new feature (a [Decision] item), not a bug fix.
 
 # write.csv(InterpolSamplingbyCountry_Graph,file = "temp.csv",row.names = FALSE)
 textcol <- "black"

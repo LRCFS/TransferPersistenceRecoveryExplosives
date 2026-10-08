@@ -2051,13 +2051,24 @@ fill_na_labels <- function(df) {
     if (col %in% nd_columns && any(is.na(df[[col]]))) {
       df[[col]] <- ifelse(is.na(df[[col]]), "ND", as.character(df[[col]]))
     } else if (col %in% bql_columns && any(is.na(df[[col]]))) {
-      # Determine if ND or BQL based on corresponding SNR flag
+      # Determine if ND or BQL based on corresponding SNR flag.
+      # BUG FIX (Oct 2026 red-team review): this previously compared against
+      # the literal "Not_Detected", a value *_snr_flag never actually takes
+      # (the real vocabulary, set in ModPeaks.R, is "Below_LOD"/"Below_LOQ"/
+      # "Quantifiable"/NA -- "Not_Detected" only ever appears, differently
+      # cased, on the unrelated rdx_is_pa_flag column). Since the comparison
+      # could never be TRUE, every NA concentration was always labelled
+      # "BQL", even for a genuine non-detect that should read "ND". Fixed to
+      # compare against "Below_LOD" (a true non-detect, per ModPeaks.R's own
+      # "pa <- NA_real_ # peak is indistinguishable from noise" comment) --
+      # also treating a missing/NA snr_flag (SNR couldn't be computed at
+      # all, e.g. no peak candidate found) as "ND" for the same reason.
       prefix <- sub("_concentration.*", "", col)
       snr_flag_col <- paste0(prefix, "_snr_flag")
       if (snr_flag_col %in% names(df)) {
         df[[col]] <- ifelse(
           is.na(df[[col]]),
-          ifelse(df[[snr_flag_col]] == "Not_Detected", "ND", "BQL"),
+          ifelse(is.na(df[[snr_flag_col]]) | df[[snr_flag_col]] == "Below_LOD", "ND", "BQL"),
           as.character(df[[col]])
         )
       } else {
