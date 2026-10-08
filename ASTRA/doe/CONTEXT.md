@@ -4,10 +4,11 @@
 
 This file has two parts, in this order (unchanged from before this note was added -- this is a navigation aid only, no content was moved):
 
-- **Session Log** (below) -- dated session entries, newest-first, August 5 - September 10, 2026.
+- **Session Log** (below) -- dated session entries, newest-first, August 5 - October 8, 2026.
 - **Design / Reference Documentation** (from "## Overview" onward) -- the original static design document: experimental design, statistical model, QC criteria, success criteria, and directory/file reference.
 
 ### Session Log contents (newest-first)
+- Session Summary (October 8, 2026) -- Red-Team Review: 2 Confirmed Bugs Fixed (Missing QC Filter in 2 Recovery Plots, Power-Analysis Interaction-Term k)
 - Session Summary (September 10, 2026) -- Figure Tidy-Up Pass, Recovery-Efficiency Correction Applied to ASTRA
 - Session Summary (September 8, 2026) -- Negative Control "Still Failing" Investigation
 - Session Summary (September 4, 2026) -- Extraction Efficiency Measured from a New 12-Replicate Dataset
@@ -59,6 +60,48 @@ This file has two parts, in this order (unchanged from before this note was adde
 
 ---
 
+
+## Session Summary (October 8, 2026) — Red-Team Review: 2 Confirmed Bugs Fixed (Missing QC Filter in 2 Recovery Plots, Power-Analysis Interaction-Term k), Plus a DataAnalysis/Chapter 3 Fix
+
+### Background
+
+Follow-on from a full-repo red-team code review (see root `OPEN_ITEMS.md`, items tagged "Oct 7 2026 red-team review") that audited every sub-project for code defects and analytical-workflow errors, independent of the usual session-driven feature work. This entry covers the items that live in ASTRA (plus one in `DataAnalysis/Chapter 3/ASTRA/`, documented here per this repo's convention that `DataAnalysis` has no `CONTEXT.md` of its own); see `GCMSQuantitation/CONTEXT.md` and `UVSwabbing/CONTEXT.md` for the equivalent entries in those projects from the same review.
+
+### Bug 1: Two Recovery-vs-Pressure Plotting Scripts Never Filtered on `analysis_accepted`
+
+**Files**: `ASTRA/plot_recovery_boxplot_actualpressure.R:134-135`, `ASTRA/plot_recovery_vs_pressure_unified.R:89-90`.
+
+Unlike the other 4 companion plotting scripts (`plot_petn_vs_rdx_recovery.R`, `plot_pressure_boxplot_by_target.R`, `plot_combined_qc_overview.R`, `plot_combined_traces_50_200.R`), these two never filtered to `analysis_accepted %in% c("PASS", "PASS*")` before fitting their own independent regression/boxplot/outlier logic -- both fit their own models directly on the data rather than reusing `main_study_analysis.R`'s `build_pooled_dataset()`. Confirmed this already let `MAIN_013`'s pre-reanalysis `FAIL` recovery values appear unfiltered in these two figures while it still carried `FAIL` status (prior to its physical reanalysis, see the Sept 2, 2026 session below).
+
+**Fix**: added the same `analysis_accepted %in% c("PASS", "PASS*")` filter (for both the Main and Pilot `wet`-only subsets) used by the 4 companion scripts.
+
+**Not yet re-run against live data** -- would need to confirm the two currently-outstanding samples with recovery data but no matched pressure-trace record (noted in the script's own header, both `PILOT_` ABS at 200g) are still correctly handled after this change.
+
+### Bug 2: Power-Analysis `k_map` Used Cell Count Instead of df+1 for the Interaction Term
+
+**File**: `ASTRA/doe/main_study_analysis.R`'s `run_power_analysis()`, `k_map` (~line 1601-1606).
+
+For every main effect, `k` is that effect's own number of levels, matching `pwr::pwr.anova.test()`'s one-way-ANOVA assumption (numerator df = k-1) -- consistent with the real Type III F-test for that term. For the `Surface_type:Pressure_f` interaction, `k` was instead set to `n_surface_types * n_pressure_levels = 10` (the raw cell count), whereas the real Type III interaction F-test has numerator df = `(n_surface_types-1)*(n_pressure_levels-1) = 4`, i.e. the consistent `k` on the same convention as every other row would be 5, not 10. This silently fed `pwr.anova.test()` a 9-numerator-df reference design for the interaction row while every other row in the same printed table used the k-1-df convention -- making the interaction row's power/min-N figures not comparable, on a like-for-like basis, to the rest of the table they're presented alongside. Distinct from, and additional to, the already-tracked `pwr.anova.test` vs. mixed/quadratic-model approximation gap (Aug 19, 2026 session, "Still To Do" -- `simr` installed but never wired in).
+
+**Fix**: `k_map`'s interaction entry now computed as `(n_surface_types-1)*(n_pressure_levels-1) + 1` (the df-equivalent, = 5), consistent with the `k = df+1` convention already used for every other row.
+
+**Not yet re-run against live data** -- would need to regenerate `main_study_analysis_summary.txt` to see the updated `MinN_for_80pct`/`Power_at_n6` figures for the interaction row specifically.
+
+### DataAnalysis/Chapter 3 Fix: `SwabMountAngles.R` NA-Handling Asymmetry
+
+**File**: `DataAnalysis/Chapter 3/ASTRA/SwabMountAngles.R`.
+
+The 45° group's summary stats (`data45_max`/`min`/`avg`/`sd`/`rsd`) were computed without `na.omit()`/`na.rm=TRUE`, while the 90° and 70° groups both already piped through `na.omit()` first -- a single `NA` in the real CSV's 45° `Load` column would have silently made `mean()`/`max()` resolve to `NA` for that angle only, inconsistent with how the other two angles are treated. Not the same issue as the sibling `OrigModSwabMountPressure.R`'s already-fixed `orig_data_avg` typo (which already uses `na.omit()` consistently on both its groups).
+
+**Fix**: added the matching `%>% na.omit()` to the 45° group.
+
+**Verified against the real `SwabMountAngles.csv`**: 0 NAs currently present (301 rows), confirmed by re-running the full script end-to-end -- identical output before/after (45° mean unchanged at 90.058), so this closes a latent risk rather than correcting an already-wrong number.
+
+### Files Modified
+
+`ASTRA/plot_recovery_boxplot_actualpressure.R`, `ASTRA/plot_recovery_vs_pressure_unified.R`, `ASTRA/doe/main_study_analysis.R` (`k_map` fix), `DataAnalysis/Chapter 3/ASTRA/SwabMountAngles.R`, root `OPEN_ITEMS.md` (all 3 items marked fixed with cross-reference back to this entry). This entry (`CONTEXT.md`).
+
+---
 
 ## Session Summary (September 10, 2026) — Figure Tidy-Up Pass (Pilot Plots Trimmed, Hinge/Boxplot Restyling), Recovery-Efficiency Correction Finally Applied to ASTRA, and Four New Pilot+Main Pressure/Recovery Figures
 

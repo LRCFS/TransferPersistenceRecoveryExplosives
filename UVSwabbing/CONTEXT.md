@@ -318,5 +318,65 @@ Ran the full script end-to-end (exit code 0, previously impossible). Confirmed c
 
 ---
 
-*Last updated: September 2026 (colour palette section added)*
+## Session Summary (October 8, 2026) — Red-Team Review: 3 Confirmed Bugs Fixed, 2 Scripts Unblocked by Finding Their Real Data
+
+### Background
+
+Follow-on from a full-repo red-team code review (see root `OPEN_ITEMS.md`, items tagged "Oct 7 2026 red-team review") that audited every sub-project for code defects and analytical-workflow errors. This entry covers the 3 confirmed, fixed bugs in this project, plus two scripts/datasets that turned out not to be genuinely `[Blocked]` after all -- the real data existed, just not at the stale `Shared with Oliver/` path hardcoded as these scripts' defaults. See `GCMSQuantitation/CONTEXT.md` and `ASTRA/doe/CONTEXT.md` for the equivalent entries in those projects from the same review.
+
+### Bug 1: `%Area` Extraction Picked Up Raw Pixel Counts Instead of the Percentage
+
+**Files**: `02_CombineResults.R:37-56`, `02b_CombineResults_ImageJResults.R:44-56` (`read_percent_area()`/`read_percent_area_from_folder()`).
+
+**Root cause** (confirmed by direct test): R's `read.csv()`/`make.names()` sanitizes a literal `%Area` ImageJ Summarize-table header to `X.Area` (ONE dot), never to the literal `%Area` string and never to `X..Area` (TWO dots). Both scripts' explicit column checks tested for the two-dot spelling, so neither could ever match -- every row silently fell through to a generic `grep("Area", ...)` fallback. In `02_CombineResults.R` specifically, that fallback had no exclusion for `Total Area`, so it picked up the raw pixel count (e.g. `23,348,160`) instead of the percentage (`100`). `02b_CombineResults_ImageJResults.R` had the identical two broken checks but happened to avoid the bug in practice via one extra fallback line already excluding `"Total"` from candidates.
+
+**Fix**: corrected the literal/regex to the one-dot spelling in both files; added the `"Total"`-exclusion to `02_CombineResults.R`'s own fallback too (so both scripts now have the same two-layer defense, rather than one relying on a coincidence); added a 0-100 plausibility guard (any extracted value outside that range is rejected to `NA` with a loud `warning()` instead of silently propagating a six-figure pixel count); made the destructive end-of-script raw-CSV cleanup conditional on that guard passing, not just on file *count* being complete; added a `DELETE_INDIVIDUAL_CSVS <- FALSE` safety toggle (default off) to both scripts.
+
+**Verified against real data, not synthetic**: found the real UV Powder Swabbing pattern-study data at `.../Experimental Results/UV Powder Swabbing/ASTRA Testing/OrganizedImages/` (1,800 real per-threshold ImageJ CSVs, 6 Surface/Rep folders) -- not the stale `Shared with Oliver/` default. Re-ran via a one-off driver overriding `OrganizedImages.dir`/`ThresholdResults.dir` after sourcing `00_GlobalCode.R` (neither script's hardcoded default was changed). Diffed the regenerated `Summary.csv` files against the pre-existing historical ones (backed up first): 1,796 of 1,800 values identical. Traced all 4 differences to a second, previously-unknown finding (see Bug 2) rather than a remaining flaw in the extraction fix itself.
+
+### Bug 2: 4 Raw ImageJ Exports Are Per-Particle Dumps, Not Summarize Rows (Found While Verifying Bug 1)
+
+Investigating those 4 differing values traced them to 4 real raw CSVs (`Surface2_Rep1/Before[18].csv`, `Surface2_Rep2/Before[83].csv` + `Blank[79].csv`, `Surface3_Rep1/After[56].csv`) that are genuine per-particle "Analyze Particles" exports (header `" ,Area,Mean,Min,Max"`, thousands of rows) mis-saved under Summarize-format filenames, rather than true single-row Summarize CSVs. These have a column literally named `"Area"` too (just the wrong kind -- one particle's pixel area, not `%Area`), so the Bug 1 column-name checks can't distinguish them, and the first particle's small pixel area (4/31/7/15 in the 4 real cases) coincidentally passed the 0-100 plausibility guard undetected.
+
+**Fix**: added a second, structural guard -- `nrow(csv_data) != 1` -- to both scripts' extraction functions: a genuine ImageJ Summarize CSV always has exactly one data row, regardless of column names. Re-ran against the real data: confirmed all 4 affected files are now correctly flagged by name via `warning()`, set to `NA` instead of a coincidentally-plausible-looking wrong value, and their 3 containing folders excluded from cleanup eligibility.
+
+**Remaining action item (lab work, not a code fix)**: those 4 raw ImageJ exports need to be redone in Summarize mode.
+
+### Bug 3: `01_OrganizeImages.R`'s Pattern Labels Didn't Match `06`/`07` -- Fixed in the Opposite Direction Than First Planned
+
+**File**: `01_OrganizeImages.R:58-70`.
+
+Originally planned to change `06_RecoveryAnalysis.R`'s/`07_PatternComparison.R`'s `pattern_order` vector (`"50g_BackandForth"`/`"50g_Snake"`/`"50g_Ratchet"`) to match `01_OrganizeImages.R`'s current source code (`"Snake"`/`"BaF"`/`"Ratchet"`, no prefix). **Checked the real, already-existing `ImageMapping.csv` for this study first** and found it already uses the `"50g_"`-prefixed names -- i.e. `06`/`07` were already correct, and `01`'s current code (which has always read `"Snake"`/`"BaF"`/`"Ratchet"` in this repo's git history) was the one out of sync with the real data. Fixing `06`/`07` instead would have broken the one real dataset that exists for this study, reproducing the exact bug on a different pair of scripts.
+
+**Fix**: changed `01_OrganizeImages.R`'s three pattern string literals to `"50g_Snake"`/`"50g_BackandForth"`/`"50g_Ratchet"` instead. The underlying surface/rep -> pattern assignment logic was already correct (confirmed to reproduce the real `ImageMapping.csv`'s mapping exactly); only the label strings were out of sync.
+
+**Verified via a safe dry run**: sourced the fixed script with `OrganizedImages.dir` redirected to a temp folder (`SourceImages.dir` pointed at the real raw `Images/` folder, read-only) -- confirmed the regenerated mapping's `Pattern` column is identical to the real `ImageMapping.csv` for all 6 Surface/Rep folders.
+
+### Bug 4 (found while verifying Bug 3): `06_RecoveryAnalysis.R` Crashed on NA Instead of Skipping Cleanly
+
+Re-running the full `01`->`06`->`07` chain against the real data (using the real `ImageMapping.csv` + the `Summary.csv` files regenerated by the Bug 1/2 fix) surfaced a further, previously-latent crash: `06_RecoveryAnalysis.R`'s 50%-order-check (`if (Before50 <= After50)`) has no NA handling, and 3 of the 6 real folders now correctly carry an NA (from the Bug 2 fix) at a threshold landing on this comparison -- crashing with `"missing value where TRUE/FALSE needed"` instead of the previous (silent, wrong) pre-fix behaviour.
+
+**Fix**: added an NA guard immediately after `UncorrectedThresholdResults` is built -- skips the folder cleanly with a clear, actionable message if any `Blank`/`Before`/`After` Area value is `NA`, rather than crashing partway through or computing a result from incomplete data.
+
+**Real consequence found**: all 3 affected folders share the same pattern (`"50g_BackandForth"`), so the pattern comparison now correctly shows **zero** `BackandForth` samples (previously n=3, computed from silently-wrong values pre-fix) -- only `Snake` (n=2) and `Ratchet` (n=1) remain, insufficient for the ANOVA to run at all. This is a more honest reflection of how little valid data currently exists for this sub-study, not a regression -- re-exporting the 4 flagged raw ImageJ files (Bug 2) would restore the `BackandForth` group. Confirmed zero regression for the 3 unaffected folders (Surface1_Rep1/Rep2, Surface3_Rep2) -- their recomputed recovery means matched the pre-existing historical `AverageRecovery.csv` values exactly (84.027/59.715/44.832%).
+
+### Bug 5: `UV_Calibration_Analysis.R`'s Cross-Concentration "Best Configuration" Pick Was Methodologically Invalid
+
+**File**: `UV_Calibration_Analysis.R:458-473`.
+
+`Composite_Score` (= `Norm_Discrimination * Norm_Linearity * Norm_Precision`) uses `Norm_Discrimination`, which is min-max-normalised SEPARATELY within each `Concentration` group. That's valid for `optimal_per_conc` (picking the best THRESHOLD within a fixed concentration -- the per-group rescaling cancels out) and the per-concentration "top 3 alternatives" list in `Recommendation.txt`, but `overall_best` then used the SAME `Composite_Score` to pick the single best CONCENTRATION *and* threshold together via `slice_max()` -- comparing scores each independently rescaled to their own concentration's own observed range (so a 0.9 at 50% and a 0.9 at 25% don't represent the same absolute discrimination). `Norm_Linearity` (R-squared, already absolute 0-1 by definition) and `Norm_Precision` (already an absolute fraction) were never part of the problem.
+
+**Fix**: added a second, GLOBALLY-normalised discrimination score (`Norm_Discrimination_Global`, min/max taken across ALL concentrations) and a corresponding `Composite_Score_Global`, used only by `overall_best`. Left `optimal_per_conc`, the per-concentration top-3 list, and the `Optimal_Threshold_Score.png` plot's underlying data unchanged (all legitimate within-group comparisons) -- added a clarifying subtitle/axis label to that plot instead, since it visually invited the same cross-colour peak-height misreading the code itself used to make.
+
+**Also found while fixing this**: the `[Blocked]` status this script carried in `OPEN_ITEMS.md` ("input folder not populated") wasn't actually accurate -- the real 4,500 raw ImageJ particle CSVs exist at `.../Experimental Results/UV Powder Swabbing/Powder Loading/output/`, same root cause as Bug 1/2's data being found at `ASTRA Testing/` rather than the stale `Shared with Oliver/` default.
+
+**Verified against the full real dataset** (4,500 raw CSVs, 45 images, via an in-memory text patch of `Data.dir`/`Output.dir` -- nothing written back to the repo script): confirmed zero regression in every upstream stage (`Linearity_Results.csv`/`Calibration_Results.csv`/`ThresholdCurves_All.csv`/`Image_Mapping.csv` byte-identical to the pre-existing historical output). Confirmed **the final recommendation is unchanged** -- `25% @ k=20` wins under both the old (invalid) and new (valid) scoring mechanisms, with the top 5 globally-ranked configurations all still from the `25%` group. The flawed methodology did not actually produce a wrong headline conclusion for this dataset, but it's now correctly justified by a valid comparison rather than coincidentally correct despite an invalid one.
+
+### Files Modified
+
+`02_CombineResults.R`, `02b_CombineResults_ImageJResults.R`, `01_OrganizeImages.R`, `06_RecoveryAnalysis.R`, `UV_Calibration_Analysis.R`, root `OPEN_ITEMS.md` (all items marked fixed with cross-reference back to this entry, and the two incorrectly-`[Blocked]` items corrected). This entry (`CONTEXT.md`). Real-data output regenerated in place (with backups taken first) at `ASTRA Testing/ThresholdResults/`, `ASTRA Testing/Analysis/`, and `Powder Loading/Calibration_Output/`.
+
+---
+
+*Last updated: October 2026 (red-team review fixes added)*
 *Key scripts: UV_Recovery_Reprocessing.R, UV_Calibration_Analysis.R*

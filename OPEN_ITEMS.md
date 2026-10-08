@@ -10,7 +10,7 @@ Each item is tagged with one of:
 - **[Blocked]** — can't proceed in this environment (e.g. missing/unsynced data).
 - **[Investigation]** — still actively being chased, no blocker, just not finished.
 
-Last compiled: October 2026 (from `GCMSQuantitation/CONTEXT.md`, `ASTRA/doe/CONTEXT.md`, `UVSwabbing/CONTEXT.md`, `SartoriusBalance/CONTEXT.md`, `ASTRA/README.md`). Updated Oct 7 2026 with findings from a full-repo red-team code review (all items tagged *"Oct 7 2026 red-team review"* below) — those items have no corresponding `CONTEXT.md` session entry yet; file:line references are given directly instead.
+Last compiled: October 2026 (from `GCMSQuantitation/CONTEXT.md`, `ASTRA/doe/CONTEXT.md`, `UVSwabbing/CONTEXT.md`, `SartoriusBalance/CONTEXT.md`, `ASTRA/README.md`). Updated Oct 7 2026 with findings from a full-repo red-team code review (all items tagged *"Oct 7 2026 red-team review"* below). Updated again Oct 8 2026: every item from that review which has since been fixed now also has a full "Session Summary (October 8, 2026)" entry in the relevant project's own `CONTEXT.md` (`GCMSQuantitation/CONTEXT.md`, `ASTRA/doe/CONTEXT.md`, `UVSwabbing/CONTEXT.md`) — the condensed summaries below point back to those entries; projects with no `CONTEXT.md` of their own (`SolutionPreparationMU`/`ErrorCalc`/`Extraction`, the Scopus/Interpol projects) still carry their full detail only here, since there is no session-log convention to redirect to for those.
 
 ---
 

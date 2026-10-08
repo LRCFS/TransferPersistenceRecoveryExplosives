@@ -5,7 +5,7 @@
 This file has three parts, in this order:
 
 - **Part 1: Living Reference / Design Documentation** -- static sections describing the current pipeline design, QC criteria, and architecture. Not a chronological log.
-- **Part 2: Session Log, Recent** -- dated session entries, newest-first, July 31 - October 6, 2026.
+- **Part 2: Session Log, Recent** -- dated session entries, newest-first, July 31 - October 8, 2026.
 - **Part 3: Earlier Project History** -- older dated session entries interleaved with further static/reference notes, roughly April - July 2026. Preserved in its original relative order from before this file was reorganised (October 2026); not re-sorted into strict chronological order during that reorganisation, to avoid misclassifying any entry.
 
 ### Part 1 contents
@@ -19,6 +19,7 @@ This file has three parts, in this order:
 - Known Issues / Bug Fixes
 
 ### Part 2 contents (newest-first)
+- Session Summary (October 8, 2026) -- Red-Team Review: 3 Confirmed Bugs Fixed (worse_of() Blank-Bracket, ND/BQL Export Label + Companion QC-Injected-Check Bug, ParentFolder Trailing-Slash)
 - Session Summary (October 6, 2026) -- ICH Q2(R2) Calibration-Curve LOD/LOQ [condensed; see Diagnostics/Generic/ICH_LODLOQ_Output/LODLOQ_Investigation_Narrative.md for full write-up]
 - Session Summary (September 8, 2026, continued) -- Conditional Formatting Silently Dropped (OneDrive XLSX)
 - Session Summary (September 8, 2026, continued) -- Extraction+Filtration Efficiency Simplified
@@ -913,7 +914,55 @@ peak_data <- signal[
 ---
 
 
-## PART 2: SESSION LOG -- RECENT (newest-first, July 31 - October 6, 2026)
+## PART 2: SESSION LOG -- RECENT (newest-first, July 31 - October 8, 2026)
+
+---
+
+## Session Summary (October 8, 2026) -- Red-Team Review: 3 Confirmed Bugs Fixed
+
+### Background
+
+Follow-on from a full-repo red-team code review (see root `OPEN_ITEMS.md`, items tagged "Oct 7 2026 red-team review") that audited every sub-project for code defects and analytical-workflow errors, independent of the usual session-driven feature work. This entry covers the 3 confirmed, fixed bugs that live in this project; see `ASTRA/doe/CONTEXT.md` and `UVSwabbing/CONTEXT.md` for the equivalent entries in those projects from the same review.
+
+### Bug 1: `worse_of()` Indexing Bug -- Blank-Carryover Hard-Fail Completely Non-Functional
+
+**File**: `Code/InjectionAcceptance.R:502-508`, `worse_of()` (used by `assign_blank_brackets()` to combine a sample/NC's pre- and post-bracketing blank contamination status into a single worst-case verdict).
+
+**Bug**: `names(rank)[which.max(rank[vals])]` indexed the full 3-element `rank` vector (`Clean=1, Trace=2, Contaminated=3`) using a position computed from `which.max()` applied to the *subsetted* `rank[vals]` (at most 2 elements, since `vals` holds only the pre/post pair with NAs dropped). Since a position within a 2-element subset essentially never corresponds to its own position in the full 3-element vector, this returns an arbitrary wrong label.
+
+**Verified by exhaustive execution** of all 16 possible `(a, b)` input combinations: `"Contaminated"` was **never** returned under any input, including `worse_of("Contaminated", "Contaminated")` -> `"Clean"`. Since this is the only mechanism gating the blank-carryover hard-fail/caveat in `evaluate_analyte()` (flowchart Section C), the carryover check has been silently non-functional for every sample/NC in both FINEX and ASTRA since it was introduced (Aug 10, 2026 "Injection Acceptance Logic Consolidated" session) -- it survived the Sept 8, 2026 full flowchart-vs-code audit because that audit checked structural completeness, not runtime correctness of this specific helper.
+
+**Fix**: changed `names(rank)[which.max(rank[vals])]` to `vals[which.max(rank[vals])]` -- `vals` already holds the correct label strings in the same order `rank[vals]` was computed from, so indexing `vals` by that same position is always correct. Re-verified by exhaustive execution of all 16 combinations post-fix -- `Contaminated`/`Trace`/`Clean` now all resolve correctly in every case.
+
+**Not yet verified against real study data** -- would require reprocessing every FINEX and ASTRA dataset to see whether any previously-silent `PASS`/`PASS*` rows now flip to `FAIL`/caveat due to a genuinely contaminated or trace-positive bracketing blank. Flagged in `OPEN_ITEMS.md` as the one real residual risk from this fix.
+
+### Bug 2 (+ companion Bug 3): ND/BQL Export Label and the QC-"Injected" Check Both Compared Against a Literal That Never Occurs
+
+**Files**: `Code/03_Quantification.R`'s `fill_na_labels()` (~line 2053-2065), and `Code/InjectionAcceptance.R:330`.
+
+**Bug 2** (`03_Quantification.R`): the ND ("Not Detected")/BQL ("Below Quantification Limit") export-label logic for NA concentration cells compared the row's `*_snr_flag` against the literal `"Not_Detected"` -- a value that column never actually takes. The real vocabulary (set in `ModPeaks.R`'s `extract_peak_area()`) is `"Below_LOD"`/`"Below_LOQ"`/`"Quantifiable"`/`NA`; `"Not_Detected"` only ever appears, differently cased (`"NOT_DETECTED"`), on the unrelated `rdx_is_pa_flag` column. Since the comparison could never be `TRUE`, every true non-detect was mislabelled `"BQL"` instead of `"ND"` in the exported `_GCMSResults.xlsx` -- display-only, doesn't touch the CSV, numeric concentrations, or any PASS/FAIL logic.
+
+**Fix**: changed the comparison to `"Below_LOD"` (the real non-detect value), also treating a missing/`NA` `snr_flag` (SNR couldn't be computed at all -- no peak candidate found) the same way. Verified by direct unit test against all 5 realistic input combinations (`Below_LOD`->ND, `Below_LOQ`->BQL, `Quantifiable`->BQL, `NA`->ND, non-NA value->passthrough).
+
+**Bug 3** (`InjectionAcceptance.R:330`): a near-identical copy of the same wrong literal, initially assumed "currently harmless" (OPEN_ITEMS.md's original red-team note) because the surrounding `!is.na(...)` clause already made the comparison vacuously true whenever reached. On closer inspection this turned out to be a **genuine behavioural bug, not dead code**: `qc_rows$injected <- !is.na(rdx_is_snr_flag) & rdx_is_snr_flag != "Not_Detected"` governs `find_injected_qc_pre()`/`find_injected_qc_post()`'s carry-forward substitution logic (deciding whether a given QC "actually injected" for bracket-assignment purposes). Since the second clause can never be `FALSE`, the check reduced to just `!is.na(rdx_is_snr_flag)` -- meaning a QC whose internal standard was detected at all, even at `"Below_LOD"` (effectively undetectable, PA floored to `NA`), was still counted as having injected successfully.
+
+**Fix**: changed the comparison to also exclude `"Below_LOD"`, matching the real non-detect semantics used in Bug 2's fix. Not yet re-run against real study data.
+
+### Bug 4: `ParentFolder` Trailing-Slash Bug (Previously Documented, Now Fixed)
+
+**File**: `GlobalCode.R:91` (now ~103 after this fix).
+
+This was already a known, documented item (`OPEN_ITEMS.md`, Jul 29 2026 session, "root cause of the Lab29/Lab33 duplicate-file incident") but had never actually been fixed -- it was flagged with "No guard added."
+
+**Root cause** (confirmed by direct test): `ParentFolder <- sub(".*/", "", DataFolder)` is greedy, so when `DataFolder` itself ends in a trailing slash, the match consumes the **entire** string, producing `ParentFolder = ""` instead of the dataset's real folder name -- `sub(".*/", "", ".../Analysis4/")` == `""` (vs `"Analysis4"` with no trailing slash). An empty `ParentFolder` produces empty-prefixed output filenames (`"_GCMSResults.csv"` instead of `"Lab29_GCMSResults.csv"`), which `04_CollateStudyResults.R`'s recursive file discovery then silently collects alongside the correctly-named files as if they were a second, distinct dataset -- exactly what happened in the original Lab29/Lab33 incident (fixed manually at the time by deleting the stale files; the underlying bug was never guarded).
+
+**Fix**: strip any trailing slash(es) before extracting the last path component: `ParentFolder <- sub(".*/", "", sub("/+$", "", DataFolder))`. Also added a defense-in-depth guard to `validate_setup()`: `ParentFolder` must now be a non-empty, single-element, non-`NA` character string containing no path separators, or the script `stop()`s immediately with a clear message naming both the bad `ParentFolder` and the `DataFolder` it was derived from.
+
+**Verification**: tested both the derivation fix and the guard logic in isolation against synthetic path strings (no trailing slash, single/double trailing slash, `NA`) -- confirmed the fix produces identical output to the old code for the normal case and correctly recovers the real folder name for every trailing-slash case, and the guard correctly `stop()`s for empty/`NA`/path-separator-containing values while passing normal ones. Did **not** source the live `GlobalCode.R` directly to verify end-to-end, since doing so risks triggering a full `01`->`03` reprocessing run against whatever dataset `DataFolder` currently points to -- a documented real hazard elsewhere in this file's own history (e.g. the disk-space incidents in the Aug 12-14, 2026 session). Confirmed the currently-configured `DataFolder` has no trailing slash, so this fix changes nothing for the current real run -- it is purely a safety net for the next time a trailing-slash path is set.
+
+### Files Modified
+
+`Code/InjectionAcceptance.R` (`worse_of()` fix, line ~330 fix), `Code/03_Quantification.R` (`fill_na_labels()` fix), `GlobalCode.R` (`ParentFolder` derivation fix + `validate_setup()` guard), root `OPEN_ITEMS.md` (all 4 items marked fixed with cross-reference back to this entry). This entry (`CONTEXT.md`).
 
 ---
 
