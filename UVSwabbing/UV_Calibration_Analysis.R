@@ -469,6 +469,29 @@ optimal_scores <- linearity_results %>%
       Pass_Saturation & Pass_Signal,
       Norm_Discrimination * Norm_Linearity * Norm_Precision,
       0
+    ),
+    # BUG FIX (Oct 2026 red-team review): Norm_Discrimination above is
+    # min-max-normalised SEPARATELY WITHIN each Concentration group (see
+    # group_by(Concentration) a few lines up), so a score of e.g. 0.9 at
+    # 50% and a score of 0.9 at 25% do NOT represent the same absolute
+    # discrimination -- each is only "near the top of ITS OWN
+    # concentration's observed range". That's fine for optimal_per_conc
+    # below (picking the best THRESHOLD within a fixed concentration,
+    # where the per-group rescaling cancels out), but Composite_Score
+    # itself was then also used by overall_best further down to pick the
+    # single best CONCENTRATION *and* threshold together -- an invalid
+    # cross-group comparison. Added a second, GLOBALLY-normalised
+    # discrimination score (min/max taken across ALL concentrations, not
+    # per-group) specifically for that cross-concentration comparison.
+    # Norm_Linearity (R-squared, already absolute 0-1 by definition) and
+    # Norm_Precision (already an absolute fraction) were never part of
+    # this problem -- only Norm_Discrimination needed a global variant.
+    Norm_Discrimination_Global = (Mean_Discrimination - min(Mean_Discrimination, na.rm = TRUE)) /
+      (max(Mean_Discrimination, na.rm = TRUE) - min(Mean_Discrimination, na.rm = TRUE) + 0.001),
+    Composite_Score_Global = ifelse(
+      Pass_Saturation & Pass_Signal,
+      Norm_Discrimination_Global * Norm_Linearity * Norm_Precision,
+      0
     )
   )
 
@@ -516,8 +539,12 @@ print(as.data.frame(cv_summary))
 cat("\n=== STAGE 5: Generating Recommendation ===\n")
 
 # Find overall best configuration
+# BUG FIX (Oct 2026 red-team review): previously used Composite_Score,
+# which is only validly comparable WITHIN a Concentration group (see the
+# Composite_Score_Global comment above). Switched to Composite_Score_Global
+# for this specific cross-concentration pick.
 overall_best <- optimal_scores %>%
-  slice_max(Composite_Score, n = 1)
+  slice_max(Composite_Score_Global, n = 1)
 
 best_conc <- as.character(overall_best$Concentration[1])
 best_k <- overall_best$Threshold[1]
@@ -718,9 +745,9 @@ if (nrow(optimal_scores) > 0) {
                aes(x = Threshold, y = Composite_Score),
                size = 4, shape = 18) +
     labs(title = "Composite Score: Optimal Threshold Identification",
-         subtitle = "Score = Discrimination × Linearity × Precision (where not saturated and signal > 2%)",
+         subtitle = "Score = Discrimination x Linearity x Precision (where not saturated and signal > 2%).\nDiscrimination is normalised SEPARATELY within each concentration -- curve SHAPE/peak LOCATION is\ncomparable within a colour, but peak HEIGHT is NOT comparable ACROSS colours (see Recommendation.txt\nfor the cross-concentration pick, which uses a separately-computed, globally-normalised score).",
          x = "Threshold (k)",
-         y = "Composite Score") +
+         y = "Composite Score (per-concentration-normalised -- not for cross-concentration comparison)") +
     theme_minimal() +
     theme(legend.position = "bottom")
   
