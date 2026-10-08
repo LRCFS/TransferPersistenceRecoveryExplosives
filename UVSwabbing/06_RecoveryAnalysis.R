@@ -47,6 +47,29 @@ for (i in filenameFolders) {
     AfterArea = Aftertempresults$Area
   )
   
+  # NA guard (added Oct 2026): a raw per-threshold CSV can be correctly
+  # flagged NA by 02_CombineResults.R (e.g. the implausible-value or
+  # wrong-ImageJ-export-format guards added in that same fix) rather than
+  # silently feeding a wrong-but-plausible-looking value through. Before
+  # this guard, an NA here would propagate into the 90%/50% alignment
+  # logic below and crash later with an opaque "missing value where
+  # TRUE/FALSE needed" error on a bare if() -- confirmed directly against
+  # this study's own real data (Surface2_Rep1/Surface2_Rep2/Surface3_Rep1,
+  # each containing one raw CSV identified as a mis-exported ImageJ
+  # "Analyze Particles" dump rather than a true Summarize row). Skip the
+  # whole folder cleanly here instead, with a clear reason, rather than
+  # crash partway through or silently compute a result from incomplete
+  # data.
+  if (any(is.na(UncorrectedThresholdResults$BlankArea)) ||
+      any(is.na(UncorrectedThresholdResults$BeforeArea)) ||
+      any(is.na(UncorrectedThresholdResults$AfterArea))) {
+    cat(sprintf(
+      "  SKIPPED: %s has NA value(s) in Blank/Before/After Area (likely a raw ImageJ export flagged as implausible by 02_CombineResults.R) -- cannot reliably compute 50%%/90%% alignment or recovery. Re-export the affected threshold(s) from ImageJ and re-run.\n",
+      surfacerep
+    ))
+    next
+  }
+  
   # Convert to long format
   UncorrectedResultsPlot <- pivot_longer(UncorrectedThresholdResults, 
                                     cols = c(BlankArea, AfterArea, BeforeArea), 

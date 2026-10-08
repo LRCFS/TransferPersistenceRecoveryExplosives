@@ -55,15 +55,28 @@ for (i in 1:num_images) {
   new_folder <- sprintf("Surface%d_Rep%d", surface_num, rep_num)
   
   # Define swabbing pattern based on surface and rep
+  # BUG FIX (Oct 2026 red-team review): these three string literals
+  # previously read "Snake"/"BaF"/"Ratchet" (no prefix), which does NOT
+  # match 06_RecoveryAnalysis.R's/07_PatternComparison.R's pattern_order
+  # vector ("50g_BackandForth"/"50g_Snake"/"50g_Ratchet"), nor the real,
+  # already-existing ImageMapping.csv on disk for this study (confirmed
+  # directly: that file already uses the "50g_"-prefixed names below --
+  # whatever process originally generated it did not use this version of
+  # this script). The underlying surface/rep -> pattern ASSIGNMENT LOGIC
+  # below is already correct (confirmed to reproduce the real
+  # ImageMapping.csv row-for-row); only the label strings were out of
+  # sync. Fixed to match 06/07 and the real data, rather than the other
+  # way round, since changing 06/07 instead would have broken the one
+  # real dataset that already exists for this study.
   if (surface_num == 1) {
-    pattern <- "Snake"
+    pattern <- "50g_Snake"
   } else if (surface_num == 2) {
-    pattern <- "BaF"
+    pattern <- "50g_BackandForth"
   } else if (surface_num == 3) {
     if (rep_num == 1) {
-      pattern <- "BaF"
+      pattern <- "50g_BackandForth"
     } else {
-      pattern <- "Ratchet"
+      pattern <- "50g_Ratchet"
     }
   } else {
     pattern <- "Unknown"
