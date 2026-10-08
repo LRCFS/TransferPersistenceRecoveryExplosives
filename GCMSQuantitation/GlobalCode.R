@@ -88,7 +88,19 @@ DataFolder <- if (!is.null(.preset_DataFolder)) {
 }
 #DataFolder <- "C:/Users/A Bruce - User/OneDrive - University of Dundee/Documents/Experimental Results/GC Data/Extraction/20260904ExtractionTest"
 rm(.preset_DataFolder, .preset_study_type)
-ParentFolder <- sub(".*/", "", DataFolder)
+# BUG FIX (Oct 2026 red-team review): if DataFolder ends in a trailing
+# slash, sub(".*/", "", DataFolder) greedily matches the ENTIRE string
+# (since ".*/" is greedy and the string itself ends in "/"), silently
+# producing an empty ParentFolder -- confirmed directly:
+#   sub(".*/", "", ".../Analysis4/") == ""  (vs "Analysis4" with no
+#   trailing slash). This was the root cause of the Lab29/Lab33
+#   duplicate-file incident (empty-prefixed output filenames like
+#   "_GCMSResults.csv" instead of "Lab29_GCMSResults.csv", silently
+#   collected alongside the correctly-named ones by
+#   04_CollateStudyResults.R's recursive file discovery). Fixed by
+#   stripping any trailing slash(es) before extracting the last path
+#   component, so a trailing slash no longer changes the result.
+ParentFolder <- sub(".*/", "", sub("/+$", "", DataFolder))
 
 # This is where the .D files from the instrument will be placed  
 dir.create(file.path(paste0(DataFolder, "/RawData/")), recursive = TRUE)
@@ -600,6 +612,19 @@ validate_setup <- function() {
   # --- DataFolder must exist ---
   if (!dir.exists(DataFolder)) {
     stop("DataFolder does not exist: ", DataFolder)
+  }
+  
+  # --- ParentFolder must be a non-empty, single path component ---
+  # (added Oct 2026 red-team review, defense-in-depth alongside the fix to
+  # ParentFolder's own derivation above -- catches any future case that
+  # could still produce an empty/invalid dataset-name prefix loudly,
+  # rather than letting it silently flow into every output filename,
+  # drift_correction_exclude_qc_lines_by_dataset/cal_exclude_lines_by_dataset
+  # lookup, and the reproducibility log)
+  if (!is.character(ParentFolder) || length(ParentFolder) != 1 ||
+      anyNA(ParentFolder) || nchar(ParentFolder) == 0 || grepl("[/\\\\]", ParentFolder)) {
+    stop("ParentFolder is empty or invalid ('", ParentFolder, "') -- derived from DataFolder ('",
+         DataFolder, "'). Check DataFolder doesn't have an unexpected trailing slash or other formatting issue.")
   }
   
   # --- study_type must be a recognised value ---
