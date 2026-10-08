@@ -8,6 +8,18 @@
 #   3. Process images in ImageJ using the corrected macro (ImageJ_ThresholdMacro.txt)
 #      which saves the Summary table (not individual particle results)
 
+# === SAFETY TOGGLE (added Oct 2026 red-team fix) ===
+# This script's cleanup step at the bottom permanently deletes the raw
+# per-threshold ImageJ CSVs once Summary.csv is written -- if the %Area
+# extraction above it is ever wrong (see the bug fixed in this same session:
+# the old code picked raw-pixel Total.Area instead of %Area for every row,
+# due to a sanitized-column-name typo), that deletion makes the mistake
+# unrecoverable short of re-running ImageJ from the original TIFFs.
+# Default FALSE so a first re-run after this fix can be sanity-checked
+# (inspect the regenerated Summary.csv files by eye) before trusting the
+# destructive step. Set to TRUE once you're confident the output is correct.
+DELETE_INDIVIDUAL_CSVS <- FALSE
+
 # === HELPER FUNCTION TO READ %Area FROM SUMMARY CSV ===
 
 read_percent_area <- function(folder_path, image_name) {
@@ -16,6 +28,7 @@ read_percent_area <- function(folder_path, image_name) {
   
   area_values <- numeric(100)
   files_found <- 0
+  any_implausible <- FALSE
   
   for (k in 1:100) {
     # Construct expected filename
@@ -33,17 +46,56 @@ read_percent_area <- function(folder_path, image_name) {
       # Read the CSV
       csv_data <- read.csv(csv_file[1])
       
-      # Extract %Area column
+      # Structural format guard (added Oct 2026, found via real-data
+      # verification of the %Area fix below): a genuine ImageJ "Summarize"
+      # CSV always has exactly 1 data row. Found 4 real files in this
+      # study's own data that were instead per-particle "Analyze Particles"
+      # dumps (thousands of rows, header " ,Area,Mean,Min,Max") -- these
+      # DO have a column literally named "Area" (just the wrong kind: one
+      # particle's pixel area, not %Area), so the column-name checks below
+      # can't distinguish them, and the first particle's area can
+      # coincidentally fall inside the 0-100 plausibility range by chance
+      # (confirmed: 4, 7, 15, 31 in the 4 real cases found -- all easily
+      # mistaken for a real %Area value). Checking row count first catches
+      # this regardless of column names.
+      if (nrow(csv_data) != 1) {
+        warning(sprintf(
+          "%s has %d data row(s), expected exactly 1 (Summarize format) -- likely a per-particle 'Analyze Particles' export saved under the wrong filename, treating as NA",
+          basename(csv_file[1]), nrow(csv_data)
+        ))
+        area_values[k] <- NA
+        any_implausible <- TRUE
+        next
+      }
+      
+      # Extract %Area column.
+      # BUG FIX (Oct 2026 red-team review): R's read.csv()/make.names()
+      # sanitizes a literal "%Area" header to "X.Area" (ONE dot), never to
+      # the literal "%Area" string itself and never to "X..Area" (TWO
+      # dots) -- confirmed by direct test. The two checks below previously
+      # could therefore never match, so every row silently fell through to
+      # the generic-Area-column fallback, which picked raw-pixel
+      # "Total Area" instead of the percentage. Fixed the literal and the
+      # fallback regex to the correct one-dot spelling.
       if ("%Area" %in% names(csv_data)) {
         area_values[k] <- csv_data[["%Area"]][1]
-      } else if ("X..Area" %in% names(csv_data)) {
-        area_values[k] <- csv_data[["X..Area"]][1]
+      } else if ("X.Area" %in% names(csv_data)) {
+        area_values[k] <- csv_data[["X.Area"]][1]
       } else {
-        # Try to find any column containing "Area"
+        # Try to find any column containing "Area", excluding "Total Area"
+        # (added as a second line of defense, Oct 2026 -- mirrors the
+        # equivalent exclusion already present in 02b_CombineResults_
+        # ImageJResults.R's own fallback, which is what let that sibling
+        # script avoid this bug despite having the same two broken checks
+        # above). Without this exclusion, a raw pixel count could again be
+        # silently picked up as "the Area column" if the %Area column is
+        # ever missing/renamed for any other reason.
         area_cols <- grep("Area", names(csv_data), value = TRUE, ignore.case = TRUE)
+        area_cols <- area_cols[!grepl("Total", area_cols, ignore.case = TRUE)]
         if (length(area_cols) > 0) {
-          # Use the %Area column if available, otherwise use Total Area
-          pct_col <- grep("%Area|^X\\.\\.Area$", area_cols, value = TRUE)
+          # Use the %Area column if available, otherwise use whatever
+          # Area-like column remains (Total Area already excluded above)
+          pct_col <- grep("%Area|^X\\.Area$", area_cols, value = TRUE)
           if (length(pct_col) > 0) {
             area_values[k] <- csv_data[[pct_col[1]]][1]
           } else {
@@ -54,12 +106,27 @@ read_percent_area <- function(folder_path, image_name) {
           area_values[k] <- NA
         }
       }
+      
+      # Plausibility guard (added Oct 2026 red-team fix): %Area is
+      # mathematically bounded 0-100 by definition. If whatever got
+      # extracted falls outside that range, it is almost certainly the
+      # wrong column (e.g. a raw pixel count) rather than a genuine %Area
+      # value -- flag loudly and discard rather than silently propagating
+      # an implausible number downstream.
+      if (!is.na(area_values[k]) && (area_values[k] < 0 || area_values[k] > 100)) {
+        warning(sprintf(
+          "Implausible %%Area value (%.1f) for %s[%d] -- likely wrong column picked, treating as NA",
+          area_values[k], image_name, k
+        ))
+        area_values[k] <- NA
+        any_implausible <- TRUE
+      }
     } else {
       area_values[k] <- NA
     }
   }
   
-  return(list(values = area_values, files_found = files_found))
+  return(list(values = area_values, files_found = files_found, any_implausible = any_implausible))
 }
 
 # === PROCESS EACH SURFACE/REP FOLDER ===
@@ -98,6 +165,7 @@ for (folder in surface_folders) {
   )
   
   all_found <- TRUE
+  any_implausible_overall <- FALSE
   
   # Process each image type
   for (img_name in image_names) {
@@ -135,6 +203,14 @@ for (folder in surface_folders) {
       all_found <- FALSE
       cat(sprintf("    WARNING: Only %d of 100 threshold files found\n", files_found))
     }
+    
+    # Track plausibility across all images in this folder (added Oct 2026
+    # red-team fix) -- feeds the cleanup gate below, so a folder with any
+    # implausible extraction never has its raw per-threshold CSVs deleted.
+    if (isTRUE(area_data$any_implausible)) {
+      any_implausible_overall <- TRUE
+      cat(sprintf("    WARNING: %s had implausible %%Area value(s) -- this folder's raw CSVs will NOT be deleted\n", img_name))
+    }
   }
   
   # Save Summary.csv
@@ -147,8 +223,16 @@ for (folder in surface_folders) {
   cat(sprintf("  Saved: %s\n", output_path))
   
   # Mark folder as processed for cleanup
-  if (all_found) {
+  # BUG FIX (Oct 2026 red-team review): previously gated on all_found alone
+  # (did every image find 100 threshold files?) -- a folder could have a
+  # complete file COUNT but still contain implausible VALUES (e.g. if the
+  # %Area column was ever mis-picked again in future), and would still have
+  # had its raw CSVs destructively deleted below. Now also requires
+  # !any_implausible_overall.
+  if (all_found && !any_implausible_overall) {
     processed_folders <- c(processed_folders, folder)
+  } else if (all_found && any_implausible_overall) {
+    cat(sprintf("  NOTE: %s had complete file counts but implausible %%Area value(s) -- excluded from cleanup\n", folder_name))
   }
 }
 
@@ -175,6 +259,17 @@ for (f in summary_files) {
 }
 
 # === CLEANUP: DELETE INDIVIDUAL CSV FILES ===
+# Gated on DELETE_INDIVIDUAL_CSVS (set near the top of this script, default
+# FALSE -- see that toggle's own comment for the Oct 2026 rationale: this
+# step is destructive and irreversible short of re-running ImageJ, so a
+# first re-run after the %Area extraction fix above should be sanity-
+# checked by eye before this is trusted).
+
+if (!DELETE_INDIVIDUAL_CSVS) {
+  cat("\n=== CLEANUP SKIPPED: DELETE_INDIVIDUAL_CSVS is FALSE ===\n")
+  cat(sprintf("%d folder(s) were eligible for cleanup (complete file counts, no implausible values) but raw CSVs were left in place.\n", length(processed_folders)))
+  cat("Inspect the regenerated Summary.csv files above, then set DELETE_INDIVIDUAL_CSVS <- TRUE and re-run this script to actually delete the raw per-threshold CSVs.\n")
+} else {
 
 cat("\n=== CLEANUP: DELETING INDIVIDUAL CSV FILES ===\n")
 
@@ -203,5 +298,7 @@ for (folder in processed_folders) {
 
 cat(sprintf("\nTotal CSV files deleted: %d\n", total_deleted))
 cat("\nFolders tidied. Only Summary.csv files remain in OrganizedImages.\n")
+
+}
 
 cat("\n=== SCRIPT COMPLETE ===\n")
